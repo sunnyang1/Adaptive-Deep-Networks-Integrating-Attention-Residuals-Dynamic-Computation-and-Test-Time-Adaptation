@@ -32,6 +32,6 @@
 Add to README.md:
 
 ```markdown
-![Validation](https://github.com/sunnyang1/Adaptive-Deep-Networks-Integrating-Attention-Residuals-Dynamic-Computation-and-Test-Time-Adaptation/workflows/Validation/badge.svg)
-![Benchmark](https://github.com/sunnyang1/Adaptive-Deep-Networks-Integrating-Attention-Residuals-Dynamic-Computation-and-Test-Time-Adaptation/workflows/Benchmark/badge.svg)
+![Validation](https://github.com/sunnyang1/Adaptive-Deep-Networks/workflows/Validation/badge.svg)
+![Benchmark](https://github.com/sunnyang1/Adaptive-Deep-Networks/workflows/Benchmark/badge.svg)
 ```

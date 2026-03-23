@@ -1,6 +1,6 @@
 # Adaptive Deep Networks: Validation Framework
 
-[![Validation](https://github.com/sunnyang1/Adaptive-Deep-Networks-Integrating-Attention-Residuals-Dynamic-Computation-and-Test-Time-Adaptation/workflows/Validation/badge.svg)](https://github.com/sunnyang1/Adaptive-Deep-Networks-Integrating-Attention-Residuals-Dynamic-Computation-and-Test-Time-Adaptation/actions)
+[![Validation](https://github.com/sunnyang1/Adaptive-Deep-Networks/workflows/Validation/badge.svg)](https://github.com/sunnyang1/Adaptive-Deep-Networks/actions)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
@@ -31,7 +31,7 @@ This repository provides a complete validation framework for reproducing the pap
 
 ```bash
 # Clone repository
-git clone https://github.com/sunnyang1/Adaptive-Deep-Networks-Integrating-Attention-Residuals-Dynamic-Computation-and-Test-Time-Adaptation.git
+git clone https://github.com/sunnyang1/Adaptive-Deep-Networks.git
 cd Adaptive-Deep-Networks
 
 # Setup on Lambda AI
