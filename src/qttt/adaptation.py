@@ -209,9 +209,12 @@ class QueryOnlyTTT(nn.Module):
             adapted_query: Optimized pseudo-query
             loss_history: Loss trajectory
         """
-        # Expand pseudo-query for attention computation
-        # [D] -> [1, 1, 1, D] (will be broadcasted)
-        query_expanded = pseudo_query.view(1, 1, 1, -1)
+        # Reshape pseudo-query from [D] to [1, H, 1, d] for multi-head attention
+        # D = H * d, so reshape to [H, d] then add batch and seq dims
+        H = self.num_heads
+        d = self.head_dim
+        query_reshaped = pseudo_query.view(H, d)  # [H, d]
+        query_expanded = query_reshaped.unsqueeze(0).unsqueeze(2)  # [1, H, 1, d]
         
         adapted, losses = qttt_adapt(
             query_expanded,
@@ -222,7 +225,8 @@ class QueryOnlyTTT(nn.Module):
             learning_rate=self.config.learning_rate
         )
         
-        # Squeeze back to [D]
+        # Reshape back to [D]
+        adapted = adapted.squeeze(0).squeeze(1)  # [H, d]
         return adapted.view(-1), losses
     
     def adapt_query_projection(

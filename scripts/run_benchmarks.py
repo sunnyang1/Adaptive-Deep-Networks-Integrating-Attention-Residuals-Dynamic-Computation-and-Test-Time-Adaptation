@@ -25,16 +25,24 @@ sys.path.insert(0, project_dir)
 sys.path.insert(0, src_dir)
 
 # Import after path setup
+# Core imports (no torch dependency)
 try:
     from models.configs import get_config, print_config
+    from benchmarks.flop_analysis import run_flop_analysis
+except ImportError as e:
+    print(f"Core import error: {e}")
+    raise
+
+# Model-dependent imports (optional for FLOP-only runs)
+try:
+    import torch
     from models.adaptive_transformer import create_adaptive_transformer
     from benchmarks.needle_haystack import NeedleHaystackBenchmark
     from benchmarks.math_eval import MATHEvaluator
-    from benchmarks.flop_analysis import run_flop_analysis
-except ImportError as e:
-    print(f"Import error: {e}")
-    print(f"Python path: {sys.path}")
-    raise
+    _HAS_TORCH = True
+except ImportError:
+    _HAS_TORCH = False
+    torch = None
 
 
 def parse_args():
@@ -67,8 +75,8 @@ def parse_args():
     parser.add_argument(
         '--device',
         type=str,
-        default='cuda' if torch.cuda.is_available() else 'cpu',
-        help='Device to use'
+        default='auto',
+        help='Device to use (auto/cpu/cuda). Auto will detect GPU availability.'
     )
     
     parser.add_argument(
@@ -230,6 +238,13 @@ def print_summary(all_results, output_dir):
 def main():
     args = parse_args()
     
+    # Resolve device if 'auto'
+    if args.device == 'auto':
+        if _HAS_TORCH and torch is not None:
+            args.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        else:
+            args.device = 'cpu'
+    
     print("=" * 60)
     print("Adaptive Deep Networks Validation")
     print("=" * 60)
@@ -250,6 +265,12 @@ def main():
     tokenizer = None
     
     if not args.skip_model_tests:
+        if not _HAS_TORCH:
+            print("\nError: PyTorch is required for model tests.")
+            print("Install with: pip install torch")
+            print("Or run with --skip-model-tests for FLOP analysis only.")
+            return
+        
         print("\nInitializing model...")
         try:
             model = create_adaptive_transformer(args.model_size)

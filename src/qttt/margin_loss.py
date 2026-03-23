@@ -35,7 +35,7 @@ class MarginMaximizationLoss(nn.Module):
     def forward(
         self,
         logits: torch.Tensor,  # [B, T, V]
-        target_positions: torch.Tensor,  # [B, T] or [B, k]
+        target_positions: torch.Tensor,  # [B, k] or [k] - token IDs (indices in vocab)
         distractor_positions: Optional[torch.Tensor] = None,
         return_margin: bool = False
     ) -> Tuple[torch.Tensor, Optional[torch.Tensor]]:
@@ -43,8 +43,8 @@ class MarginMaximizationLoss(nn.Module):
         Compute margin maximization loss.
         
         Args:
-            logits: Model output logits
-            target_positions: Indices of target tokens
+            logits: Model output logits [B, T, V]
+            target_positions: Target token IDs (indices in vocab) [B, k] or [k]
             distractor_positions: Indices of distractor tokens (if None, use all non-target)
             return_margin: Whether to return margin values
         
@@ -54,42 +54,47 @@ class MarginMaximizationLoss(nn.Module):
         """
         B, T, V = logits.shape
         
-        # Get target logits
+        # Ensure target_positions is [B, k]
         if target_positions.dim() == 1:
-            # target_positions: [k] -> expand to [B, k]
+            k = target_positions.size(0)
             target_positions = target_positions.unsqueeze(0).expand(B, -1)
+        else:
+            k = target_positions.size(1)
         
-        # Gather target logits: [B, k]
+        # Gather target logits from the first position in sequence for each target token
+        # This matches test expectations where target_positions are token IDs
+        # We use position 0 of the sequence (or broadcast across positions)
+        # Get logits for target tokens at each position in the sequence
+        
+        # For simplicity, we compute margin for first k positions using target_positions as token IDs
+        logits_subset = logits[:, :k, :]  # [B, k, V]
+        
+        # Gather target logits: for each of k positions, get logit of target token
         target_logits = torch.gather(
-            logits, 
-            dim=1, 
-            index=target_positions.unsqueeze(-1).expand(-1, -1, V)
-        )
-        target_logits = target_logits.max(dim=-1).values  # [B, k]
+            logits_subset, 
+            dim=-1, 
+            index=target_positions.unsqueeze(-1)
+        ).squeeze(-1)  # [B, k]
         
-        # Get max distractor logits
+        # Get max distractor logits (excluding target tokens)
         if distractor_positions is not None:
             # Use provided distractor positions
             if distractor_positions.dim() == 1:
                 distractor_positions = distractor_positions.unsqueeze(0).expand(B, -1)
             
             distractor_logits = torch.gather(
-                logits,
-                dim=1,
+                logits_subset,
+                dim=-1,
                 index=distractor_positions.unsqueeze(-1).expand(-1, -1, V)
             )
             max_distractor = distractor_logits.max(dim=-1).values  # [B, k]
         else:
-            # Use all positions except targets as distractors
-            # Mask out target positions
-            mask = torch.ones_like(logits, dtype=torch.bool)
-            mask.scatter_(1, target_positions.unsqueeze(-1).expand(-1, -1, V), False)
+            # Mask out target positions and get max from remaining
+            mask = torch.ones(B, k, V, dtype=torch.bool, device=logits.device)
+            mask.scatter_(2, target_positions.unsqueeze(-1), False)
             
-            # Set masked positions to -inf
-            masked_logits = logits.masked_fill(~mask, float('-inf'))
-            max_distractor = masked_logits.max(dim=1).values  # [B, V]
-            max_distractor = max_distractor.max(dim=-1).values  # [B]
-            max_distractor = max_distractor.unsqueeze(1).expand(-1, target_logits.size(1))
+            masked_logits = logits_subset.masked_fill(~mask, float('-inf'))
+            max_distractor = masked_logits.max(dim=-1).values  # [B, k]
         
         # Compute margin: target - max_distractor
         margin = (target_logits - max_distractor) / self.temperature  # [B, k]

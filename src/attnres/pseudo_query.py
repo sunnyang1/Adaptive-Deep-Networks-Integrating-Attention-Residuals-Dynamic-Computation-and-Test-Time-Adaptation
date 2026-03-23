@@ -74,22 +74,27 @@ class PseudoQueryManager(nn.Module):
             is_mlp: Whether this is for MLP layer
         
         Returns:
-            Attention weights [num_blocks + 1]
+            Attention weights [num_blocks] averaged over batch and seq dims
         """
         pseudo_query = self.get_pseudo_query(layer_idx, is_mlp)
         
         if len(block_representations) == 0:
             return torch.ones(1) / 1  # Uniform for first block
         
-        # Stack blocks
-        V = torch.stack(block_representations, dim=0)  # [N, D]
+        # Stack blocks: [N, B, T, D]
+        V = torch.stack(block_representations, dim=0)
         
-        # RMSNorm
-        norm = V.norm(2, dim=-1, keepdim=True) * (V.size(-1) ** -0.5)
-        K = V / (norm + self.eps)
+        # RMSNorm: x / sqrt(mean(x^2))
+        rms = torch.sqrt(torch.mean(V ** 2, dim=-1, keepdim=True) + self.eps)
+        K = V / rms
         
-        # Compute attention scores
-        logits = torch.matmul(K, pseudo_query) / (self.dim ** 0.5)
+        # Compute attention scores: [N, B, T]
+        # einsum: 'n b t d, d -> n b t'
+        logits = torch.einsum('n b t d, d -> n b t', K, pseudo_query)
+        logits = logits / (self.dim ** 0.5)
+        
+        # Average over batch and sequence dimensions
+        logits = logits.mean(dim=(1, 2))  # [N]
         weights = F.softmax(logits, dim=0)
         
         return weights

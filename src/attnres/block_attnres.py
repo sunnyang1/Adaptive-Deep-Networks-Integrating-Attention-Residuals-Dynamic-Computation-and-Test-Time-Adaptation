@@ -21,8 +21,9 @@ class RMSNorm(nn.Module):
     
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # x: [..., dim]
-        norm = x.norm(2, dim=-1, keepdim=True) * (x.size(-1) ** -0.5)
-        return self.weight * x / (norm + self.eps)
+        # RMSNorm: x / sqrt(mean(x^2)) * weight
+        rms = torch.sqrt(torch.mean(x ** 2, dim=-1, keepdim=True) + self.eps)
+        return self.weight * x / rms
 
 
 def block_attn_res(

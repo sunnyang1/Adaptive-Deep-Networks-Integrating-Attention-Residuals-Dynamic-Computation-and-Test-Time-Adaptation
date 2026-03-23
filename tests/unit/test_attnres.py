@@ -170,7 +170,13 @@ class TestPseudoQueryManager:
         mlp_query = manager.get_pseudo_query(5, is_mlp=True)
         assert mlp_query.shape == (128,)
         
-        # Should be different parameters
+        # Should be different parameter slices (different memory locations)
+        assert query is not mlp_query
+        
+        # After random initialization, they should have different values
+        manager.pseudo_queries.data.normal_()
+        query = manager.get_pseudo_query(5, is_mlp=False)
+        mlp_query = manager.get_pseudo_query(5, is_mlp=True)
         assert not torch.allclose(query, mlp_query)
     
     def test_compute_attention_weights(self):

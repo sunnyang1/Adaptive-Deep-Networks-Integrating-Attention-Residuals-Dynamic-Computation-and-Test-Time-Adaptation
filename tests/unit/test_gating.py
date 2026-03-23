@@ -39,7 +39,7 @@ class TestEMAThreshold:
     
     def test_update_increases_threshold_for_high_loss(self):
         """If losses are consistently high, threshold should increase."""
-        calibrator = EMATrThreshold(initial_threshold=2.0, beta=0.9)
+        calibrator = EMAThreshold(initial_threshold=2.0, beta=0.9)
         
         # Feed high losses
         for _ in range(50):
