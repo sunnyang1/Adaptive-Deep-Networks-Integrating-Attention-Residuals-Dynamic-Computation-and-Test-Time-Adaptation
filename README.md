@@ -21,7 +21,7 @@ This repository provides a complete validation framework for reproducing the pap
 | Benchmark | Target | Paper Section |
 |-----------|--------|---------------|
 | Needle-in-Haystack (256K) | 86.9% avg | 5.4.1 |
-| MATH (7B params) | 52.3% | 5.4.2 |
+| MATH (8.7B params) | 52.3% | 5.4.2 |
 | Compute Efficiency | 40% reduction | 5.4.3 |
 | AttnRes Overhead | <2% | 5.6.3 |
 
@@ -40,6 +40,23 @@ bash scripts/lambda_setup.sh
 # Or local installation
 pip install -r requirements.txt
 ```
+
+### Streaming Training (Zero Local Storage)
+
+For limited disk space (e.g., AutoDL 50GB), use streaming training:
+
+```bash
+# Single GPU with streaming
+python scripts/train_streaming.py --model-size medium --max-steps 10000
+
+# Multi-GPU distributed training with streaming
+torchrun --nproc_per_node=4 scripts/train_streaming.py --model-size medium --max-steps 100000
+
+# FineWeb dataset streaming
+python scripts/train_streaming.py --model-size small --dataset fineweb --dataset-config sample-10BT
+```
+
+See `STREAMING_TRAINING_GUIDE.md` for details.
 
 ### Run Validation
 
@@ -128,9 +145,9 @@ for step in range(num_steps):
 
 | Config | Params | Layers | Hidden | Blocks | qTTT Steps |
 |--------|--------|--------|--------|--------|------------|
-| Small  | 1.5B   | 32     | 2048   | 8      | 16         |
-| Medium | 7B     | 32     | 4096   | 8      | 32         |
-| Large  | 50B    | 64     | 5120   | 16     | 32         |
+| Small  | 2.2B   | 32     | 2048   | 8      | 16         |
+| Medium | 8.7B   | 32     | 4096   | 8      | 32         |
+| Large  | 27B    | 64     | 5120   | 16     | 32         |
 
 ## Citation
 

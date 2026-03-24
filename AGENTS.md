@@ -26,9 +26,9 @@ This is the validation framework for the paper "Adaptive Deep Networks: Integrat
 
 | Size | Params | Layers | Hidden | Blocks |
 |------|--------|--------|--------|--------|
-| Small | 1.5B | 32 | 2048 | 8 |
-| Medium | 7B | 32 | 4096 | 8 |
-| Large | 50B | 64 | 5120 | 16 |
+| Small | 2.2B | 32 | 2048 | 8 |
+| Medium | 8.7B | 32 | 4096 | 8 |
+| Large | 27B | 64 | 5120 | 16 |
 
 ## Key Design Decisions
 
@@ -65,7 +65,7 @@ pytest tests/unit/test_attnres.py -v
 ## Validation Benchmarks
 
 1. **Needle-in-Haystack**: Long-context retrieval (target: 86.9% avg)
-2. **MATH**: Mathematical reasoning (target: 52.3% @ 7B)
+2. **MATH**: Mathematical reasoning (target: 52.3% @ 8.7B)
 3. **FLOP Analysis**: Verify T_think ≈ 2 * N_qTTT * k
 4. **Ablation Study**: Component contribution analysis
 

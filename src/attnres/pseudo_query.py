@@ -12,7 +12,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import Dict, List, Optional, Tuple
-import numpy as np
+try:
+    import numpy as np
+except ImportError:
+    np = None
 
 
 class PseudoQueryManager(nn.Module):
@@ -158,20 +161,25 @@ class PseudoQueryManager(nn.Module):
             "is_specialized": spec_ratio.mean().item() < 0.8  # Threshold
         }
     
-    def visualize_attention_patterns(self) -> np.ndarray:
+    def visualize_attention_patterns(self):
         """
         Generate heatmap of attention patterns across layers and blocks.
         
         Returns:
             Numpy array [num_layers, num_blocks + 1] of average attention weights
+            or torch.Tensor if numpy is not available
         """
         if self.history_ptr == 0:
-            return np.zeros((self.num_layers, self.num_blocks + 1))
+            if np is not None:
+                return np.zeros((self.num_layers, self.num_blocks + 1))
+            return torch.zeros((self.num_layers, self.num_blocks + 1))
         
         num_entries = min(self.history_ptr, 100)
         avg_weights = self.attention_history[:num_entries].mean(dim=0)  # [num_layers, num_blocks + 1]
         
-        return avg_weights.numpy()
+        if np is not None:
+            return avg_weights.numpy()
+        return avg_weights
 
 
 class PseudoQueryInitializer:

@@ -11,6 +11,16 @@ from typing import Optional, Tuple, List, Dict
 from dataclasses import dataclass
 
 from models.configs import ModelConfig
+
+
+def get_device():
+    """Get the best available device."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")
 from attnres.block_attnres import BlockAttnRes, RMSNorm
 from gating.threshold import DynamicThreshold
 from qttt.adaptation import QueryOnlyTTT, KVCache
