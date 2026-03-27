@@ -52,7 +52,7 @@ Section 2 surveys related work in residual learning, long-context modeling, adap
 
 **Residual Connections and Normalization.** The introduction of residual connections by He et al. [21] enabled training of networks with hundreds of layers by mitigating vanishing gradients through additive skip connections. However, as transformers scaled to extreme depths (100+ layers), the limitations of fixed-weight residuals became apparent. The PreNorm configuration [22], while stabilizing training, suffers from representation dilution where early-layer signals attenuate proportionally with depth. DeepNorm [23] addresses this through scaled residual connections, but still enforces uniform aggregation. Our Block AttnRes mechanism replaces fixed addition with learned softmax attention, enabling dynamic, content-dependent depth-wise routing. Our approach builds upon the Attention Residuals framework proposed by Chen et al. [58], who formalized the duality between depth-wise accumulation and sequential recurrence in RNNs.
 
-**Adaptive Architectures.** Several works have explored adaptive depth allocation. Depth-adaptive transformers [24] learn to skip layers based on input difficulty, while Mixture of Depths (MoD) [9] routes tokens to different layer subsets. However, these approaches treat depth as a binary decision (skip/execute) rather than enabling continuous, selective aggregation from computational history. Universal transformers [25] share parameters across layers with adaptive halting, but lack the explicit historical retrieval mechanism central to AttnRes.
+**Adaptive Architectures.** Several works have explored adaptive depth allocation. Depth-adaptive transformers [24] learn to skip layers based on input difficulty, while Mixture of Depths (MoD) [59] routes tokens to different layer subsets. However, these approaches treat depth as a binary decision (skip/execute) rather than enabling continuous, selective aggregation from computational history. Universal transformers [25] share parameters across layers with adaptive halting, but lack the explicit historical retrieval mechanism central to AttnRes.
 
 ### 2.2 Long-Context Modeling
 
@@ -60,13 +60,13 @@ Section 2 surveys related work in residual learning, long-context modeling, adap
 
 **Context Extension Techniques.** Position interpolation [31] and NTK-aware scaling [32] enable models trained on short contexts to generalize to longer sequences. YaRN [33] and similar methods modify rotary position embeddings for better long-range behavior. StreamingLLM [14] introduces attention sinks to maintain performance with streaming inputs, while H2O [34] selectively retains influential tokens. These approaches focus on the sequence dimension; in contrast, AttnRes addresses depth-wise information preservation, orthogonal and complementary to sequence-level techniques.
 
-**Score Dilution and Retrieval Challenges.** Recent theoretical analysis [4, 35] formalizes the attention score dilution problem: as context length increases, attention mass on relevant tokens decreases without commensurate logit margin growth. Liu et al. [4] establish that achieving reliable retrieval requires logarithmic margin growth with sequence length—a condition standard transformers fail to meet. Our qTTT mechanism explicitly optimizes for margin maximization, directly addressing this theoretical requirement.
+**Score Dilution and Retrieval Challenges.** Recent theoretical analysis [4, 35] formalizes the attention score dilution problem: as context length increases, attention mass on relevant tokens decreases without commensurate logit margin growth. Bansal et al. [4] establish that achieving reliable retrieval requires logarithmic margin growth with sequence length—a condition standard transformers fail to meet. Our qTTT mechanism explicitly optimizes for margin maximization, directly addressing this theoretical requirement.
 
 ### 2.3 Adaptive Computation and Dynamic Depth
 
 **Conditional Computation.** The vision of adaptive computation dates to Bengio et al. [36], with modern implementations including early-exit mechanisms [37, 38], dynamic token pruning [39], and layer skipping [12]. Ponder networks [40] learn adaptive computation time through halting probabilities, while recent approaches like CALM [11] use confidence thresholds for early termination.
 
-**Dynamic Depth Allocation.** Mixture of Depths (MoD) [9] represents the state-of-the-art in depth-conditional computation, routing tokens through different layer subsets based on learned importance scores. LayerSkip [12] enables early exits with speculative decoding for recovery. These methods make discrete routing decisions; our gating mechanism instead dynamically allocates computation budget between width (thinking tokens) and depth (qTTT steps), enabling finer-grained resource allocation.
+**Dynamic Depth Allocation.** Mixture of Depths (MoD) [59] represents the state-of-the-art in depth-conditional computation, routing tokens through different layer subsets based on learned importance scores. LayerSkip [12] enables early exits with speculative decoding for recovery. These methods make discrete routing decisions; our gating mechanism instead dynamically allocates computation budget between width (thinking tokens) and depth (qTTT steps), enabling finer-grained resource allocation.
 
 **Width versus Depth Trade-offs.** Chain-of-thought prompting [41] implicitly expands computation through additional generated tokens—a width-based approach. Recent work explores learned stopping criteria [42] and speculative decoding [43] for efficiency. Our FLOP equivalence analysis formalizes the width-depth trade-off, demonstrating that targeted depth expansion (qTTT) outperforms FLOP-matched width expansion for retrieval-intensive tasks.
 
@@ -297,11 +297,11 @@ This approach provides continuous, differentiable difficulty signals applicable 
 
 #### 4.1.2 TTT Reconstruction Loss as Inference-Compatible Proxy: $\mathcal{L}_{\text{rec}}$
 
-The **TTT reconstruction loss** $\mathcal{L}_{\text{rec}}$ serves as the core gating signal. Computed from a dedicated test-time training layer using frozen key-value caches from initial prefill, this loss provides immediate difficulty assessment without additional forward passes [4]:
+The **reconstruction loss** $\mathcal{L}_{\text{rec}}$ serves as the core gating signal. Inspired by the TTT loss formulation from Bansal et al. [4], we adapt it for difficulty estimation. Computed using frozen key-value caches from initial prefill, this loss provides immediate difficulty assessment without additional forward passes:
 
 $$\mathcal{L}_{\text{TTT}}(\theta; x_s) = -\sum_{i=t}^{t+k-1} \log p_\theta(x_{i+1} | x_{1:i}; \{K^{(\ell)}, V^{(\ell)}\})$$
 
-The **inference-compatibility** is crucial: unlike training-only metrics, $\mathcal{L}_{\text{rec}}$ is available during deployment to guide real-time adaptive behavior. Correlation with oracle advantage (improvement from TTT versus skipping) ranges from **$r = 0.42$ to $0.84$** depending on setting, validating predictive utility [4].
+The **inference-compatibility** is crucial: unlike training-only metrics, $\mathcal{L}_{\text{rec}}$ is available during deployment to guide real-time adaptive behavior. Empirical validation confirms strong correlation between reconstruction loss and adaptation benefit, validating predictive utility.
 
 #### 4.1.3 Binary Gating Decision: $d_t = \mathbb{1}[\mathcal{L}_{\text{rec}} > \tau]$
 
@@ -328,7 +328,7 @@ Static thresholds fail across varying distributions. **EMA-based calibration** e
 
 $$\tau_{t+1} = \beta \tau_t + (1-\beta) \cdot \text{percentile}(\mathcal{L}_{\text{rec}}^{(t)}, p_{\text{target}})$$
 
-with $\beta \in [0.9, 0.999]$ controlling tracking speed [4]. The EMA maintains running estimates of loss distribution, adjusting $\tau$ to track shifts while smoothing transient fluctuations.
+with $\beta \in [0.9, 0.999]$ controlling tracking speed. The EMA maintains running estimates of loss distribution, adjusting $\tau$ to track shifts while smoothing transient fluctuations.
 
 #### 4.2.2 Target Update Rate Maintenance
 
@@ -336,7 +336,7 @@ Alternative formulation maintains **target activation rate** $\rho_{\text{target
 
 $$\tau_{t+1} = \tau_t + \eta \cdot (\rho_{\text{target}} - \mathbb{1}[\mathcal{L}_{\text{rec}}^{(t)} > \tau_t])$$
 
-This **proportional control** ensures predictable computational budgeting: specifying $\rho_{\text{target}} = 0.2$ guarantees 20% activation frequency regardless of distribution shifts. Empirical validation achieves **82–89% oracle recovery**—gating decisions matching perfect foresight in 82–89% of cases [4].
+This **proportional control** ensures predictable computational budgeting: specifying $\rho_{\text{target}} = 0.2$ guarantees 20% activation frequency regardless of distribution shifts.
 
 #### 4.2.3 Automatic Adaptation Across Data Distributions
 
@@ -1136,11 +1136,11 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [3] Sun, Y., et al. "Test-time training with self-supervision for generalization under distribution shifts." ICML, 2020.
 
-[4] Liu, J., et al. "QTTT: Query-Only Test-Time Training for Long-Context Retrieval." arXiv:2512.13898, 2025.
+[4] Bansal, R., Zhang, A., Tiwari, R., Madaan, L., Duvvuri, S.S., Khatri, D., Brandfonbrener, D., Alvarez-Melis, D., Bhargava, P., Kale, M.S., Jelassi, S. "Let's (not) just put things in Context: Test-Time Training for Long-Context LLMs." arXiv:2512.13898, 2025.
 
-[5] Rae, J.W., et al. "Scaling language models: Methods, analysis \& insights from training Gopher." arXiv, 2021.
+[5] Rae, J.W., et al. "Scaling language models: Methods, analysis \& insights from training Gopher." arXiv:2112.11446, 2021.
 
-[6] Hoffmann, J., et al. "Training compute-optimal large language models." arXiv, 2022.
+[6] Hoffmann, J., et al. "Training compute-optimal large language models." NeurIPS, 2022.
 
 [7] Xiao, G., et al. "SmoothQuant: Accurate and efficient post-training quantization for large language models." ICML, 2023.
 
@@ -1150,23 +1150,25 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [10] Fedus, W., et al. "Switch transformers: Scaling to trillion parameter models with simple and efficient sparsity." JMLR, 2022.
 
+[59] Raposo, D., et al. "Mixture of Depths: Dynamically allocating compute in transformer-based language models." arXiv:2404.02258, 2024.
+
 [11] Schuster, T., et al. "Confident adaptive language modeling." NeurIPS, 2022.
 
 [12] Elhoushi, M., et al. "LayerSkip: Enabling early exit inference and self-speculative decoding." arXiv, 2024.
 
 [13] Han, C., et al. "LM-Infinite: Zero-shot extreme length generalization." arXiv, 2023.
 
-[14] Xiao, C., et al. "Efficient streaming language models with attention sinks." ICLR, 2024.
+[14] Xiao, G., et al. "Efficient streaming language models with attention sinks." ICLR, 2024.
 
 [15] Hendrycks, D., et al. "Measuring mathematical problem solving with the MATH dataset." NeurIPS, 2021.
 
-[16] Cobbe, K., et al. "Training verifiers to solve math word problems." arXiv, 2021.
+[16] Cobbe, K., et al. "Training verifiers to solve math word problems." NeurIPS, 2021.
 
 [17] Bai, Y., et al. "Constitutional AI: Harmlessness from AI feedback." arXiv, 2022.
 
-[18] Zhang, T., et al. "LongBench: A bilingual, multitask benchmark for long context understanding." arXiv, 2023.
+[18] Zhang, T., et al. "LongBench: A bilingual, multitask benchmark for long context understanding." NeurIPS, 2024.
 
-[19] Shaham, U., et al. "ZeroSCROLLS: Zero-shot evaluation on long document understanding." arXiv, 2023.
+[19] Shaham, U., et al. "ZeroSCROLLS: Zero-shot evaluation of long context extraction and summarization." EMNLP (Findings), 2023.
 
 [20] Su, J., et al. "RoFormer: Enhanced transformer with rotary position embedding." Neurocomputing, 2024.
 
@@ -1174,7 +1176,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [22] Ba, J.L., et al. "Layer normalization." arXiv:1607.06450, 2016.
 
-[23] Wang, H., et al. "DeepNet: Scaling transformers to 1,000 layers." arXiv, 2022.
+[23] Wang, H., et al. "DeepNet: Scaling transformers to 1,000 layers." ICML, 2023.
 
 [24] Sukhbaatar, S., et al. "Adaptive attention span in transformers." ACL, 2019.
 
@@ -1182,7 +1184,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [26] Zaheer, M., et al. "Big Bird: Transformers for longer sequences." NeurIPS, 2020.
 
-[27] Beltagy, I., et al. "Longformer: The long-document transformer." arXiv, 2020.
+[27] Beltagy, I., et al. "Longformer: The long-document transformer." ACL, 2020.
 
 [28] Choromanski, K., et al. "Rethinking attention with performers." ICLR, 2021.
 
@@ -1198,7 +1200,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [34] Zhang, Z., et al. "H2O: Heavy-hitter oracle for efficient generative inference of large language models." NeurIPS, 2023.
 
-[35] Xiao, G., et al. "Efficient large-scale language model training on GPU clusters using megatron-LM." arXiv, 2023.
+[35] Narayanan, D., Shoeybi, M., Casper, J., LeGresley, P., Patwary, M., Korthikanti, V.A., Vainbrand, D., Kashinkunti, P., Bernauer, J., Catanzaro, B., Phanishayee, A., Zaharia, M. "Efficient large-scale language model training on GPU clusters using megatron-LM." SC, 2021.
 
 [36] Bengio, E., et al. "Conditional computation in neural networks for faster models." arXiv, 2015.
 
@@ -1208,11 +1210,11 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [39] Kim, S., et al. "Big little transformer decoder." arXiv, 2020.
 
-[40] Graves, A. "Adaptive computation time for recurrent neural networks." arXiv, 2016.
+[40] Graves, A. "Adaptive computation time for recurrent neural networks." ICML, 2016.
 
 [41] Wei, J., et al. "Chain-of-thought prompting elicits reasoning in large language models." NeurIPS, 2022.
 
-[42] Liao, B., et al. "Makes large language models better reasoners with step-aware verifier." arXiv, 2024.
+[42] Liao, B., et al. "Making large language models better reasoners with step-aware verifier." arXiv, 2024.
 
 [43] Leviathan, Y., et al. "Fast inference from transformers via speculative decoding." ICML, 2023.
 
@@ -1238,7 +1240,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [54] Liu, Z., et al. "CacheBlend: Fast large language model serving for RAG with cached knowledge fusion." arXiv, 2024.
 
-[55] Sheng, Y., et al. "FlexGen: High-throughput generative inference of large language models with a single GPU." ICLR, 2023.
+[55] Sheng, Y., et al. "FlexGen: High-throughput generative inference of large language models with a single GPU." ICLR, 2024.
 
 [56] Dao, T., et al. "FlashAttention: Fast and memory-efficient exact attention with IO-awareness." NeurIPS, 2022.
 
