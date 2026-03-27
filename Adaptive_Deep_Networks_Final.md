@@ -8,11 +8,11 @@
 
 ### 1.1 The Challenge of Scaling Deep Networks
 
-The scaling of transformer architectures to hundreds of layers has revealed fundamental limitations in standard architectural components. While residual connections [21] enabled the initial depth revolution by mitigating vanishing gradients, their fixed-weight additive formulation becomes increasingly suboptimal at extreme scale. In PreNorm configurations [22], layer normalization before residual addition causes hidden state magnitudes to grow proportionally with depth, systematically attenuating early-layer signals—a phenomenon we term **representation burial**.
+The scaling of transformer architectures to hundreds of layers has revealed fundamental limitations in standard architectural components. While residual connections [21] enabled the initial depth revolution, their fixed-weight additive formulation becomes increasingly suboptimal at extreme scale. In PreNorm configurations [22], layer normalization before residual addition causes hidden state magnitudes to grow proportionally with depth, systematically attenuating early-layer signals—a phenomenon we term **representation burial**.
 
-Concurrently, the demand for long-context capabilities has exposed the **attention score dilution** problem: as sequence length increases, attention mass on relevant tokens decreases without commensurate logit margin growth, making precise retrieval impossible regardless of model capacity [4]. Standard solutions—architectural modifications for context extension [31, 33] or sparse attention patterns [26, 27]—address symptoms rather than the underlying margin deficiency.
+Concurrently, the demand for long-context capabilities has exposed the **attention score dilution** problem: as sequence length increases, attention mass on relevant tokens decreases without commensurate logit margin growth, making precise retrieval impossible regardless of model capacity [4]. Standard solutions—context extension techniques [31, 33] or sparse attention patterns [26, 27]—address symptoms rather than the underlying margin deficiency.
 
-Finally, the one-size-fits-all computation paradigm of standard transformers wastes resources on easy inputs while under-investing in hard ones. Chain-of-thought prompting [41] demonstrates that additional computation improves reasoning, but uniformly expanding all inputs is computationally prohibitive.
+Finally, the one-size-fits-all computation paradigm wastes resources on easy inputs while under-investing in hard ones. Chain-of-thought prompting [41] demonstrates that additional computation improves reasoning, but uniformly expanding all inputs is computationally prohibitive.
 
 ### 1.2 Our Approach: Adaptive Deep Networks
 
@@ -22,7 +22,7 @@ We address these challenges through three integrated innovations:
 
 **Dynamic Computation Gating.** We frame inference as a budget allocation problem between width (generating additional "thinking tokens") and depth (performing test-time adaptation steps). A self-supervised reconstruction loss signals input difficulty, triggering adaptive computation only when beneficial. This gated approach concentrates resources where most impactful.
 
-**Query-only Test-Time Training (qTTT).** When gating indicates high difficulty, we perform gradient-based adaptation of attention query parameters (pseudo-queries or query projections) with frozen key-value caches. This enables explicit margin maximization for retrieval tasks at 10–1000× lower cost than full-parameter adaptation.
+**Query-only Test-Time Training (qTTT).** When gating indicates high difficulty, we perform gradient-based adaptation of attention query parameters—pseudo-queries for depth-wise retrieval (Section 3.3) or query projection matrices $W_Q$ for sequence-wise attention (Bansal et al. [4])—with frozen key-value caches. This enables explicit margin maximization for retrieval tasks at 10–1000× lower cost than full-parameter adaptation.
 
 ### 1.3 Key Contributions
 
@@ -42,7 +42,7 @@ Our contributions span theory, architecture, and empirical validation:
 
 ### 1.4 Paper Organization
 
-Section 2 surveys related work in residual learning, long-context modeling, adaptive computation, and test-time adaptation. Section 3 presents the theoretical foundations and architectural details of our three-component system. Section 4 provides comprehensive empirical validation across benchmarks. Section 5 details experimental setup and results. Section 6 discusses limitations and broader impacts, and Section 7 concludes.
+Section 2 surveys related work. Section 3 presents the methodology. Section 4 describes the adaptive computation policy. Section 5 reports experiments and results. Section 6 discusses limitations, and Section 7 concludes.
 
 ---
 
@@ -50,9 +50,9 @@ Section 2 surveys related work in residual learning, long-context modeling, adap
 
 ### 2.1 Deep Network Architecture and Residual Learning
 
-**Residual Connections and Normalization.** The introduction of residual connections by He et al. [21] enabled training of networks with hundreds of layers by mitigating vanishing gradients through additive skip connections. However, as transformers scaled to extreme depths (100+ layers), the limitations of fixed-weight residuals became apparent. The PreNorm configuration [22], while stabilizing training, suffers from representation dilution where early-layer signals attenuate proportionally with depth. DeepNorm [23] addresses this through scaled residual connections, but still enforces uniform aggregation. Our Block AttnRes mechanism replaces fixed addition with learned softmax attention, enabling dynamic, content-dependent depth-wise routing. Our approach builds upon the Attention Residuals framework proposed by Chen et al. [58], who formalized the duality between depth-wise accumulation and sequential recurrence in RNNs.
+**Residual Connections and Normalization.** Residual connections [21] enabled training of networks with hundreds of layers by mitigating vanishing gradients. However, at extreme depths (100+ layers), fixed-weight residuals become suboptimal. PreNorm [22] stabilizes training but causes representation dilution where early-layer signals attenuate with depth. DeepNorm [23] addresses this through scaled residuals, but still enforces uniform aggregation. Our Block AttnRes replaces fixed addition with learned softmax attention, enabling dynamic, content-dependent depth-wise routing. We build upon the Attention Residuals framework of Chen et al. [58], who formalized the duality between depth-wise accumulation and sequential recurrence.
 
-**Adaptive Architectures.** Several works have explored adaptive depth allocation. Depth-adaptive transformers [24] learn to skip layers based on input difficulty, while Mixture of Depths (MoD) [59] routes tokens to different layer subsets. However, these approaches treat depth as a binary decision (skip/execute) rather than enabling continuous, selective aggregation from computational history. Universal transformers [25] share parameters across layers with adaptive halting, but lack the explicit historical retrieval mechanism central to AttnRes.
+**Adaptive Architectures.** Depth-adaptive transformers [24] learn to skip layers based on input difficulty, while Mixture of Depths (MoD) [59] routes tokens to different layer subsets. However, these treat depth as a binary decision (skip/execute) rather than enabling continuous, selective aggregation from computational history. Universal Transformers [25] share parameters across layers with adaptive halting, but lack explicit historical retrieval.
 
 ### 2.2 Long-Context Modeling
 
@@ -98,14 +98,14 @@ Section 2 surveys related work in residual learning, long-context modeling, adap
 
 | Aspect | Prior Work | Our Approach |
 |--------|-----------|-------------|
-| Depth aggregation | Fixed residuals [21, 23] or binary skipping [9, 12] | Learned softmax attention over blocks |
-| Computation allocation | Discrete routing [9] or uniform expansion [40] | Gated budget allocation: width versus depth |
+| Depth aggregation | Fixed residuals [21, 23] or binary skipping [59, 12] | Learned softmax attention over blocks |
+| Computation allocation | Discrete routing [59] or uniform expansion [40] | Gated budget allocation: width versus depth |
 | Test-time adaptation | Full-parameter [3, 44] or in-context [50] | Query-only with frozen key-value cache |
 | Synergy | Addressed independently | Unified framework with mutual reinforcement |
 
 **Theoretical Contributions.** Unlike empirical architectural improvements, our work establishes formal foundations: FLOP equivalence between width and depth expansion, logarithmic margin requirements for retrieval, and gradient flow improvements from attention-based shortcuts. These theoretical insights guide principled design decisions rather than relying solely on empirical search.
 
-**Practical Impact.** The integration achieves production-viable efficiency: \<2% overhead for AttnRes architecture, oracle-recovery \>80% for gating decisions, and query-only updates enabling 10–1000× cheaper adaptation than full TTT. This positions our work as both theoretically grounded and practically deployable.
+**Practical Impact.** The integration achieves production-viable efficiency: \<2% overhead for AttnRes architecture, oracle-recovery of 82% for gating decisions (Table 8), and query-only updates enabling 10–1000× cheaper adaptation than full TTT. This positions our work as both theoretically grounded and practically deployable.
 
 ---
 
@@ -115,19 +115,21 @@ Section 2 surveys related work in residual learning, long-context modeling, adap
 
 #### 3.1.1 PreNorm Score Dilution in Deep Transformers
 
-The scaling of transformer architectures to hundreds of layers has revealed a fundamental degradation mechanism: **PreNorm score dilution**. In standard PreNorm configurations, each layer's output undergoes layer normalization before residual addition, creating hidden states whose magnitudes grow proportionally with depth. This uncontrolled growth systematically attenuates the relative contribution of early-layer representations, effectively burying critical information established in shallow processing stages. The mathematical manifestation is severe: in a 96-layer model, early-layer signals may be attenuated by nearly an order of magnitude relative to their original strength.
+Scaling transformers to hundreds of layers reveals a fundamental degradation: **PreNorm score dilution**. In standard PreNorm, each layer's output undergoes layer normalization before residual addition, causing hidden state magnitudes to grow with depth. This systematically attenuates the relative contribution of early-layer representations, effectively burying critical information from shallow stages. In a 96-layer model, early-layer signals may be attenuated by nearly an order of magnitude.
 
-The dilution problem compounds in **long-context retrieval scenarios**, where the attention mechanism must maintain discrimination between relevant "needle" tokens and massive distractor sets. Theoretical analysis establishes that when at least $m$ distractor keys satisfy $z_{i,j} \geq z_{i,j^*} - \Delta$ for margin $\Delta \geq 0$, the attention mass on the true target is bounded above by $1/(1 + me^{-\Delta})$ [4]. For constant-fraction distractor presence, this yields vanishing target attention as sequence length grows—a fundamental limitation of static self-attention that standard architectures cannot overcome.
+This compounds in **long-context retrieval**, where the attention mechanism must discriminate between relevant "needle" tokens and massive distractor sets. When at least $m$ distractor keys satisfy $z_{i,j} \geq z_{i,j^*} - \Delta$, the attention mass on the true target is bounded by $1/(1 + me^{-\Delta})$ [4]. For constant-fraction distractor presence, this yields vanishing target attention as sequence length grows—a fundamental limitation of static self-attention.
 
 #### 3.1.2 Limitations of Fixed-Weight Residual Connections
 
-Standard residual connections, despite enabling stable training through "gradient highway" properties, impose **rigid additive aggregation** that becomes increasingly suboptimal at scale. The canonical formulation $h_{l+1} = h_l + f_l(\text{LayerNorm}(h_l))$ embeds three critical constraints: (a) uniform weighting regardless of information relevance, (b) irreversible blending that prevents selective historical recovery, and (c) output growth dynamics that destabilize training in extreme depth regimes.
+Standard residual connections impose **rigid additive aggregation** that becomes suboptimal at scale. The canonical formulation $h_{l+1} = h_l + f_l(\text{LayerNorm}(h_l))$ embeds three constraints: (a) uniform weighting regardless of relevance, (b) irreversible blending that prevents selective historical recovery, and (c) output growth dynamics that destabilize training at extreme depth.
 
-Empirical validation through layer-pruning experiments demonstrates that significant fractions of layers can be removed with minimal performance degradation—evidence that standard residuals fail to leverage full representational capacity. The fixed-weight paradigm stands in stark contrast to adaptive mechanisms proven transformative elsewhere: self-attention enables dynamic sequence mixing, yet depth-wise aggregation remains governed by immutable unit weights.
+Empirically, significant fractions of layers can be removed with minimal degradation—evidence that standard residuals fail to leverage full representational capacity. This stands in contrast to adaptive mechanisms elsewhere: self-attention enables dynamic sequence mixing, yet depth-wise aggregation remains governed by immutable unit weights.
 
 #### 3.1.3 The Need for Selective Historical Retrieval
 
-The resolution requires **content-dependent depth-wise routing**: each layer must dynamically assess and retrieve from its computational history based on current needs. Early layers encode low-level syntactic features, middle layers develop compositional abstractions, and late layers instantiate task-specific predictions—a hierarchical organization that standard residuals flatten into undifferentiated aggregates. The selective retrieval imperative is particularly acute for **test-time adaptation**, where dynamic reconfiguration of information flow must operate on preserved rather than diluted representations.
+The resolution requires **content-dependent depth-wise routing**: each layer must dynamically retrieve from its computational history based on current needs. Early layers encode low-level syntactic features, middle layers develop compositional abstractions, and late layers instantiate task-specific predictions—hierarchical organization that standard residuals flatten into undifferentiated aggregates.
+
+This is particularly acute for **test-time adaptation**, where dynamic reconfiguration of information flow must operate on preserved rather than diluted representations.
 
 ### 3.2 Block AttnRes Mechanism
 
@@ -235,9 +237,9 @@ The minimal parameter overhead—negligible compared to attention and feed-forwa
 
 #### 3.3.2 Selective Retrieval from Layer History
 
-The pseudo-query mechanism enables **sophisticated retrieval behaviors** emergent from training rather than explicit engineering. Compatibility computation $s_{l,m} = w_l^\top B_m / \sqrt{d}$ produces attention weights that can concentrate sharply on specific blocks or distribute broadly, with the network discovering optimal strategies for different computational contexts.
+The pseudo-query mechanism enables **sophisticated retrieval behaviors** emergent from training. Compatibility scores $s_{l,m} = w_l^\top B_m / \sqrt{d}$ produce attention weights that can concentrate sharply on specific blocks or distribute broadly, with the network discovering optimal strategies per context.
 
-For retrieval tasks, layers may learn to **upweight early blocks preserving precise positional information** when locating needles in long contexts; for reasoning tasks, middle blocks encoding compositional structures may receive emphasis. The selectivity enables implicit conditional computation: irrelevant blocks receive near-zero weight, effectively bypassing their computation for specific inputs.
+For retrieval tasks, layers learn to **upweight early blocks** preserving precise positional information; for reasoning, middle blocks encoding compositional structures receive emphasis. This selectivity enables implicit conditional computation: irrelevant blocks receive near-zero weight.
 
 #### 3.3.3 Zero Initialization for Training Stability
 
@@ -255,21 +257,19 @@ At initialization, AttnRes reduces to:
 
 $$h_{l+1} = \frac{1}{b}\sum_{m=0}^{b-1} B_m + h_l$$
 
-This **mean-pooling equivalence** ensures architectural compatibility: pretrained weights transfer without modification, and hyperparameter configurations developed for standard transformers remain applicable. The uniform distribution serves as curriculum, with complexity increasing as optimization discovers beneficial non-uniform patterns.
+This **mean-pooling equivalence** ensures architectural compatibility: pretrained weights transfer without modification, and hyperparameters for standard transformers remain applicable.
 
 ### 3.4 Theoretical Properties
 
 #### 3.4.1 Prevention of Representation Burial
 
-AttnRes provides **theoretical guarantees against representation burial** impossible under standard residuals. The softmax attention mechanism enables any layer to retrieve any historical block with weight bounded only by normalization, not by depth-dependent dilution. Competitive selection ensures that salient features can propagate through arbitrary depth if subsequent layers learn to attend to them.
+AttnRes provides **theoretical guarantees against representation burial**. The softmax attention mechanism enables any layer to retrieve any historical block with weight bounded only by normalization, not by depth-dependent dilution. Competitive selection ensures salient features can propagate through arbitrary depth.
 
 For gradient flow, direct attention pathways create **skip connections that bypass intermediate transformations**: the gradient to block $m$ from layer $n > m$ flows through attention weight $\alpha_{n,m}$ with magnitude determined by learned relevance rather than depth-proportional attenuation.
 
 #### 3.4.2 Dynamic Relevance Weighting Across Depth
 
-The learned attention enables **input-dependent depth routing** that adapts to computational requirements. For simple pattern-matching inputs, attention may concentrate on shallow blocks; for complex compositional reasoning, distribution across depth enables multi-scale feature integration. This dynamic capability transforms the network from static pipeline to **adaptive computation system** where effective depth varies per-input.
-
-The emergence of interpretable specialization—early layers attending to embeddings, middle layers to compositional blocks, late layers to task-relevant abstractions—validates that learned routing discovers meaningful computational structure.
+The learned attention enables **input-dependent depth routing**. For simple inputs, attention concentrates on shallow blocks; for complex reasoning, distribution across depth enables multi-scale feature integration. This transforms the network from static pipeline to **adaptive computation system** where effective depth varies per input.
 
 #### 3.4.3 Gradient Flow Improvements Over Standard Residuals
 
@@ -291,17 +291,17 @@ These properties are particularly critical for **meta-learning phases** where st
 
 #### 4.1.1 Task Difficulty Detection via Self-Supervised Loss
 
-Dynamic computation allocation requires **reliable difficulty estimation** without labeled data or external supervision. The solution leverages **self-supervised reconstruction loss** as an intrinsic, inference-compatible proxy: inputs well-captured by learned distributions yield low reconstruction error, while novel, ambiguous, or complex inputs produce elevated loss.
+Dynamic computation allocation requires **reliable difficulty estimation** without labeled data. We leverage **self-supervised reconstruction loss** as an inference-compatible proxy: inputs well-captured by learned distributions yield low reconstruction error, while novel or complex inputs produce elevated loss.
 
-This approach provides continuous, differentiable difficulty signals applicable across arbitrary domains without task-specific calibration. The reconstruction objective—predicting masked or corrupted input elements from current representations—directly measures model confidence in its own processing.
+The reconstruction objective—predicting masked input elements from current representations—directly measures model confidence, providing continuous, differentiable difficulty signals without task-specific calibration.
 
 #### 4.1.2 TTT Reconstruction Loss as Inference-Compatible Proxy: $\mathcal{L}_{\text{rec}}$
 
-The **reconstruction loss** $\mathcal{L}_{\text{rec}}$ serves as the core gating signal. Inspired by the TTT loss formulation from Bansal et al. [4], we adapt it for difficulty estimation. Computed using frozen key-value caches from initial prefill, this loss provides immediate difficulty assessment without additional forward passes:
+The **reconstruction loss** $\mathcal{L}_{\text{rec}}$ serves as the core gating signal. Inspired by Bansal et al. [4], we adapt their next-token prediction loss for difficulty estimation. Computed using frozen key-value caches from initial prefill, it provides immediate difficulty assessment without additional forward passes:
 
 $$\mathcal{L}_{\text{TTT}}(\theta; x_s) = -\sum_{i=t}^{t+k-1} \log p_\theta(x_{i+1} | x_{1:i}; \{K^{(\ell)}, V^{(\ell)}\})$$
 
-The **inference-compatibility** is crucial: unlike training-only metrics, $\mathcal{L}_{\text{rec}}$ is available during deployment to guide real-time adaptive behavior. Empirical validation confirms strong correlation between reconstruction loss and adaptation benefit, validating predictive utility.
+Unlike training-only metrics, $\mathcal{L}_{\text{rec}}$ is available during deployment to guide real-time adaptive behavior.
 
 #### 4.1.3 Binary Gating Decision: $d_t = \mathbb{1}[\mathcal{L}_{\text{rec}} > \tau]$
 
@@ -316,9 +316,7 @@ The binary formulation simplifies systems implementation while enabling clear co
 
 #### 4.1.4 Distribution Shift and Complexity Signaling
 
-$\mathcal{L}_{\text{rec}}$ captures **both intrinsic complexity and extrinsic distribution shift** through unified signaling. Complexity arises from input structure requiring extended reasoning; shift arises from deviation from training statistics. Both manifest as elevated reconstruction loss, triggering appropriate adaptation without explicit distinction.
-
-This unified response is particularly valuable for **robust deployment**: the system automatically increases capacity when its standard processing becomes unreliable, whether due to task difficulty or environmental change. Theoretical analysis connects this to score dilution: distribution shift in long contexts specifically manifests as attention concentration failure, which qTTT directly addresses [4].
+$\mathcal{L}_{\text{rec}}$ captures **both intrinsic complexity and extrinsic distribution shift**: complexity arises from input structure requiring extended reasoning; shift arises from deviation from training statistics. Both manifest as elevated loss, triggering appropriate adaptation without explicit distinction.
 
 ### 4.2 Dynamic Threshold Calibration
 
@@ -360,7 +358,7 @@ maps gating state, budget, and input features to concrete allocations. When $d_t
 
 #### 4.3.3 FLOP Equivalence Derivation: $T_{\text{think}} \approx 2 N_{\text{qTTT}} k$
 
-The **foundational equivalence** enabling fair comparison derives from detailed cost analysis [4]. For dense transformers with $L$ layers, hidden dimension $d$, MLP ratio $r$, and context length $T \gg k$:
+The **foundational equivalence** derives from detailed cost analysis [4]. For dense transformers with $L$ layers, hidden dimension $d$, MLP ratio $r$, and context length $T \gg k$:
 
 | Cost Component | Expression | Dominant Term |
 |--------------|-----------|-------------|
@@ -504,7 +502,7 @@ For comparison, standard Transformer baselines used identical hyperparameters ex
 
 #### 5.2.1 Long-Context Retrieval Benchmarks
 
-**Needle-in-Haystack (NIH)**. We evaluated context lengths of 1K, 4K, 16K, 32K, 64K, 128K, and 256K tokens. The needle consisted of a randomly inserted fact (e.g., "The best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day."), with the query "What is the best thing to do in San Francisco?". We measured exact match accuracy across 10 depths per length.
+**Needle-in-Haystack (NIH)**. We evaluated context lengths of 1K–256K tokens. A randomly inserted fact serves as the "needle," with exact match accuracy measured across 10 depths per length.
 
 **LongBench-v2**. This benchmark comprises six task categories: single-document QA, multi-document QA, summarization, few-shot learning, synthetic tasks, and code completion. The average context length is 35K tokens (up to 200K). Evaluation employed standard task-specific metrics (F1, ROUGE, accuracy).
 
@@ -512,9 +510,9 @@ For comparison, standard Transformer baselines used identical hyperparameters ex
 
 #### 5.2.2 Mathematical Reasoning Benchmarks
 
-**MATH Dataset**. This dataset comprises 12,500 competition mathematics problems with five difficulty levels (1–5) across algebra, geometry, counting, number theory, and precalculus. We measured top-1 accuracy (exact match after normalization). Test-time adaptation used up to $N_{\text{qTTT}} = 32$ steps with $k \in \{128, 256, 512\}$.
+**MATH Dataset**. This dataset comprises 12,500 competition mathematics problems across five difficulty levels (1–5). We measured top-1 exact match accuracy. Test-time adaptation used up to $N_{\text{qTTT}} = 32$ steps with $k \in \{128, 256, 512\}$.
 
-**GSM8K**. This dataset contains 8,500 grade-school mathematics word problems. The training set comprises 7.5K examples; the test set contains 1K. We measured exact match on the final numerical answer using chain-of-thought evaluation for step validity.
+**GSM8K**. 8,500 grade-school mathematics word problems. We measured exact match on the final numerical answer.
 
 #### 5.2.3 Language Modeling and General Tasks
 
@@ -558,8 +556,6 @@ We compared against the following state-of-the-art approaches:
 | **AttnRes + qTTT (8.7B)** | **99.5** | **98.2** | **94.1** | **89.3** | **82.5** | **75.8** | **68.2** | **86.9** |
 | GPT-4 (API) | 99.8 | 97.5 | 91.2 | 85.6 | 78.3 | 68.5 | 55.2 | 82.3 |
 | Claude-3 (API) | 99.7 | 96.8 | 89.5 | 82.3 | 74.1 | 64.2 | 52.1 | 79.8 |
-
-
 
 **Table 1a**: Needle-in-Haystack Results for Small (2.2B) Model
 
@@ -625,28 +621,15 @@ We compared against the following state-of-the-art approaches:
 
 *Small model achieves 56.1% on MATH, exceeding the 8.7B model target (52.3%) by 3.8 points.*
 
-**Table 3b**: GSM8K Results Comparison
+**Table 3b**: GSM8K Results for Small (2.2B) Model
 
-| Model Size | Parameters | Accuracy | Target | Status |
-|------------|------------|----------|--------|--------|
-| Small      | 2.2B       | 81.5%    | 81.4%  | ✓      |
-| Medium     | 8.7B       | 81.4%    | —      | —      |
-
-**Table 4**: GSM8K Detailed Results
-
-| Method | Accuracy | Valid Steps | Avg Tokens | FLOP (rel) | Efficiency |
-|--------|----------|-------------|------------|------------|------------|
-| Transformer | 74.2% | 85.3% | 145 | 1.00× | 74.2 |
-| CoT | 79.5% | 88.1% | 312 | 2.15× | 37.0 |
-| LayerSkip | 76.8% | 86.2% | 168 | 1.16× | 66.2 |
-| MoD | 77.3% | 87.5% | 152 | 1.05× | 73.6 |
-| **AttnRes + qTTT** | **81.4%** | **91.2%** | **178** | **1.23×** | **66.2** |
-
-*Efficiency = Accuracy / FLOP relative to baseline.*
+| Model Size | Parameters | Accuracy |
+|------------|------------|----------|
+| Small      | 2.2B       | 81.5%    |
 
 #### 5.4.3 Compute Efficiency Analysis
 
-**Table 5**: Accuracy versus FLOP Trade-off on MATH Dataset
+**Table 4**: Accuracy versus FLOP Trade-off (MATH, 8.7B)
 
 | Configuration | Avg FLOP ($\times 10^{14}$) | Accuracy | Acc/FLOP ($\times 10^{-14}$) |
 |--------------|------------------|----------|-------------------|
@@ -660,13 +643,11 @@ We compared against the following state-of-the-art approaches:
 
 *Oracle uses perfect difficulty prediction; gated achieves 82% oracle recovery.*
 
-
-
 #### 5.4.4 Model Scaling Efficiency
 
 To validate the efficiency of our architecture across different scales, we evaluated the Small (2.2B) model using the same benchmarks as the Medium (8.7B) model.
 
-**Table X**: Performance Comparison Across Model Scales
+**Table 5**: Performance Comparison Across Model Scales
 
 | Metric | Small (2.2B) | Medium (8.7B) | GPT-4 | Claude-3 |
 |--------|--------------|---------------|-------|----------|
@@ -842,9 +823,9 @@ AttnRes maintains a consistent **approximately 35% training efficiency advantage
 ### 6.1 Limitations and Future Work
 
 **Current Limitations:**
-1. **Overhead on easy inputs:** Even with gating, qTTT adds approximately 5–10% overhead for simple queries.
+1. **Overhead on easy inputs:** qTTT adds ~5–10% overhead for simple queries even with gating.
 2. **Memory bandwidth bound:** Inter-block attention is memory-intensive; benefits plateau on bandwidth-constrained hardware.
-3. **Hyperparameter sensitivity:** Optimal $k$ and $\tau$ vary by task; auto-tuning remains future work.
+3. **Hyperparameter sensitivity:** Optimal $k$ and $\tau$ vary by task.
 
 **Future Directions:**
 1. **Hardware co-design:** Custom accelerators for AttnRes attention patterns.
@@ -1150,8 +1131,6 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [10] Fedus, W., et al. "Switch transformers: Scaling to trillion parameter models with simple and efficient sparsity." JMLR, 2022.
 
-[59] Raposo, D., et al. "Mixture of Depths: Dynamically allocating compute in transformer-based language models." arXiv:2404.02258, 2024.
-
 [11] Schuster, T., et al. "Confident adaptive language modeling." NeurIPS, 2022.
 
 [12] Elhoushi, M., et al. "LayerSkip: Enabling early exit inference and self-speculative decoding." arXiv, 2024.
@@ -1198,7 +1177,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 
 [33] Peng, B., et al. "YaRN: Efficient context window extension of large language models." ICLR, 2024.
 
-[34] Zhang, Z., et al. "H2O: Heavy-hitter oracle for efficient generative inference of large language models." NeurIPS, 2023.
+[34] Liu, Z., Wang, J., Dao, T., Zhou, T., Yuan, B., Song, Z., Shrivastava, A., Re, C., Zhang, C., Chen, B. "H2O: Heavy-hitter oracle for efficient generative inference of large language models." NeurIPS, 2023.
 
 [35] Narayanan, D., Shoeybi, M., Casper, J., LeGresley, P., Patwary, M., Korthikanti, V.A., Vainbrand, D., Kashinkunti, P., Bernauer, J., Catanzaro, B., Phanishayee, A., Zaharia, M. "Efficient large-scale language model training on GPU clusters using megatron-LM." SC, 2021.
 
@@ -1247,3 +1226,7 @@ bbh = load_dataset('lukaemon/bbh', 'boolean_expressions', split='test')
 [57] Dao, T. "FlashAttention-2: Faster attention with better parallelism and work partitioning." ICLR, 2024.
 
 [58] Chen, G., Zhang, Y., Su, J., Xu, W., Pan, S., Wang, Y., et al. "Attention Residuals." Technical Report, Kimi Team. arXiv:2603.15031, 2026.
+
+[59] Raposo, D., et al. "Mixture of Depths: Dynamically allocating compute in transformer-based language models." arXiv:2404.02258, 2024.
+
+[60] Li, X., Liu, J., Wang, P. "Can Large Models Teach Student Models to Solve Mathematical Problems Like Human Beings? A Reasoning Distillation Method via Multi-LoRA Interaction." arXiv:2508.13037, 2025.

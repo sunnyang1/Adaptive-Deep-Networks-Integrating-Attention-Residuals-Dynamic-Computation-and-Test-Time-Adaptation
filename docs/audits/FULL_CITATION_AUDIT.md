@@ -18,7 +18,7 @@
 
 ## 二、🔴 严重错误（P0 — 必须立即修正）
 
-### [4] 作者和标题完全错误
+### [4] 作者和标题完全错误 — ✅ 已修正
 - **我们写的**: `Liu, J., et al. "QTTT: Query-Only Test-Time Training for Long-Context Retrieval." arXiv:2512.13898, 2025.`
 - **实际应为**: `Bansal, R., Zhang, A., Tiwari, R., et al. "Let's (not) just put things in Context: Test-Time Training for Long-Context LLMs." arXiv:2512.13898, 2025.`
 - **问题**: 作者完全错误（Bansal 非 Liu），标题完全错误
