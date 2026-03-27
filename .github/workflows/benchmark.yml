@@ -50,7 +50,7 @@ jobs:
         "
     
     - name: Save results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: needle-haystack-results
         path: results/
@@ -88,7 +88,7 @@ jobs:
         "
     
     - name: Upload detailed results
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: detailed-flop-analysis
         path: scripts/detailed_flop_analysis.json
