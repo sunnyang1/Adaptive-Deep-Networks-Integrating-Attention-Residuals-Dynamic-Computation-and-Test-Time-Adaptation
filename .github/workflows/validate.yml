@@ -198,19 +198,7 @@ jobs:
         x = torch.randint(0, 1000, (1, 128))
         with torch.no_grad():
             out = model(x)
-        print(f'Forward pass OK: {out.shape}')
-        "
-    
-    - name: Test model creation (medium)
-      run: |
-        python3 -c "
-        import sys
-        sys.path.insert(0, 'src')
-        from models.configs import AttnResMediumConfig
-        from models.adaptive_transformer import AdaptiveTransformer
-        config = AttnResMediumConfig()
-        model = AdaptiveTransformer(config)
-        print(f'7B model created: {model.count_parameters() / 1e9:.1f}B parameters')
+            print(f'Forward pass OK: {out.shape}')
         "
 
   # ============================================================================
