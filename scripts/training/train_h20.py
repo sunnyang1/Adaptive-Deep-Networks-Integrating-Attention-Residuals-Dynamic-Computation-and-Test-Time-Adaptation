@@ -185,12 +185,12 @@ def main():
         print("\nReady for training!")
         print("\nExample command to actually train:")
         if world_size > 1:
-            print(f"  torchrun --nproc_per_node=4 scripts/train_model.py \\")
+            print(f"  torchrun --nproc_per_node=4 scripts/training/train_model.py \\")
             print(f"    --model-size {args.model_size} \\")
             print(f"    --batch-size {args.batch_size // world_size} \\")
             print(f"    --epochs {args.epochs}")
         else:
-            print(f"  python scripts/train_model.py \\")
+            print(f"  python scripts/training/train_model.py \\")
             print(f"    --model-size {args.model_size} \\")
             print(f"    --batch-size {args.batch_size} \\")
             print(f"    --epochs {args.epochs}")

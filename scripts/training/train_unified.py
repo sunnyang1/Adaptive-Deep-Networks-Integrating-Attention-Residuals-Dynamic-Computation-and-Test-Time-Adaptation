@@ -10,8 +10,8 @@ Replaces:
 - train_streaming.py
 
 Usage:
-    python scripts/train_unified.py --model-size small
-    python scripts/train_unified.py --model-size medium --distributed
+    python scripts/training/train_unified.py --model-size small
+    python scripts/training/train_unified.py --model-size medium --distributed
 """
 
 import sys
@@ -26,7 +26,7 @@ import torch.nn as nn
 from tqdm import tqdm
 
 # Import shared modules
-from scripts.common import (
+from scripts.training.common import (
     add_project_to_path,
     get_default_paths,
     ensure_directories,

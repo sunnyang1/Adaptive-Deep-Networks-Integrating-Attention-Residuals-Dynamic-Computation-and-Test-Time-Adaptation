@@ -30,7 +30,7 @@ mkdir -p results
 echo "Starting Section 5.2 Evaluation..."
 echo ""
 
-python scripts/eval_5_2.py \
+python scripts/evaluation/eval_5_2.py \
     --model-size medium \
     --device $DEVICE
 

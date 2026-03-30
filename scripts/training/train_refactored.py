@@ -5,8 +5,8 @@ Demonstrates the improved architecture using scripts/common/ modules.
 Replaces train_model.py, train_h20.py, train_streaming.py
 
 Usage:
-    python scripts/train_refactored.py --model-size small
-    python scripts/train_refactored.py --model-size medium --distributed
+    python scripts/training/train_refactored.py --model-size small
+    python scripts/training/train_refactored.py --model-size medium --distributed
 """
 
 import argparse
@@ -21,7 +21,7 @@ import torch.nn as nn
 from tqdm import tqdm
 
 # Import shared modules
-from scripts.common import (
+from scripts.training.common import (
     get_default_paths,
     ensure_directories,
     setup_distributed,
