@@ -127,17 +127,29 @@ class RandomRotation:
     
     def inverse(self, x: torch.Tensor) -> torch.Tensor:
         """Apply inverse rotation."""
-        # WH transform is self-inverse (up to normalization)
+        # WH transform: H @ H = n * I
+        # Forward: rotate(x) = H @ (D*x) / sqrt(n)
+        # Inverse: We need to compute H^-1 @ y where y = H @ (D*x) / sqrt(n)
+        # H^-1 = H / n, so H^-1 @ y = H @ y / n = H @ H @ (D*x) / (sqrt(n) * n)
+        #                              = n * D * x / (sqrt(n) * n)
+        #                              = D * x / sqrt(n)
+        # Then we apply D again: D * (D * x / sqrt(n)) = x / sqrt(n)
+        # So we need to multiply by sqrt(n) to get x back
         original_shape = x.shape
         x_flat = x.reshape(-1, self.dim)
-        x_inv = self._fwht(x_flat) / self.dim  # Normalize
+        
+        # Apply WH transform (without normalization)
+        x_inv = self._fwht(x_flat, normalize=False) / self.dim
         
         # Apply D^-1 = D (diagonal with ±1)
         x_inv = x_inv * self.D
         
+        # Multiply by sqrt(n) to undo the forward normalization
+        x_inv = x_inv * math.sqrt(self.dim)
+        
         return x_inv.reshape(original_shape)
     
-    def _fwht(self, x: torch.Tensor) -> torch.Tensor:
+    def _fwht(self, x: torch.Tensor, normalize: bool = True) -> torch.Tensor:
         """
         Fast Walsh-Hadamard Transform.
         
@@ -146,14 +158,22 @@ class RandomRotation:
         n = x.shape[-1]
         h = 2
         
+        # Work on a copy
+        x = x.clone()
+        
         while h <= n:
-            hf = h // 2
+            # Perform butterfly operations in-place
             x = x.reshape(*x.shape[:-1], n // h, h)
-            x = torch.stack([
-                x[..., :hf].sum(dim=-1),
-                x[..., hf:].sum(dim=-1)
-            ], dim=-1).reshape(*x.shape[:-2], n)
+            x_half = x[..., :h//2]
+            y_half = x[..., h//2:]
+            # [a, b] -> [a+b, a-b]
+            new_x = torch.cat([x_half + y_half, x_half - y_half], dim=-1)
+            x = new_x.reshape(*x.shape[:-2], n)
             h *= 2
+        
+        # Normalize
+        if normalize:
+            x = x / math.sqrt(n)
         
         return x
 
@@ -328,17 +348,13 @@ class MSECompressor:
         """
         original_shape = x.shape
         
-        # Normalize
-        x_norm = x.norm(dim=-1, keepdim=True)
-        x_normalized = x / (x_norm + 1e-8)
-        
         # Pad if needed
         if self.rotation:
             dim = self.rotation.dim
-            x_padded = self._pad_to_dim(x_normalized, dim)
+            x_padded = self._pad_to_dim(x, dim)
             x_rotated = self.rotation.rotate(x_padded)
         else:
-            x_rotated = x_normalized
+            x_rotated = x
         
         # Quantize
         indices, _ = self.quantizer.quantize(x_rotated)
@@ -352,7 +368,6 @@ class MSECompressor:
         
         return {
             'indices': indices_packed,
-            'norm': x_norm.half(),
             'pack_shape': pack_shape,
             'original_shape': original_shape,
         }
@@ -374,14 +389,11 @@ class MSECompressor:
         
         # Inverse rotation
         if self.rotation:
-            x_normalized = self.rotation.inverse(x_rotated)
+            x = self.rotation.inverse(x_rotated)
             # Remove padding
-            x_normalized = x_normalized[..., :compressed['original_shape'][-1]]
+            x = x[..., :compressed['original_shape'][-1]]
         else:
-            x_normalized = x_rotated
-        
-        # Restore norm
-        x = x_normalized * compressed['norm'].float()
+            x = x_rotated
         
         return x.reshape(compressed['original_shape'])
     
