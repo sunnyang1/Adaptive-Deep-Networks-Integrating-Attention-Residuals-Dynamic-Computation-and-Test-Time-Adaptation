@@ -1,0 +1,27 @@
+{
+  "model_type": "adaptive_transformer",
+  "model_size": "large",
+  "architectures": ["AdaptiveTransformer"],
+  
+  "vocab_size": 32000,
+  "num_layers": 64,
+  "hidden_dim": 5120,
+  "num_heads": 40,
+  "mlp_ratio": 4,
+  "max_seq_len": 32768,
+  
+  "attnres": {
+    "num_blocks": 16,
+    "pseudo_query_init": "zero"
+  },
+  
+  "qttt": {
+    "max_qttt_steps": 32,
+    "qttt_span_length": 256,
+    "qttt_learning_rate": 0.002
+  },
+  
+  "gating": {
+    "gating_target_rate": 0.25
+  }
+}

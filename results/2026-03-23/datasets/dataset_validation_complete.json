@@ -1,0 +1,106 @@
+{
+  "timestamp": "2026-03-23T23:26:35.765993",
+  "validation_results": {
+    "zero_scrolls": {
+      "total_tasks": 10,
+      "available_tasks": 10,
+      "tasks": {
+        "book_sum_sort": {
+          "status": "OK",
+          "test_samples": 500,
+          "val_samples": 20,
+          "sample_input_len": 2020
+        },
+        "gov_report": {
+          "status": "OK",
+          "test_samples": 500,
+          "val_samples": 20,
+          "sample_input_len": 4761
+        },
+        "musique": {
+          "status": "OK",
+          "test_samples": 500,
+          "val_samples": 20,
+          "sample_input_len": 1353
+        },
+        "narrative_qa": {
+          "status": "OK",
+          "test_samples": 860,
+          "val_samples": 20,
+          "sample_input_len": 43861
+        },
+        "qasper": {
+          "status": "OK",
+          "test_samples": 28,
+          "val_samples": 28,
+          "sample_input_len": 1911
+        },
+        "qmsum": {
+          "status": "OK",
+          "test_samples": 281,
+          "val_samples": 20,
+          "sample_input_len": 10563
+        },
+        "quality": {
+          "status": "OK",
+          "test_samples": 500,
+          "val_samples": 21,
+          "sample_input_len": 3568
+        },
+        "space_digest": {
+          "status": "OK",
+          "test_samples": 500,
+          "val_samples": 20,
+          "sample_input_len": 6253
+        },
+        "squality": {
+          "status": "OK",
+          "test_samples": 1040,
+          "val_samples": 80,
+          "sample_input_len": 4890
+        },
+        "summ_screen_fd": {
+          "status": "OK",
+          "test_samples": 337,
+          "val_samples": 20,
+          "sample_input_len": 2275
+        }
+      },
+      "issues": []
+    },
+    "math_datasets": {
+      "math": {},
+      "gsm8k": {},
+      "note": "datasets library not installed"
+    },
+    "general_tasks": {
+      "note": "datasets library not installed"
+    },
+    "longbench": {
+      "status": "ERROR",
+      "error": "No module named '_lzma'"
+    },
+    "needle_haystack": {
+      "needle": "The best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.",
+      "query": "What is the best thing to do in San Francisco?",
+      "context_lengths": [
+        1024,
+        4096,
+        16384,
+        32768,
+        65536,
+        131072,
+        262144
+      ],
+      "sample_context": "The weather today is quite pleasant. The weather today is quite pleasant. Technology has changed the way we live. I enjoy reading books in my free time. I enjoy reading books in my free time. I enjoy reading books in my free time. The weather today is quite pleasant. Many people visit this place for vacation. The weather today is quite pleasant. Many people visit this place for vacation. The city is known for its diverse culture. The weather today is quite pleasant. The weather today is quite pl...",
+      "sample_tokens_estimate": 2950,
+      "needle_insert_position": "204/410 (50%)"
+    }
+  },
+  "summary": {
+    "total_validations": 5,
+    "passed": 1,
+    "failed": 1,
+    "warnings": 0
+  }
+}

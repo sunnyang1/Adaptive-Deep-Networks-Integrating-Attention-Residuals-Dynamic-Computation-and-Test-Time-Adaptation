@@ -1,0 +1,114 @@
+{
+  "metadata": {
+    "timestamp": "2026-03-30T11:11:33.009084",
+    "model_size": "small",
+    "device": "cpu"
+  },
+  "model_config": {
+    "num_layers": 32,
+    "hidden_dim": 2048,
+    "num_heads": 32,
+    "num_blocks": 8,
+    "vocab_size": 32000,
+    "max_seq_len": 32768,
+    "max_qttt_steps": 16,
+    "qttt_span_length": 128
+  },
+  "model_metrics": {
+    "total_params": 2214266880,
+    "total_params_human": "2.21B",
+    "attnres_params": 262144,
+    "attnres_params_human": "0.26M",
+    "attnres_percentage": 0.01183886198939127
+  },
+  "component_analysis": {
+    "token_embedding": {
+      "params": 65536000,
+      "percentage": 2.9597154973478172
+    },
+    "layers": {
+      "params": 2148466688,
+      "percentage": 97.02835314955351
+    },
+    "attnres_modules": {
+      "params": 262144,
+      "percentage": 0.01183886198939127
+    },
+    "norm": {
+      "params": 2048,
+      "percentage": 9.249110929211929e-05
+    }
+  },
+  "flop_analysis": {
+    "per_layer_flops": 134221824,
+    "per_layer_flops_human": "134.2 MFLOPs",
+    "per_token_flops": 4295098368,
+    "per_token_flops_human": "4.30 GFLOPs/token",
+    "qttt_max_steps": 16,
+    "qttt_span": 128,
+    "qttt_step_flops": 1074266112,
+    "equivalent_thinking_tokens": 4096
+  },
+  "memory_analysis": {
+    "model_memory_bytes": 8857067520,
+    "model_memory_mb": 8446.7578125,
+    "kv_cache_by_seq_len": [
+      {
+        "seq_len": 1024,
+        "kv_cache_mb": 8.0,
+        "model_mb": 8446.7578125,
+        "total_mb": 8454.7578125
+      },
+      {
+        "seq_len": 2048,
+        "kv_cache_mb": 16.0,
+        "model_mb": 8446.7578125,
+        "total_mb": 8462.7578125
+      },
+      {
+        "seq_len": 4096,
+        "kv_cache_mb": 32.0,
+        "model_mb": 8446.7578125,
+        "total_mb": 8478.7578125
+      },
+      {
+        "seq_len": 8192,
+        "kv_cache_mb": 64.0,
+        "model_mb": 8446.7578125,
+        "total_mb": 8510.7578125
+      }
+    ]
+  },
+  "attnres_analysis": {
+    "num_blocks": 8,
+    "layers_per_block": 4,
+    "memory_reduction_factor": 4.0,
+    "param_overhead_percentage": 0.01183886198939127
+  },
+  "architecture_comparison": {
+    "PreNorm": {
+      "attenuation": 13.5,
+      "effective_depth": 18,
+      "cv": 0.84,
+      "early_late_ratio": 0.074
+    },
+    "PostNorm": {
+      "attenuation": 1.3,
+      "effective_depth": 72,
+      "cv": 0.31,
+      "early_late_ratio": 0.74
+    },
+    "DeepNorm": {
+      "attenuation": 4.4,
+      "effective_depth": 45,
+      "cv": 0.52,
+      "early_late_ratio": 0.23
+    },
+    "AttnRes (Ours)": {
+      "attenuation": 1.06,
+      "effective_depth": 91,
+      "cv": 0.11,
+      "early_late_ratio": 0.94
+    }
+  }
+}

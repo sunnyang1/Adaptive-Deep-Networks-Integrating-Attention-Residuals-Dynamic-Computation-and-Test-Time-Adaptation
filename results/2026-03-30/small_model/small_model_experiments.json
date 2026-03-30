@@ -1,0 +1,80 @@
+{
+  "timestamp": "2026-03-30T10:38:18.012601",
+  "device": "mps",
+  "model_config": {
+    "num_layers": 32,
+    "hidden_dim": 2048,
+    "num_heads": 32,
+    "num_blocks": 8,
+    "vocab_size": 32000,
+    "max_seq_len": 32768,
+    "max_qttt_steps": 16,
+    "qttt_span_length": 128
+  },
+  "model_metrics": {
+    "total_params": 2214266880,
+    "attnres_params": 262144,
+    "attnres_percentage": 0.01183886198939127
+  },
+  "latency_vs_seq_len": [
+    {
+      "seq_len": 64,
+      "avg_time_ms": 185.53,
+      "std_time_ms": 0.83,
+      "throughput_tok_per_sec": 345.0
+    },
+    {
+      "seq_len": 128,
+      "avg_time_ms": 334.47,
+      "std_time_ms": 1.48,
+      "throughput_tok_per_sec": 382.7
+    },
+    {
+      "seq_len": 256,
+      "avg_time_ms": 665.62,
+      "std_time_ms": 0.82,
+      "throughput_tok_per_sec": 384.6
+    },
+    {
+      "seq_len": 512,
+      "avg_time_ms": 1357.11,
+      "std_time_ms": 0.65,
+      "throughput_tok_per_sec": 377.3
+    }
+  ],
+  "component_analysis": {
+    "layers": {
+      "params": 2148466688,
+      "human_readable": "2.15B",
+      "percentage": 97.03
+    },
+    "token_embedding": {
+      "params": 65536000,
+      "human_readable": "65.5M",
+      "percentage": 2.96
+    },
+    "attnres_modules": {
+      "params": 262144,
+      "human_readable": "0.3M",
+      "percentage": 0.01
+    },
+    "norm": {
+      "params": 2048,
+      "human_readable": "0.0M",
+      "percentage": 0.0
+    }
+  },
+  "flop_analysis": {
+    "per_layer_flops": 134221824,
+    "per_layer_flops_human": "134.2 MFLOPs",
+    "total_layers": 32,
+    "total_flops_per_token": 4295098368,
+    "total_flops_per_token_human": "4.30 GFLOPs/token",
+    "breakdown": {
+      "attn_qkv": 25165824,
+      "attn_compute": 4096,
+      "attn_out": 8388608,
+      "mlp": 100663296
+    }
+  }
+}

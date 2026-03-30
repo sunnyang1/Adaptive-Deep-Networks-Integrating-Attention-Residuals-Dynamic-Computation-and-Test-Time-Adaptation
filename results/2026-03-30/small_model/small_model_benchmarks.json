@@ -1,0 +1,76 @@
+{
+  "config": {
+    "num_layers": 32,
+    "hidden_dim": 2048,
+    "num_heads": 32,
+    "num_blocks": 8,
+    "mlp_ratio": 4,
+    "vocab_size": 32000,
+    "max_seq_len": 32768,
+    "max_qttt_steps": 16,
+    "qttt_span_length": 128
+  },
+  "theoretical_params": 2213150720,
+  "theoretical_params_human": "2.21B",
+  "build_time_seconds": 34.15988779067993,
+  "actual_params": 2214266880,
+  "attnres_params": 262144,
+  "attnres_params_human": "0.26M",
+  "memory": {
+    "before_build_mb": 204.55078125,
+    "after_build_mb": 5223.84765625,
+    "model_memory_mb": 5019.296875,
+    "model_memory_gb": 4.9016571044921875
+  },
+  "dtype": "torch.float32",
+  "structure": {
+    "num_layers": 32,
+    "num_attnres_modules": 32,
+    "params_by_component": {
+      "token_embedding": 65536000,
+      "layers": 2148466688,
+      "attnres_modules": 262144,
+      "norm": 2048
+    },
+    "params_by_component_human": {
+      "token_embedding": "65.5M",
+      "layers": "2.15B",
+      "attnres_modules": "0.3M",
+      "norm": "0.0M"
+    }
+  },
+  "efficiency": {
+    "sequence_length_tests": [
+      {
+        "seq_len": 512,
+        "batch_size": 1,
+        "avg_time_ms": 1403.1787713368733,
+        "tokens_per_sec": 364.8857939264531
+      },
+      {
+        "seq_len": 1024,
+        "batch_size": 1,
+        "avg_time_ms": 3785.5769793192544,
+        "tokens_per_sec": 270.5003769819368
+      },
+      {
+        "seq_len": 2048,
+        "batch_size": 1,
+        "avg_time_ms": 50286.63762410482,
+        "tokens_per_sec": 40.72652491321659
+      }
+    ],
+    "flop_analysis": {
+      "per_layer_flops": 134221824,
+      "total_layers": 32,
+      "total_flops_per_token": 4295098368,
+      "total_flops_human": "4.30 GFLOPs/token"
+    }
+  },
+  "metadata": {
+    "model_size": "small",
+    "device": "mps",
+    "timestamp": "2026-03-30T10:33:28.969629",
+    "pytorch_version": "2.2.2"
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "gradient_flow": {
+    "num_layers_measured": 32,
+    "cv": 1.552181983737772,
+    "early_grad": 3.004567941620914,
+    "late_grad": 0.46033914223381683,
+    "early_late_ratio": 6.526857410041453,
+    "mean_norms": [
+      7.826025103436512,
+      2.7252634506465463,
+      1.8700274480245263,
+      1.4291879931996634,
+      1.172335712797322,
+      0.9907266153922801,
+      0.8685765063202725,
+      0.7730619618600342,
+      0.6974231590245377,
+      0.6376333558945761,
+      0.5885122708852869,
+      0.5420362086443429,
+      0.5095473258859704,
+      0.47497544904323535,
+      0.4484166002594693,
+      0.42298442463017577,
+      0.400240359373765,
+      0.3816883982112267,
+      0.36186243619915165,
+      0.3471598508660983,
+      0.3316555481296202,
+      0.3184424957601088,
+      0.305995099762782,
+      0.2940198227034858,
+      0.2849027359204922,
+      0.2757989593254552,
+      0.2653526785490492,
+      0.25751409332986697,
+      0.5332251889491467,
+      0.5177855016887545,
+      0.5034326221599235,
+      0.4897383050413926
+    ],
+    "paper_target": {
+      "cv": 0.11,
+      "early_grad": 0.067,
+      "late_grad": 0.071,
+      "early_late_ratio": 0.94
+    }
+  },
+  "needle_haystack": {
+    "context_lengths": [
+      512,
+      1024,
+      2048
+    ],
+    "scores": [
+      {
+        "context_length": 512,
+        "score": 0.0,
+        "tested_length": 512
+      },
+      {
+        "context_length": 1024,
+        "score": 0.0,
+        "tested_length": 1024
+      },
+      {
+        "context_length": 2048,
+        "score": 0.0,
+        "tested_length": 2048
+      }
+    ],
+    "average_score": 0.0
+  },
+  "flop_analysis": {
+    "model_config": {
+      "num_layers": 32,
+      "hidden_dim": 2048,
+      "num_heads": 32,
+      "head_dim": 64,
+      "mlp_dim": 8192
+    },
+    "flops": {
+      "per_layer": 134221824,
+      "per_layer_human": "134.2 MFLOPs",
+      "per_token": 4295098368,
+      "per_token_human": "4.30 GFLOPs/token"
+    },
+    "qttt": {
+      "max_steps": 16,
+      "span_length": 128,
+      "step_flops": 1074266112,
+      "step_flops_human": "1074.3 MFLOPs/step",
+      "equivalent_thinking_tokens": 4096
+    },
+    "flop_equivalence": {
+      "formula": "T_think \u2248 2 * N_qTTT * k",
+      "theoretical_t_think": 4096,
+      "qttt_steps": 16,
+      "span": 128
+    }
+  },
+  "component_analysis": {
+    "total_params": 2214266880,
+    "total_params_human": "2.21B",
+    "attnres_params": 262144,
+    "attnres_params_human": "0.26M",
+    "attnres_percentage": 0.01183886198939127,
+    "components": {
+      "layers": {
+        "params": 2148466688,
+        "percentage": 97.02835314955351,
+        "human": "2.15B"
+      },
+      "token_embedding": {
+        "params": 65536000,
+        "percentage": 2.9597154973478172,
+        "human": "65.5M"
+      },
+      "attnres_modules": {
+        "params": 262144,
+        "percentage": 0.01183886198939127,
+        "human": "0.3M"
+      },
+      "norm": {
+        "params": 2048,
+        "percentage": 9.249110929211929e-05,
+        "human": "0.0M"
+      }
+    }
+  },
+  "inference_performance": {
+    "latency_tests": [
+      {
+        "seq_len": 64,
+        "avg_time_ms": 6385.0099086761475,
+        "std_time_ms": 262.9182731424157,
+        "throughput_tok_per_sec": 10.023477005577522
+      },
+      {
+        "seq_len": 128,
+        "avg_time_ms": 11608.926010131836,
+        "std_time_ms": 23.600474462987073,
+        "throughput_tok_per_sec": 11.025998433299204
+      },
+      {
+        "seq_len": 256,
+        "avg_time_ms": 50885.414934158325,
+        "std_time_ms": 36479.560979614675,
+        "throughput_tok_per_sec": 5.030911123182224
+      },
+      {
+        "seq_len": 512,
+        "avg_time_ms": 44407.21182823181,
+        "std_time_ms": 410.2604588931046,
+        "throughput_tok_per_sec": 11.529658785614117
+      },
+      {
+        "seq_len": 1024,
+        "avg_time_ms": 93350.56376457214,
+        "std_time_ms": 851.1497750520781,
+        "throughput_tok_per_sec": 10.969403490508135
+      }
+    ]
+  },
+  "metadata": {
+    "timestamp": "2026-03-30T11:42:18.767713",
+    "model_size": "small",
+    "model_params": 2214266880,
+    "device": "cpu",
+    "pytorch_version": "2.2.2"
+  }
+}

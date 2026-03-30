@@ -1,0 +1,74 @@
+======================================================================
+ADAPTIVE DEEP NETWORKS - PAPER METRICS SUMMARY
+======================================================================
+
+Generated: 2026-03-30T11:29:17.783324
+
+This report summarizes key metrics from the paper:
+'Adaptive Deep Networks: Integrating Block Attention
+Residuals, TurboQuant Compression, and Test-Time Adaptation'
+
+======================================================================
+TOP-LEVEL ACHIEVEMENTS
+======================================================================
+
+1. Long-Context Retrieval (Needle-in-Haystack)
+   • 86.9% average accuracy up to 256K context
+   • 68.2% at 256K vs 1.5% baseline (45× improvement)
+   • 2.3× improvement over TTT-Linear
+
+2. Mathematical Reasoning (MATH Dataset)
+   • 52.3% overall with 8.7B parameters
+   • Matches 50B static baseline performance
+   • Level 5: 34.5% vs 12.1% baseline
+
+3. Compute Efficiency
+   • 110 tokens/s under 500ms latency
+   • 2.4× vs Thinking Tokens (45 t/s)
+   • 40% compute reduction vs alternatives
+
+4. Memory Efficiency
+   • 5.7× KV cache reduction
+   • 2.8 GB vs 16 GB at 128K context
+   • 6×+ TurboQuant compression
+
+5. Component Synergy
+   • Synergy coefficient: 1.18 (super-additive)
+   • Full system: 56.8% vs Standard: 39.7% (+17.1%)
+   • All components contribute positively
+
+======================================================================
+TECHNICAL HIGHLIGHTS
+======================================================================
+
+AttnRes (Block Attention Residuals):
+  • Memory: O(Ld) → O(Nd) = 4-16× reduction
+  • Overhead: <0.1% parameters
+  • Gradient CV: 0.11 vs 0.84 (PreNorm)
+
+TurboQuant:
+  • 6×+ memory reduction, zero accuracy loss
+  • Data-oblivious: no calibration needed
+  • 8× throughput on Tensor Cores
+
+qTTT (Query-only Test-Time Training):
+  • 50% parameter reduction vs Cartesian
+  • 10× lower cost vs full-parameter TTT
+  • Explicit margin maximization
+
+======================================================================
+PAPER CITATION
+======================================================================
+
+@article{adaptive_deep_networks_2026,
+  title={Adaptive Deep Networks: Integrating Attention
+         Residuals, TurboQuant Compression, and
+         Test-Time Adaptation},
+  author={[Authors]},
+  journal={arXiv preprint},
+  year={2026}
+}
+
+======================================================================
+END OF REPORT
+======================================================================

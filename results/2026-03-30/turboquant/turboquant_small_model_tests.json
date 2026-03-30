@@ -1,0 +1,149 @@
+{
+  "compression_ratio": {
+    "polar_quant": {
+      "compression_ratio": 4.995121951219512,
+      "original_bits": 1024,
+      "compressed_bits": 205,
+      "target_dim": 64
+    },
+    "turboquant_full": {
+      "compression_ratio": 3.806691449814126,
+      "original_bits": 1024,
+      "compressed_bits": 269,
+      "breakdown": {
+        "polar_radius": 16,
+        "polar_angles": 189,
+        "qjl_signs": 64
+      }
+    },
+    "theoretical": {
+      "fp16_size_bytes": 128,
+      "compressed_size_bytes": 33.625,
+      "memory_reduction_factor": 3.806691449814126
+    }
+  },
+  "kv_cache_compression": {
+    "by_sequence_length": [
+      {
+        "seq_len": 1024,
+        "original_mb": 8.0,
+        "compressed_mb": 2.1015625,
+        "reduction_factor": 3.806691449814126
+      },
+      {
+        "seq_len": 2048,
+        "original_mb": 16.0,
+        "compressed_mb": 4.203125,
+        "reduction_factor": 3.806691449814126
+      },
+      {
+        "seq_len": 4096,
+        "original_mb": 32.0,
+        "compressed_mb": 8.40625,
+        "reduction_factor": 3.806691449814126
+      }
+    ],
+    "target_reduction": 5.7,
+    "average_reduction": 3.806691449814126
+  },
+  "attention_accuracy": {
+    "mse": 0.01630890928208828,
+    "relative_error": 0.8915669918060303,
+    "cosine_similarity": 0.6609136462211609,
+    "shape": [
+      1,
+      32,
+      128,
+      64
+    ],
+    "target_relative_error": 0.05
+  },
+  "throughput_comparison": {
+    "full_precision": {
+      "avg_time_ms": 4.700326919555664,
+      "throughput_melements_per_sec": 111.54287967049801
+    },
+    "turboquant": {
+      "avg_time_ms": 36.46702766418457,
+      "throughput_melements_per_sec": 14.377042319654693
+    },
+    "speedup": 0.12889251525624076,
+    "target_speedup": 8.0
+  },
+  "polar_quant_accuracy": {
+    "by_bit_width": [
+      {
+        "angle_bits": 2,
+        "compression_ratio": 7.211267605633803,
+        "mse": 0.790616512298584,
+        "relative_error": 0.8819718360900879,
+        "snr_db": 1.0909051536225387
+      },
+      {
+        "angle_bits": 3,
+        "compression_ratio": 4.995121951219512,
+        "mse": 0.27675026655197144,
+        "relative_error": 0.5218141078948975,
+        "snr_db": 5.649683480123743
+      },
+      {
+        "angle_bits": 4,
+        "compression_ratio": 3.8208955223880596,
+        "mse": 0.11811757832765579,
+        "relative_error": 0.340901643037796,
+        "snr_db": 9.347418614698336
+      },
+      {
+        "angle_bits": 5,
+        "compression_ratio": 3.093655589123867,
+        "mse": 0.05778329074382782,
+        "relative_error": 0.23843660950660706,
+        "snr_db": 12.452541246803566
+      }
+    ]
+  },
+  "qjl_accuracy": {
+    "by_proj_dim": [
+      {
+        "proj_dim": 32,
+        "compression_ratio": 32.0,
+        "mse": 63.04213333129883,
+        "relative_error": 0.9753646850585938,
+        "bias": 0.15080837905406952
+      },
+      {
+        "proj_dim": 64,
+        "compression_ratio": 16.0,
+        "mse": 63.940399169921875,
+        "relative_error": 0.9822889566421509,
+        "bias": 0.12034505605697632
+      },
+      {
+        "proj_dim": 128,
+        "compression_ratio": 8.0,
+        "mse": 64.25869750976562,
+        "relative_error": 0.9847308993339539,
+        "bias": 0.11081042885780334
+      },
+      {
+        "proj_dim": 256,
+        "compression_ratio": 4.0,
+        "mse": 64.9829330444336,
+        "relative_error": 0.9902645945549011,
+        "bias": 0.11031095683574677
+      }
+    ]
+  },
+  "metadata": {
+    "timestamp": "2026-03-30T10:52:23.124335",
+    "model_size": "small",
+    "model_params": 2214266880,
+    "device": "mps",
+    "turboquant_config": {
+      "head_dim": 64,
+      "angle_bits": 3,
+      "qjl_proj_dim": 64,
+      "total_bits_per_element": 4
+    }
+  }
+}
