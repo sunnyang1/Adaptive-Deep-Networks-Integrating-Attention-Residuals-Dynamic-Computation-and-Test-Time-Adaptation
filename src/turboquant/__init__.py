@@ -106,6 +106,28 @@ from .mnn_improved import (
 )
 
 # ============================================================================
+# V3 Community Improvements (tonbistudio)
+# ============================================================================
+
+from .v3_improved import (
+    # Core V3 classes
+    TurboQuantV3,
+    TurboQuantV3Config,
+    MSECompressor,
+    MSECompressorConfig,
+    LloydMaxQuantizerV3,
+    RandomRotation,
+    # Bit packing
+    pack_bits,
+    unpack_bits,
+    # Convenience functions
+    create_v3_k4_v2,
+    create_v3_k3_v2,
+    create_v3_layer_adaptive,
+    V3_RECOMMENDED,
+)
+
+# ============================================================================
 # Exports
 # ============================================================================
 
@@ -142,6 +164,20 @@ __all__ = [
     'KVQuantMode',
     'create_mnn_turboquant',
     'MNN_RECOMMENDATIONS',
+    
+    # V3 Community Improvements (tonbistudio)
+    'TurboQuantV3',
+    'TurboQuantV3Config',
+    'MSECompressor',
+    'MSECompressorConfig',
+    'LloydMaxQuantizerV3',
+    'RandomRotation',
+    'pack_bits',
+    'unpack_bits',
+    'create_v3_k4_v2',
+    'create_v3_k3_v2',
+    'create_v3_layer_adaptive',
+    'V3_RECOMMENDED',
 ]
 
 __version__ = '2.0.0'
