@@ -138,7 +138,9 @@ lightning_logs/
 output/
 outputs/
 results/
-experiments/
+# Note: experiments/ is not ignored - we track the experiment framework code
+# Only ignore experiment outputs
+experiments/results/
 
 # Datasets (large files)
 data/
