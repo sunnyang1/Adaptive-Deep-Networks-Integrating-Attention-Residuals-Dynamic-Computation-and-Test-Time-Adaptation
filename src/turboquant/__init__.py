@@ -17,7 +17,19 @@ from .qjl import QJLCompressor, QJLDecompressor
 from .turbo_quant import TurboQuantPipeline, TurboQuantConfig
 from .tensor_core import TensorCoreKernel, INT4Linear
 
+# MNN-inspired improvements
+from .mnn_improved import (
+    MNNTurboQuantConfig,
+    MNNTurboQuantCompressor,
+    AttentionMode,
+    KVQuantMode,
+    LloydMaxQuantizer,
+    create_mnn_turboquant,
+    CONFIG_RECOMMENDATIONS,
+)
+
 __all__ = [
+    # Original TurboQuant
     'PolarQuant',
     'CartesianToPolar',
     'QJLCompressor',
@@ -26,4 +38,12 @@ __all__ = [
     'TurboQuantConfig',
     'TensorCoreKernel',
     'INT4Linear',
+    # MNN-inspired improvements
+    'MNNTurboQuantConfig',
+    'MNNTurboQuantCompressor',
+    'AttentionMode',
+    'KVQuantMode',
+    'LloydMaxQuantizer',
+    'create_mnn_turboquant',
+    'CONFIG_RECOMMENDATIONS',
 ]
