@@ -7,7 +7,7 @@ Based on: Section 4.2 of Adaptive Deep Networks paper
 
 import torch
 import torch.nn as nn
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
 from collections import deque
 
 

@@ -7,10 +7,10 @@ Complete model implementation integrating all three components.
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple, List, Dict
+from typing import Optional, Tuple, List, Dict, Union
 from dataclasses import dataclass
 
-from models.configs import ModelConfig
+from src.models.configs import ModelConfig
 
 
 def get_device():
@@ -21,9 +21,9 @@ def get_device():
         return torch.device("mps")
     else:
         return torch.device("cpu")
-from attnres.block_attnres import BlockAttnRes, RMSNorm
-from gating.threshold import DynamicThreshold
-from qttt.adaptation import QueryOnlyTTT, KVCache
+from src.attnres.block_attnres import BlockAttnRes, RMSNorm
+from src.gating.threshold import DynamicThreshold
+from src.qttt.adaptation import QueryOnlyTTT, KVCache
 
 
 class AdaptiveAttention(nn.Module):

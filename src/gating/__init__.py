@@ -1,12 +1,36 @@
-"""Dynamic Computation Gating implementation."""
+"""
+Dynamic Computation Gating Module
 
-from .reconstruction import ReconstructionLoss, compute_reconstruction_loss
-from .threshold import DynamicThreshold, EMAThreshold, TargetRateThreshold
+Provides:
+- DynamicThreshold: Base class for threshold calibration
+- EMAThreshold: Exponential moving average calibration
+- TargetRateThreshold: Maintain target adaptation rate
+- GatingController: High-level gating controller
+- DepthPriorityGatingController: TurboQuant-aware depth-priority controller
+"""
+
+from .reconstruction import ReconstructionLoss
+from .threshold import (
+    DynamicThreshold,
+    EMAThreshold,
+    TargetRateThreshold,
+    HybridThreshold,
+    GatingController
+)
+from .depth_priority import (
+    DepthPriorityGatingController,
+    AdaptiveThresholdWithDepthPriority,
+    create_depth_priority_controller
+)
 
 __all__ = [
     'ReconstructionLoss',
-    'compute_reconstruction_loss',
     'DynamicThreshold',
     'EMAThreshold',
-    'TargetRateThreshold'
+    'TargetRateThreshold',
+    'HybridThreshold',
+    'GatingController',
+    'DepthPriorityGatingController',
+    'AdaptiveThresholdWithDepthPriority',
+    'create_depth_priority_controller',
 ]

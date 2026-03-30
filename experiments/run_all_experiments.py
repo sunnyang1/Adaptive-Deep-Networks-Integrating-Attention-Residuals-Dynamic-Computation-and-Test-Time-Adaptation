@@ -17,37 +17,37 @@ EXPERIMENTS = [
     {
         'id': 'exp1',
         'name': 'Representation Burial定量测量',
-        'script': 'exp1_representation_burial/run_exp1.py',
+        'script': 'core/exp1_representation_burial/run_exp1.py',
         'description': '验证PreNorm配置下早期层信号随深度衰减的现象'
     },
     {
         'id': 'exp2',
         'name': 'Logit Margin与上下文长度关系',
-        'script': 'exp2_margin_analysis/run_exp2.py',
+        'script': 'core/exp2_margin_analysis/run_exp2.py',
         'description': '验证对数margin要求，展示qTTT如何实现'
     },
     {
         'id': 'exp3',
         'name': '梯度流改善定量测量',
-        'script': 'exp3_gradient_flow/run_exp3.py',
+        'script': 'core/exp3_gradient_flow/run_exp3.py',
         'description': '验证AttnRes改善梯度流均匀性'
     },
     {
         'id': 'exp4',
         'name': 'FLOP等价公式实证验证',
-        'script': 'exp4_flop_equivalence/run_exp4.py',
+        'script': 'core/exp4_flop_equivalence/run_exp4.py',
         'description': '验证 T_think ≈ 2 * N_qTTT * k'
     },
     {
         'id': 'exp5',
         'name': '组件协同效应定量分析',
-        'script': 'exp5_synergy/run_exp5.py',
+        'script': 'core/exp5_synergy/run_exp5.py',
         'description': '验证AttnRes、qTTT、Gating的协同效应'
     },
     {
         'id': 'exp6',
         'name': '辅助验证实验',
-        'script': 'exp6_auxiliary/run_exp6.py',
+        'script': 'core/exp6_auxiliary/run_exp6.py',
         'description': '初始化效果、块大小影响、超参数敏感性'
     }
 ]

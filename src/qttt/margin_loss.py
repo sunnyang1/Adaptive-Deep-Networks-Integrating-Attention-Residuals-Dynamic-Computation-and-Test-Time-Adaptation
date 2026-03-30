@@ -8,7 +8,7 @@ Based on: Section 4.4.3 of Adaptive Deep Networks paper
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union, List
 
 
 class MarginMaximizationLoss(nn.Module):
@@ -221,9 +221,9 @@ class MultiScaleMarginLoss(nn.Module):
     
     def __init__(
         self,
-        scales: list = [1, 4, 16],
+        scales: List[int] = [1, 4, 16],
         temperature: float = 1.0,
-        scale_weights: Optional[list] = None
+        scale_weights: Optional[List[float]] = None
     ):
         super().__init__()
         self.scales = scales
