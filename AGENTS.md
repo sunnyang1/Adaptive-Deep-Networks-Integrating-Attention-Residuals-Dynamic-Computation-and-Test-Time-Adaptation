@@ -73,12 +73,17 @@ pytest tests/unit/test_attnres.py -v
 
 Setup:
 ```bash
-bash scripts/lambda_setup.sh
+bash scripts/setup/lambda_setup.sh
 ```
 
 Run validation:
 ```bash
-python scripts/run_benchmarks.py --model-size medium --benchmarks all
+python scripts/evaluation/run_benchmarks.py --model-size medium --benchmarks all
+```
+
+Run experiments:
+```bash
+python experiments/run_experiments_unified.py --category paper
 ```
 
 ## Code Style

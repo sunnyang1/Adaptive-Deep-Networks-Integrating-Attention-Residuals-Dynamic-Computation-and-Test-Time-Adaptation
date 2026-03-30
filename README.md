@@ -52,29 +52,32 @@ bash scripts/lambda_setup.sh
 
 ```bash
 # List available experiments
-python experiments/run_refactored.py --list
+python experiments/run_experiments_unified.py --list
 
 # Run a specific experiment
-python experiments/run_refactored.py exp1_representation_burial
+python experiments/run_experiments_unified.py --exp exp1_representation_burial
 
 # Run with quick mode (reduced samples)
-python experiments/run_refactored.py exp3_gradient_flow --quick
+python experiments/run_experiments_unified.py --category core --quick
 
-# Run with custom config
-python experiments/run_refactored.py exp2_margin_analysis --config configs/experiments/exp2.yaml
+# Run paper metrics validation
+python experiments/run_experiments_unified.py --category paper
 ```
 
 ### Training
 
 ```bash
 # Unified training script (works on all platforms)
-python scripts/train_refactored.py --model-size medium --epochs 3
+python scripts/training/train_refactored.py --model-size medium --epochs 3
 
 # Multi-GPU distributed training
-torchrun --nproc_per_node=4 scripts/train_refactored.py --model-size medium --distributed
+torchrun --nproc_per_node=4 scripts/training/train_refactored.py --model-size medium --distributed
 
 # Streaming training (for limited disk space)
-python scripts/train_streaming.py --model-size small --max-steps 10000
+python scripts/training/train_streaming.py --model-size small --max-steps 10000
+
+# Build and validate Small Model
+python scripts/model/build_and_benchmark_small.py
 ```
 
 ### Run Tests
@@ -98,10 +101,11 @@ mypy src/
 
 ## Documentation
 
-- **[API Documentation](docs/api/README.md)** - Complete API reference
-- **[Architecture Guide](docs/ARCHITECTURE.md)** - System architecture and diagrams
-- **[Migration Guide](experiments/MIGRATION_GUIDE.md)** - How to migrate experiments
-- **[Refactoring Summary](experiments/REFACTORING_SUMMARY.md)** - Architecture refactoring details
+- **[Documentation Index](docs/README.md)** - All documentation organized by category
+- **[Papers](docs/papers/)** - Research papers (V1 and TurboQuant versions)
+- **[Validation Reports](docs/reports/validation/)** - Validation results and analysis
+- **[Implementation Reports](docs/reports/implementation/)** - Refactoring and implementation details
+- **[Guides](docs/guides/)** - How-to guides and build instructions
 
 ## Key Features
 
@@ -148,10 +152,16 @@ Adaptive-Deep-Networks/
 │   ├── real_model/              # Real model validation
 │   └── runner/                  # Experiment execution framework
 │
-├── scripts/                      # Training and setup scripts
-│   ├── common/                  # Shared training utilities
-│   ├── train_refactored.py      # Unified training script
-│   └── lambda_setup.sh          # Lambda AI setup
+├── scripts/                      # Utility scripts (organized by function)
+│   ├── setup/                   # Environment setup
+│   ├── model/                   # Model building and analysis
+│   ├── training/                # Training scripts
+│   ├── evaluation/              # Benchmarks and evaluation
+│   ├── experiments/             # Paper experiments
+│   ├── data/                    # Data processing
+│   ├── colab/                   # Google Colab scripts
+│   └── common/                  # Shared utilities
+│   └── README.md                # Script documentation
 │
 ├── configs/                      # Configuration files
 │   └── experiments/             # YAML configs for experiments
@@ -160,9 +170,12 @@ Adaptive-Deep-Networks/
 │   ├── unit/                    # Unit tests
 │   └── conftest.py              # Pytest fixtures
 │
-├── docs/                         # Documentation
-│   ├── api/                     # API documentation
-│   └── ARCHITECTURE.md          # Architecture diagrams
+├── docs/                         # Documentation (organized by category)
+│   ├── papers/                  # Research papers
+│   ├── reports/                 # Validation and implementation reports
+│   ├── guides/                  # How-to guides
+│   ├── project/                 # Project management
+│   └── README.md                # Documentation index
 │
 └── pyproject.toml               # Project configuration
 ```
@@ -217,6 +230,17 @@ for step in range(num_steps):
          Dynamic Computation, and Test-Time Adaptation},
   year={2025}
 }
+```
+
+## Makefile Targets
+
+```bash
+make install          # Install dependencies
+make test             # Run all tests
+make lint             # Run linting
+make quick            # Quick validation
+make full             # Full experiment suite
+make paper-metrics    # Generate paper metrics
 ```
 
 ## License
