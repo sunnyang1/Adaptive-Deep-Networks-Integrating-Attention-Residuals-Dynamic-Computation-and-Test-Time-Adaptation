@@ -1,183 +1,129 @@
 """
-TurboQuant: Unified Extreme Compression API
+TurboQuant V3: Refactored Implementation
 
-Simple, clean interface for all quantization modes.
+Clean, modular implementation of TurboQuant V3 compression.
+Based on community findings that QJL hurts attention quality.
 
 Quick Start:
-    >>> from src.turboquant import TurboQuant
+    >>> from turboquant import create_k4_v2
     
-    >>> # No compression (FP16)
-    >>> quant = TurboQuant('fp16')
-    
-    >>> # INT8 quantization (2x compression)
-    >>> quant = TurboQuant('int8')
-    
-    >>> # TurboQuant 4-bit (3x compression)
-    >>> quant = TurboQuant('tq4')
-    >>> quant.fit(sample_keys, sample_values)  # Fit on data
-    >>> compressed = quant.compress_kv(keys, values)
-    
-    >>> # With FlashAttention
-    >>> quant = TurboQuant('tq4_flash')
-
-Recommended Configs:
-    - 'fp16': No compression (default)
-    - 'int8': 2x compression, near lossless
-    - 'tq4': 3x compression (4B+ models)
-    - 'tq3': 4x compression (4B+ models)
-
-Full API:
-    >>> quant = TurboQuant('tq4', head_dim=128, device='cuda')
+    >>> # Create compressor
+    >>> tq = create_k4_v2(head_dim=64)
     >>> 
-    >>> # Fit quantizers
-    >>> quant.fit(sample_keys, sample_values)
-    >>> # Or use Beta distribution for RHT
-    >>> quant.fit_beta()
+    >>> # Fit on sample data
+    >>> tq.fit(sample_keys, sample_values)
     >>> 
     >>> # Compress/decompress
-    >>> compressed = quant.compress_kv(keys, values)
-    >>> keys_deq, values_deq = quant.decompress_kv(compressed)
+    >>> compressed = tq.compress(keys, values)
+    >>> keys_dq, values_dq = tq.decompress(compressed)
     >>> 
-    >>> # Memory stats
-    >>> stats = quant.memory_stats(seq_len=32768)
-    >>> print(f"Saving: {stats['memory_saved']:.1f}%")
+    >>> # Use as HF cache
+    >>> cache = tq.as_cache(residual_window=128)
+    >>> model.generate(..., past_key_values=cache)
+
+Recommended Configs:
+    - create_k4_v2(): 4-bit K, 2-bit V (recommended, ~4.9x compression)
+    - create_k3_v2(): 3-bit K, 2-bit V (~3.0x compression)
+    - create_k2_v2(): 2-bit K, 2-bit V (~7.1x compression, max memory)
 """
 
 # ============================================================================
-# Unified API (Recommended)
+# Core API (Recommended)
 # ============================================================================
 
-from .core import (
-    TurboQuant,
-    TurboQuantConfig,
-    QuantMode,
-    create_quantizer,
-    RECOMMENDED_CONFIGS,
-    quantize_kv,
-)
-
-# ============================================================================
-# Quantizers (Advanced)
-# ============================================================================
-
-from .core import (
-    LloydMaxQuantizer,
-    INT8Quantizer,
-    FP16Quantizer,
-)
-
-# ============================================================================
-# Legacy API (Backward Compatibility)
-# ============================================================================
-
-from .polar_quant import (
-    PolarQuant,
-    CartesianToPolar,
-    HadamardTransform,
-)
-
-from .qjl import (
-    QJLCompressor,
-    QJLDecompressor,
-    BatchQJL,
-)
-
-from .turbo_quant import (
-    TurboQuantPipeline,
-    TurboQuantConfig as LegacyTurboQuantConfig,
-)
-
-from .tensor_core import (
-    TensorCoreKernel,
-    INT4Linear,
-)
-
-# ============================================================================
-# MNN-Inspired Improvements
-# ============================================================================
-
-from .mnn_improved import (
-    MNNTurboQuantConfig,
-    MNNTurboQuantCompressor,
-    AttentionMode,
-    KVQuantMode,
-    create_mnn_turboquant,
-    CONFIG_RECOMMENDATIONS as MNN_RECOMMENDATIONS,
-)
-
-# ============================================================================
-# V3 Community Improvements (tonbistudio)
-# ============================================================================
-
-from .v3_improved import (
-    # Core V3 classes
+from .api import (
     TurboQuantV3,
-    TurboQuantV3Config,
-    MSECompressor,
-    MSECompressorConfig,
-    LloydMaxQuantizerV3,
+    TurboQuantConfig,
+    create_k4_v2,
+    create_k3_v2,
+    create_k2_v2,
+    RECOMMENDED,
+)
+
+# ============================================================================
+# Low-level Components
+# ============================================================================
+
+from .rotation import (
     RandomRotation,
-    # Bit packing
+    fwht,
+    fwht_inverse,
+)
+
+from .quantizer import (
+    LloydMaxQuantizer,
+)
+
+from .compressor import (
+    MSECompressor,
+    CompressorConfig,
     pack_bits,
     unpack_bits,
-    # Convenience functions
-    create_v3_k4_v2,
-    create_v3_k3_v2,
-    create_v3_layer_adaptive,
-    V3_RECOMMENDED,
+)
+
+from .cache import (
+    V3Cache,
+    CacheConfig,
 )
 
 # ============================================================================
-# Exports
+# Legacy Exports (Backward Compatibility)
 # ============================================================================
 
+# Keep old V3 imports working
+from .v3_improved import (
+    TurboQuantV3 as LegacyTurboQuantV3,
+    TurboQuantV3Config as LegacyTurboQuantV3Config,
+    create_v3_k4_v2 as legacy_create_v3_k4_v2,
+    create_v3_k3_v2 as legacy_create_v3_k3_v2,
+    MSECompressor as LegacyMSECompressor,
+    MSECompressorConfig as LegacyMSECompressorConfig,
+    LloydMaxQuantizerV3 as LegacyLloydMaxQuantizerV3,
+    RandomRotation as LegacyRandomRotation,
+    pack_bits as legacy_pack_bits,
+    unpack_bits as legacy_unpack_bits,
+)
+
+# Keep old unified API working
+from .core import (
+    TurboQuant,
+    TurboQuantConfig as LegacyTurboQuantConfig,
+    QuantMode,
+)
+
+# ============================================================================
+# Version
+# ============================================================================
+
+__version__ = '3.0.0'
+
 __all__ = [
-    # Unified API (New - Recommended)
-    'TurboQuant',
-    'TurboQuantConfig',
-    'QuantMode',
-    'create_quantizer',
-    'RECOMMENDED_CONFIGS',
-    'quantize_kv',
-    
-    # Quantizers
-    'LloydMaxQuantizer',
-    'INT8Quantizer',
-    'FP16Quantizer',
-    
-    # Legacy API (Backward Compatibility)
-    'PolarQuant',
-    'CartesianToPolar',
-    'HadamardTransform',
-    'QJLCompressor',
-    'QJLDecompressor',
-    'BatchQJL',
-    'TurboQuantPipeline',
-    'LegacyTurboQuantConfig',
-    'TensorCoreKernel',
-    'INT4Linear',
-    
-    # MNN-Inspired
-    'MNNTurboQuantConfig',
-    'MNNTurboQuantCompressor',
-    'AttentionMode',
-    'KVQuantMode',
-    'create_mnn_turboquant',
-    'MNN_RECOMMENDATIONS',
-    
-    # V3 Community Improvements (tonbistudio)
+    # New API (Recommended)
     'TurboQuantV3',
-    'TurboQuantV3Config',
-    'MSECompressor',
-    'MSECompressorConfig',
-    'LloydMaxQuantizerV3',
+    'TurboQuantConfig',
+    'create_k4_v2',
+    'create_k3_v2',
+    'create_k2_v2',
+    'RECOMMENDED',
+    
+    # Low-level Components
     'RandomRotation',
+    'fwht',
+    'fwht_inverse',
+    'LloydMaxQuantizer',
+    'MSECompressor',
+    'CompressorConfig',
     'pack_bits',
     'unpack_bits',
-    'create_v3_k4_v2',
-    'create_v3_k3_v2',
-    'create_v3_layer_adaptive',
-    'V3_RECOMMENDED',
+    'V3Cache',
+    'CacheConfig',
+    
+    # Legacy (Backward Compatibility)
+    'TurboQuant',
+    'LegacyTurboQuantConfig',
+    'QuantMode',
+    'LegacyTurboQuantV3',
+    'LegacyTurboQuantV3Config',
+    'legacy_create_v3_k4_v2',
+    'legacy_create_v3_k3_v2',
 ]
-
-__version__ = '2.0.0'
