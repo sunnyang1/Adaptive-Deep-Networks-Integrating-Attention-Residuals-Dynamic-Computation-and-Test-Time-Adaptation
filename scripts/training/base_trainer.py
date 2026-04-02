@@ -28,7 +28,7 @@ from src.models.adaptive_transformer import AdaptiveTransformer
 from scripts.common.training import CheckpointManager, compute_loss, train_step, get_scheduler
 from scripts.common.distributed import setup_distributed, cleanup_distributed, is_main_process
 from scripts.common.data import HuggingFaceDataset, get_dataloader
-from src.models.tokenizer import create_tokenizer
+from src.models.tokenizer import create_tokenizer, get_tokenizer_for_model
 
 
 class BaseTrainer(ABC):
@@ -139,8 +139,16 @@ class BaseTrainer(ABC):
     
     def _setup_data(self):
         """Setup training and validation data loaders using HuggingFace datasets."""
+        # Tokenizer configuration
+        tokenizer_name = self.args.tokenizer_name or get_tokenizer_for_model(self.get_model_size_name())
+        hf_token = self.args.hf_token  # For gated models like Llama-2
+        
         # Create tokenizer
-        tokenizer = create_tokenizer(self.config.vocab_size)
+        tokenizer = create_tokenizer(
+            tokenizer_name=tokenizer_name,
+            vocab_size=self.config.vocab_size,
+            token=hf_token,
+        )
         
         # Dataset configuration from args
         dataset_name = self.args.dataset_name
@@ -153,6 +161,7 @@ class BaseTrainer(ABC):
         print(f"  Dataset: {dataset_name}")
         if dataset_config:
             print(f"  Config: {dataset_config}")
+        print(f"  Tokenizer: {tokenizer_name}")
         print(f"  Streaming: {streaming}")
         print(f"  Max train samples: {max_train_samples}")
         print(f"  Max val samples: {max_val_samples}")
@@ -387,5 +396,11 @@ def get_common_parser() -> argparse.ArgumentParser:
                        help='Maximum training samples (defaults to train-samples)')
     parser.add_argument('--max-val-samples', type=int, default=None,
                        help='Maximum validation samples (defaults to val-samples)')
+    
+    # Tokenizer configuration
+    parser.add_argument('--tokenizer-name', type=str, default=None,
+                       help='Tokenizer name (e.g., gpt2, meta-llama/Llama-2-7b-hf, meta-llama/Meta-Llama-3-8B)')
+    parser.add_argument('--hf-token', type=str, default=None,
+                       help='HuggingFace API token (for gated models like Llama-2)')
     
     return parser

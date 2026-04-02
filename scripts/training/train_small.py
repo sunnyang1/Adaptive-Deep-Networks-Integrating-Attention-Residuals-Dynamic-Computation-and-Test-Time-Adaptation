@@ -23,11 +23,37 @@ Usage:
         --epochs 1 \
         --train-samples 1000 \
         --val-samples 100
+    
+    # With Llama-2 tokenizer (requires HuggingFace auth)
+    python scripts/training/train_small.py \
+        --output-dir results/small_model \
+        --epochs 5 \
+        --batch-size 1 \
+        --grad-accum 8 \
+        --lr 1e-4 \
+        --warmup-steps 500 \
+        --seq-len 32768 \
+        --dataset-name HuggingFaceFW/fineweb-edu \
+        --dataset-config sample-10BT \
+        --tokenizer-name meta-llama/Llama-2-7b-hf \
+        --hf-token $HF_TOKEN \
+        --streaming
+    
+    # Alternative high-quality datasets (Llama-2 style training data)
+    # RedPajama (1.2T tokens, diverse web crawl + academic)
+    python scripts/training/train_small.py ... --dataset-name togethercomputer/RedPajama-Data-1T
+    
+    # SlimPajama (627B deduplicated tokens, higher quality)
+    python scripts/training/train_small.py ... --dataset-name cerebras/SlimPajama-627B
+    
+    # FineWeb-Edu (1.3T educational content tokens)
+    python scripts/training/train_small.py ... --dataset-name HuggingFaceFW/fineweb-edu
 
 Hardware Requirements:
     - Minimum: 8GB RAM, CPU
     - Recommended: 16GB RAM, 1x GPU with 8GB+ VRAM
-    - Training time: ~2-4 hours on GPU for 3 epochs
+    - For 32K context on A100: batch-size 1 + grad-accum 8
+    - Training time: ~2-4 hours on GPU for 3 epochs (seq_len 512)
 """
 
 import sys

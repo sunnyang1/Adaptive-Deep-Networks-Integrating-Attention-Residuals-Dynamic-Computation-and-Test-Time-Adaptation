@@ -84,7 +84,12 @@ class HuggingFaceDataset(Dataset):
     def _tokenize_text(self, text: str) -> list:
         """Tokenize text to token IDs."""
         if self.tokenizer is not None:
-            return self.tokenizer.encode(text)
+            # Use tokenizer's encode method (handles both old and new interface)
+            encoded = self.tokenizer.encode(text, add_special_tokens=False)
+            # Handle both list and tensor returns
+            if isinstance(encoded, torch.Tensor):
+                return encoded.tolist()
+            return encoded
         # Fallback: simple byte encoding
         return [b % 32000 for b in text.encode('utf-8', errors='ignore')]
     
