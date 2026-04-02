@@ -172,6 +172,10 @@ class BaseTrainer(ABC):
                 gradient_accumulation_steps=self.args.grad_accum
             )
             
+            # Update weights and zero gradients
+            self.optimizer.step()
+            self.optimizer.zero_grad()
+            
             total_loss += loss
             num_batches += 1
             self.global_step += 1

@@ -26,17 +26,20 @@ class DummyDataset(Dataset):
         self.size = size
         self.seq_len = seq_len
         self.vocab_size = vocab_size
-        self.generator = torch.Generator().manual_seed(seed)
+        self.seed = seed
     
     def __len__(self) -> int:
         return self.size
     
     def __getitem__(self, idx: int) -> dict:
+        # Deterministic per-sample generator for reproducibility
+        g = torch.Generator().manual_seed(self.seed + idx)
+        
         # Generate random sequence
         input_ids = torch.randint(
             0, self.vocab_size,
             (self.seq_len,),
-            generator=self.generator
+            generator=g
         )
         
         # Shift for labels (next token prediction)
