@@ -9,6 +9,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, Tuple, List, Dict, Union
 from dataclasses import dataclass
+from torch.utils.checkpoint import checkpoint
 
 from src.models.configs import ModelConfig
 
@@ -76,12 +77,19 @@ class AdaptiveAttention(nn.Module):
             k = k.view(B, -1, self.config.num_heads, self.head_dim).transpose(1, 2)
             v = v.view(B, -1, self.config.num_heads, self.head_dim).transpose(1, 2)
         
-        # Attention
-        scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
-        attn = F.softmax(scores, dim=-1)
-        attn = self.dropout(attn)
+        # Attention: use scaled_dot_product_attention for FlashAttention/Memory-efficient backend
+        if kv_cache is None and hasattr(F, 'scaled_dot_product_attention'):
+            out = F.scaled_dot_product_attention(
+                q, k, v,
+                dropout_p=self.dropout.p if self.training else 0.0,
+                is_causal=True
+            )
+        else:
+            scores = torch.matmul(q, k.transpose(-2, -1)) / (self.head_dim ** 0.5)
+            attn = F.softmax(scores, dim=-1)
+            attn = self.dropout(attn)
+            out = torch.matmul(attn, v)
         
-        out = torch.matmul(attn, v)  # [B, H, T, d]
         out = out.transpose(1, 2).contiguous().view(B, T, D)
         out = self.o_proj(out)
         
@@ -289,17 +297,31 @@ class AdaptiveTransformer(nn.Module):
                 block_representations.append(partial_block)
                 partial_block = torch.zeros_like(hidden)
             
-            # Forward through layer
-            hidden, partial_block = layer(
-                hidden,
-                block_representations,
-                partial_block,
-                attnres if use_attnres else None,
-                use_attnres=use_attnres,
-                use_qttt=use_qttt,
-                kv_cache=kv_cache,
-                adapted_query=adapted_query
-            )
+            # Forward through layer (with optional gradient checkpointing)
+            if self.training and getattr(self.config, 'use_gradient_checkpointing', False):
+                hidden, partial_block = checkpoint(
+                    layer,
+                    hidden,
+                    block_representations,
+                    partial_block,
+                    attnres if use_attnres else None,
+                    use_attnres,
+                    use_qttt,
+                    kv_cache,
+                    adapted_query,
+                    use_reentrant=False,
+                )
+            else:
+                hidden, partial_block = layer(
+                    hidden,
+                    block_representations,
+                    partial_block,
+                    attnres if use_attnres else None,
+                    use_attnres=use_attnres,
+                    use_qttt=use_qttt,
+                    kv_cache=kv_cache,
+                    adapted_query=adapted_query
+                )
         
         # Final norm and projection
         hidden = self.norm(hidden)

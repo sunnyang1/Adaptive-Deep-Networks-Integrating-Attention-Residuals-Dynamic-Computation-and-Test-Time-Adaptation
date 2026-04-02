@@ -25,9 +25,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.models.configs import ModelConfig, AttnResSmallConfig, AttnResMediumConfig, AttnResLargeConfig
 from src.models.adaptive_transformer import AdaptiveTransformer
-from scripts.common.training import CheckpointManager, compute_loss, train_step
+from scripts.common.training import CheckpointManager, compute_loss, train_step, get_scheduler
 from scripts.common.distributed import setup_distributed, cleanup_distributed, is_main_process
-from scripts.common.data import DummyDataset, get_dataloader
+from scripts.common.data import HuggingFaceDataset, get_dataloader
+from src.models.tokenizer import create_tokenizer
 
 
 class BaseTrainer(ABC):
@@ -118,32 +119,69 @@ class BaseTrainer(ABC):
         # Setup data loaders
         self._setup_data()
         
+        # Setup scheduler
+        total_steps = len(self.train_loader) * self.args.epochs // self.args.grad_accum
+        self.scheduler = get_scheduler(
+            self.optimizer,
+            self.args.warmup_steps,
+            total_steps
+        )
+        
         print(f"\nTraining Configuration:")
         print(f"  Epochs: {self.args.epochs}")
         print(f"  Batch size: {self.args.batch_size}")
         print(f"  Learning rate: {self.args.lr}")
+        print(f"  Warmup steps: {self.args.warmup_steps}")
+        print(f"  Total scheduled steps: {total_steps}")
+        print(f"  Gradient accumulation: {self.args.grad_accum}")
         print(f"  Device: {self.device}")
         print(f"  Output dir: {self.args.output_dir}")
     
     def _setup_data(self):
-        """Setup training and validation data loaders."""
-        # Create dummy datasets for now
-        # In production, replace with actual dataset loading
-        train_dataset = DummyDataset(
-            size=self.args.train_samples,
+        """Setup training and validation data loaders using HuggingFace datasets."""
+        # Create tokenizer
+        tokenizer = create_tokenizer(self.config.vocab_size)
+        
+        # Dataset configuration from args
+        dataset_name = self.args.dataset_name
+        dataset_config = self.args.dataset_config
+        streaming = self.args.streaming
+        max_train_samples = self.args.max_train_samples or self.args.train_samples
+        max_val_samples = self.args.max_val_samples or self.args.val_samples
+        
+        print(f"\nDataset Configuration:")
+        print(f"  Dataset: {dataset_name}")
+        if dataset_config:
+            print(f"  Config: {dataset_config}")
+        print(f"  Streaming: {streaming}")
+        print(f"  Max train samples: {max_train_samples}")
+        print(f"  Max val samples: {max_val_samples}")
+        
+        # Create datasets
+        train_dataset = HuggingFaceDataset(
+            dataset_name=dataset_name,
+            dataset_config=dataset_config,
+            split="train",
             seq_len=self.args.seq_len,
-            vocab_size=self.config.vocab_size
+            tokenizer=tokenizer,
+            max_samples=max_train_samples,
+            streaming=streaming,
         )
-        val_dataset = DummyDataset(
-            size=self.args.val_samples,
+        
+        val_dataset = HuggingFaceDataset(
+            dataset_name=dataset_name,
+            dataset_config=dataset_config,
+            split="validation" if not streaming else "train",  # Some datasets only have train
             seq_len=self.args.seq_len,
-            vocab_size=self.config.vocab_size
+            tokenizer=tokenizer,
+            max_samples=max_val_samples,
+            streaming=streaming,
         )
         
         self.train_loader = DataLoader(
             train_dataset,
             batch_size=self.args.batch_size,
-            shuffle=True,
+            shuffle=not streaming,  # Cannot shuffle streaming datasets easily
             num_workers=0,
             pin_memory=True if self.device.type == 'cuda' else False
         )
@@ -156,10 +194,11 @@ class BaseTrainer(ABC):
         )
     
     def train_epoch(self) -> float:
-        """Train one epoch."""
+        """Train one epoch with gradient accumulation."""
         self.model.train()
         total_loss = 0.0
         num_batches = 0
+        accumulated_steps = 0
         
         pbar = tqdm(self.train_loader, desc=f"Epoch {self.current_epoch}")
         for batch in pbar:
@@ -172,22 +211,35 @@ class BaseTrainer(ABC):
                 gradient_accumulation_steps=self.args.grad_accum
             )
             
-            # Update weights and zero gradients
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-            
+            accumulated_steps += 1
             total_loss += loss
-            num_batches += 1
-            self.global_step += 1
             
-            # Update progress bar
-            pbar.set_postfix({'loss': f'{loss:.4f}'})
-            
-            # Log periodically
-            if self.global_step % self.args.log_interval == 0:
-                self._log_step(loss)
+            # Perform optimizer step only after accumulating enough gradients
+            if accumulated_steps >= self.args.grad_accum:
+                self.optimizer.step()
+                self.scheduler.step()
+                self.optimizer.zero_grad()
+                
+                self.global_step += 1
+                accumulated_steps = 0
+                
+                # Update progress bar
+                pbar.set_postfix({
+                    'loss': f'{loss:.4f}',
+                    'lr': f'{self.scheduler.get_last_lr()[0]:.2e}'
+                })
+                
+                # Log periodically
+                if self.global_step % self.args.log_interval == 0:
+                    self._log_step(loss)
         
-        avg_loss = total_loss / num_batches
+        # Handle any remaining accumulated gradients
+        if accumulated_steps > 0:
+            self.optimizer.step()
+            self.scheduler.step()
+            self.optimizer.zero_grad()
+        
+        avg_loss = total_loss / num_batches if num_batches > 0 else 0.0
         return avg_loss
     
     def validate(self) -> float:
@@ -323,5 +375,17 @@ def get_common_parser() -> argparse.ArgumentParser:
     parser.add_argument('--device', type=str, default='auto', help='Device (auto/cuda/cpu)')
     parser.add_argument('--seed', type=int, default=42, help='Random seed')
     parser.add_argument('--log-interval', type=int, default=10, help='Logging interval')
+    
+    # Dataset configuration
+    parser.add_argument('--dataset-name', type=str, default='openwebtext',
+                       help='HuggingFace dataset name (e.g., openwebtext, HuggingFaceFW/fineweb-edu)')
+    parser.add_argument('--dataset-config', type=str, default=None,
+                       help='Dataset configuration name')
+    parser.add_argument('--streaming', action='store_true', default=True,
+                       help='Use streaming mode for datasets (no local download)')
+    parser.add_argument('--max-train-samples', type=int, default=None,
+                       help='Maximum training samples (defaults to train-samples)')
+    parser.add_argument('--max-val-samples', type=int, default=None,
+                       help='Maximum validation samples (defaults to val-samples)')
     
     return parser

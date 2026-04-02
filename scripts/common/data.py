@@ -9,6 +9,117 @@ from torch.utils.data import Dataset, DataLoader
 from typing import Optional, Iterator
 
 
+class HuggingFaceDataset(Dataset):
+    """
+    Dataset backed by HuggingFace datasets library.
+    
+    Supports streaming mode for large datasets without local storage.
+    """
+    
+    def __init__(
+        self,
+        dataset_name: str = "openwebtext",
+        dataset_config: Optional[str] = None,
+        split: str = "train",
+        seq_len: int = 512,
+        tokenizer=None,
+        max_samples: int = 100000,
+        streaming: bool = True,
+        text_column: str = "text",
+    ):
+        """
+        Args:
+            dataset_name: HuggingFace dataset name (e.g., "openwebtext", "HuggingFaceFW/fineweb-edu")
+            dataset_config: Dataset configuration name
+            split: Dataset split ("train", "validation", "test")
+            seq_len: Sequence length for training
+            tokenizer: Tokenizer instance (with encode method)
+            max_samples: Maximum number of samples (for non-streaming mode)
+            streaming: Whether to use streaming mode (no local download)
+            text_column: Column name containing text
+        """
+        self.seq_len = seq_len
+        self.tokenizer = tokenizer
+        self.text_column = text_column
+        
+        try:
+            from datasets import load_dataset
+        except ImportError:
+            raise ImportError("Please install datasets: pip install datasets")
+        
+        print(f"Loading dataset: {dataset_name} ({dataset_config or 'default'}) [{split}]")
+        print(f"Streaming: {streaming}, Max samples: {max_samples}")
+        
+        self.dataset = load_dataset(
+            dataset_name,
+            dataset_config,
+            split=split,
+            streaming=streaming,
+        )
+        
+        # For non-streaming, limit samples
+        if not streaming and max_samples:
+            self.dataset = self.dataset.select(range(min(max_samples, len(self.dataset))))
+        
+        # Pre-tokenize for faster access (if not streaming and small enough)
+        self.pre_tokenized = not streaming and max_samples and max_samples <= 10000
+        if self.pre_tokenized:
+            print("Pre-tokenizing dataset...")
+            self.tokenized_data = self._pre_tokenize()
+        else:
+            self.tokenized_data = None
+    
+    def _pre_tokenize(self):
+        """Pre-tokenize entire dataset for faster access."""
+        data = []
+        for item in self.dataset:
+            text = item.get(self.text_column, "")
+            if not text:
+                continue
+            tokens = self._tokenize_text(text)
+            if len(tokens) >= self.seq_len + 1:
+                data.append(tokens)
+        return data
+    
+    def _tokenize_text(self, text: str) -> list:
+        """Tokenize text to token IDs."""
+        if self.tokenizer is not None:
+            return self.tokenizer.encode(text)
+        # Fallback: simple byte encoding
+        return [b % 32000 for b in text.encode('utf-8', errors='ignore')]
+    
+    def __len__(self) -> int:
+        if self.pre_tokenized:
+            return len(self.tokenized_data)
+        # For streaming datasets, return a large number
+        return 1000000
+    
+    def __getitem__(self, idx: int) -> dict:
+        if self.pre_tokenized:
+            tokens = self.tokenized_data[idx]
+            input_ids = tokens[:self.seq_len]
+            labels = tokens[1:self.seq_len + 1]
+        else:
+            # Streaming mode: get next item
+            item = self.dataset[idx]
+            text = item.get(self.text_column, "")
+            tokens = self._tokenize_text(text)
+            
+            # Create sliding window if text is long enough
+            if len(tokens) >= self.seq_len + 1:
+                input_ids = tokens[:self.seq_len]
+                labels = tokens[1:self.seq_len + 1]
+            else:
+                # Pad short sequences
+                input_ids = tokens[:-1] + [0] * (self.seq_len - len(tokens) + 1)
+                labels = tokens[1:] + [0] * (self.seq_len - len(tokens) + 1)
+        
+        return {
+            'input_ids': torch.tensor(input_ids, dtype=torch.long),
+            'labels': torch.tensor(labels, dtype=torch.long),
+        }
+
+
 class DummyDataset(Dataset):
     """
     Dummy dataset for testing.
