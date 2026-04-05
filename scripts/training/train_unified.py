@@ -26,19 +26,14 @@ import torch.nn as nn
 from tqdm import tqdm
 
 # Import shared modules
-from scripts.training.common import (
-    add_project_to_path,
-    get_default_paths,
-    ensure_directories,
-    setup_distributed,
-    cleanup_distributed,
-    is_main_process,
-    CheckpointManager,
-    compute_loss,
-    train_step,
-    DummyDataset,
-    get_dataloader,
-)
+from scripts.common.paths import add_project_to_path, get_default_paths, ensure_directories
+from scripts.common.distributed import setup_distributed, cleanup_distributed, is_main_process
+from scripts.common.training import CheckpointManager, compute_loss, train_step
+from scripts.common.data import DummyDataset, get_dataloader
+
+# Import model
+from src.models.configs import get_config
+from src.models.adaptive_transformer import AdaptiveTransformer
 
 
 def parse_args():
@@ -84,32 +79,15 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_model_config(size: str):
-    """Get model configuration for size."""
-    configs = {
-        'small': {
-            'vocab_size': 32000,
-            'hidden_dim': 2048,
-            'num_layers': 32,
-            'num_heads': 32,
-            'batch_size': 8,
-        },
-        'medium': {
-            'vocab_size': 32000,
-            'hidden_dim': 4096,
-            'num_layers': 32,
-            'num_heads': 32,
-            'batch_size': 2,
-        },
-        'large': {
-            'vocab_size': 32000,
-            'hidden_dim': 5120,
-            'num_layers': 64,
-            'num_heads': 40,
-            'batch_size': 1,
-        },
+def get_model_config_with_batch(size: str):
+    """Get model configuration for size with batch size."""
+    config = get_config(size)
+    batch_sizes = {
+        'small': 8,
+        'medium': 2,
+        'large': 1,
     }
-    return configs[size]
+    return config, batch_sizes[size]
 
 
 def main():
@@ -143,32 +121,19 @@ def main():
         print()
     
     # Get model config
-    model_config = get_model_config(args.model_size)
-    batch_size = args.batch_size or model_config['batch_size']
+    config, default_batch = get_model_config_with_batch(args.model_size)
+    batch_size = args.batch_size or default_batch
     
     if is_main_process(rank):
         print(f"Batch size: {batch_size}")
         print(f"Sequence length: {args.seq_len}")
         print()
     
-    # Create model (placeholder - would import actual model)
+    # Create model
     if is_main_process(rank):
         print("Creating model...")
     
-    # This would be replaced with actual model creation
-    # from src.models import AdaptiveTransformer
-    # model = AdaptiveTransformer(model_config)
-    
-    # For demonstration, create a simple model
-    model = nn.TransformerEncoder(
-        nn.TransformerEncoderLayer(
-            d_model=model_config['hidden_dim'],
-            nhead=model_config['num_heads'],
-            dim_feedforward=model_config['hidden_dim'] * 4,
-            batch_first=True
-        ),
-        num_layers=model_config['num_layers']
-    )
+    model = AdaptiveTransformer(config)
     
     model = model.to(device)
     
@@ -188,7 +153,7 @@ def main():
     dataset = DummyDataset(
         size=1000,
         seq_len=args.seq_len,
-        vocab_size=model_config['vocab_size'],
+        vocab_size=config.vocab_size,
         seed=args.seed
     )
     

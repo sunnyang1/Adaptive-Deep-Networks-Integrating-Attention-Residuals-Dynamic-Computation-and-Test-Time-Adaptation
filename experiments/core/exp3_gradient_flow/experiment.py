@@ -23,7 +23,7 @@ from experiments.common.visualization import (
     ARCHITECTURE_COLORS, ARCHITECTURE_LABELS,
     plot_training_curves, plot_architecture_comparison
 )
-from scripts.training.common import DummyDataset, get_dataloader
+from scripts.common.data import DummyDataset, get_dataloader
 
 
 def measure_gradient_statistics(

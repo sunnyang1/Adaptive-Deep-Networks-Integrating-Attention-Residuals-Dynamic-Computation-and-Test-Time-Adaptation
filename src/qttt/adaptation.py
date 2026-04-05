@@ -36,8 +36,8 @@ class KVCache:
         keys: torch.Tensor,  # [B, num_heads, T, head_dim]
         values: torch.Tensor  # [B, num_heads, T, head_dim]
     ):
-        self.keys = keys.detach()
-        self.values = values.detach()
+        self.keys = keys.detach().clone()
+        self.values = values.detach().clone()
         self.is_frozen = True
     
     def __len__(self):
@@ -135,10 +135,10 @@ def qttt_adapt(
             # seq_positions[i] picks which position in the sequence,
             # target_token_ids[i] picks which token in the vocab
             target_logits = logits[
-                torch.arange(logits.size(0), device=logits.device).unsqueeze(1),  # B
-                torch.arange(logits.size(1), device=logits.device).unsqueeze(0),  # H
-                seq_positions.unsqueeze(0).unsqueeze(1).expand(-1, logits.size(1), -1),  # k -> [B, H, k]
-                target_token_ids.unsqueeze(0).unsqueeze(1).expand(-1, logits.size(1), -1)  # [B, H, k]
+                torch.arange(logits.size(0), device=logits.device).view(-1, 1, 1),  # [B, 1, 1]
+                torch.arange(logits.size(1), device=logits.device).view(1, -1, 1),  # [1, H, 1]
+                seq_positions.view(1, 1, -1).expand(logits.size(0), logits.size(1), -1),  # [B, H, k]
+                target_token_ids.view(1, 1, -1).expand(logits.size(0), logits.size(1), -1)  # [B, H, k]
             ]
 
             if distractor_positions is not None:
@@ -148,10 +148,10 @@ def qttt_adapt(
                     distractor_positions.unsqueeze(0).unsqueeze(1).expand(-1, logits.size(1), -1),
                 ]
                 # Max over vocab dimension for each distractor position
-                max_distractor = distractor_logits.max(dim=-1, keepdim=True).values
+                max_distractor = distractor_logits.max(dim=-1, keepdim=False).values
             else:
                 # Use all other positions as distractors, max over vocab
-                max_distractor = logits.max(dim=-1, keepdim=True).values
+                max_distractor = logits.max(dim=-1, keepdim=False).values
 
             margin = target_logits - max_distractor
             loss = -F.logsigmoid(margin).mean()

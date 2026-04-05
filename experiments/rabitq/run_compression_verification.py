@@ -72,13 +72,15 @@ def measure_compression_ratio(keys, values, rq):
     # Compress
     compressed = rq.compress(keys, values)
 
-    # Compressed size: indices + norms for both K and V
+    # New CompressedKV structure: list of QuantizedVector objects
+    # We count only reconstruction-effective storage (binary + ex + delta + vl)
     compressed_bytes = 0
     for key in ('keys', 'values'):
-        comp = compressed[key]
-        compressed_bytes += comp['indices'].numel() * comp['indices'].element_size()
-        compressed_bytes += comp['norm'].numel() * comp['norm'].element_size()
-        # pack_shape metadata is small, ignore
+        ck = compressed[key]
+        for qv in ck.quantized_vectors:
+            compressed_bytes += qv.binary_code_packed.numel() * qv.binary_code_packed.element_size()
+            compressed_bytes += qv.ex_code_packed.numel() * qv.ex_code_packed.element_size()
+            compressed_bytes += 2 * 4  # delta + vl only
 
     ratio = original_bytes / max(compressed_bytes, 1)
     return ratio, original_bytes, compressed_bytes

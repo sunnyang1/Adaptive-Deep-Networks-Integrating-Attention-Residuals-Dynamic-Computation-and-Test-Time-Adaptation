@@ -83,7 +83,7 @@ class TestAdaptiveLayer:
         layer = AdaptiveLayer(config, layer_idx=0)
         hidden_states = torch.randn(batch_size, seq_len, config.hidden_dim)
         
-        output = layer(hidden_states)
+        output, _ = layer(hidden_states)
         
         assert output.shape == hidden_states.shape
 
@@ -112,4 +112,4 @@ class TestAdaptiveTransformer:
         
         output = model(input_ids)
         
-        assert output.logits.shape == (batch_size, seq_len, config.vocab_size)
+        assert output.shape == (batch_size, seq_len, config.vocab_size)

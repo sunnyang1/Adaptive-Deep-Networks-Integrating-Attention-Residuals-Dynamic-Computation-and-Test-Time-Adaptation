@@ -2,7 +2,7 @@
 Margin Maximization Loss for qTTT
 
 Implements logit margin maximization for reliable retrieval.
-Based on: Section 4.4.3 of Adaptive Deep Networks paper
+Based on: Section 3.3.3 of Adaptive Deep Networks paper
 """
 
 import torch
@@ -15,7 +15,7 @@ class MarginMaximizationLoss(nn.Module):
     """
     Logit margin maximization objective.
     
-    Formula from Section 4.4.3:
+    Formula from Section 3.3.3:
         L_margin = -log σ(z_target - max(z_distractor))
     
     This pushes target logits above maximum distractor logits,
@@ -85,7 +85,7 @@ class MarginMaximizationLoss(nn.Module):
             distractor_logits = torch.gather(
                 logits_subset,
                 dim=-1,
-                index=distractor_positions.unsqueeze(-1).expand(-1, -1, V)
+                index=distractor_positions.unsqueeze(-1)
             )
             max_distractor = distractor_logits.max(dim=-1).values  # [B, k]
         else:

@@ -33,7 +33,7 @@ class DepthPriorityGatingController:
         max_qttt_steps: int = 32,
         min_qttt_steps: int = 4,
         think_tokens_if_forced: int = 0,  # Set to 0 for strict depth priority
-        turboquant_enabled: bool = True,
+        rabitq_enabled: bool = True,
         reconstruction_computer: Optional[nn.Module] = None
     ):
         """
@@ -42,7 +42,7 @@ class DepthPriorityGatingController:
             max_qttt_steps: Maximum qTTT adaptation steps
             min_qttt_steps: Minimum qTTT steps when adapting
             think_tokens_if_forced: Thinking tokens budget (should be 0)
-            turboquant_enabled: Whether TurboQuant acceleration is active
+            rabitq_enabled: Whether RaBitQ acceleration is active
             reconstruction_computer: Module for computing reconstruction loss
         """
         self.threshold_calibrator = threshold_calibrator
@@ -51,11 +51,11 @@ class DepthPriorityGatingController:
         self.max_qttt_steps = max_qttt_steps
         self.min_qttt_steps = min_qttt_steps
         self.think_tokens = think_tokens_if_forced
-        self.turboquant_enabled = turboquant_enabled
+        self.rabitq_enabled = rabitq_enabled
         
         # Cost ratio: depth vs width
-        if turboquant_enabled:
-            # With TurboQuant: 8× arithmetic + 4× memory = 8× total
+        if rabitq_enabled:
+            # With RaBitQ: 8× arithmetic + 4× memory = 8× total
             self.depth_cost_factor = 1/8
             self.flop_equivalence_multiplier = 16  # T_think = 16 * N_qTTT * k
         else:
@@ -111,7 +111,7 @@ class DepthPriorityGatingController:
             )
             
             # Strict depth priority: minimize thinking tokens
-            if self.turboquant_enabled:
+            if self.rabitq_enabled:
                 think_tokens = 0  # All budget to depth
             else:
                 think_tokens = self.think_tokens
@@ -135,7 +135,7 @@ class DepthPriorityGatingController:
             'adapt': should_adapt,
             'qttt_steps': num_steps,
             'think_tokens': think_tokens,
-            'turboquant_enabled': self.turboquant_enabled
+            'rabitq_enabled': self.rabitq_enabled
         })
         
         return should_adapt, num_steps, think_tokens, threshold
@@ -175,7 +175,7 @@ class DepthPriorityGatingController:
             'avg_qttt_steps': qttt_total / triggers,
             'avg_think_tokens': think_total / triggers,
             'depth_priority_ratio': depth_ratio,
-            'turboquant_savings': 8.0 if self.turboquant_enabled else 1.0,
+            'rabitq_savings': 8.0 if self.rabitq_enabled else 1.0,
             'flop_equivalence_multiplier': self.flop_equivalence_multiplier
         }
     
@@ -203,12 +203,12 @@ class DepthPriorityGatingController:
                 'equivalence': f'T_think = {standard_equiv} * N_qTTT * k',
                 'example_16_steps_128_span': f'{standard_think} tokens'
             },
-            'turboquant_policy': {
+            'rabitq_policy': {
                 'equivalence': f'T_think = {turbo_equiv} * N_qTTT * k',
                 'example_16_steps_128_span': f'{turbo_think} tokens',
                 'savings_vs_standard': f'{turbo_equiv / standard_equiv:.1f}x'
             },
-            'recommendation': 'Strict depth priority under TurboQuant'
+            'recommendation': 'Strict depth priority under RaBitQ'
         }
 
 
@@ -269,7 +269,7 @@ class AdaptiveThresholdWithDepthPriority(EMAThreshold):
 def create_depth_priority_controller(
     target_rate: float = 0.3,
     max_qttt_steps: int = 32,
-    turboquant_enabled: bool = True,
+    rabitq_enabled: bool = True,
     use_adaptive_threshold: bool = True
 ) -> DepthPriorityGatingController:
     """
@@ -278,7 +278,7 @@ def create_depth_priority_controller(
     Args:
         target_rate: Target adaptation rate (ρ_target)
         max_qttt_steps: Maximum qTTT steps per adaptation
-        turboquant_enabled: Whether TurboQuant is active
+        rabitq_enabled: Whether RaBitQ is active
         use_adaptive_threshold: Use adaptive threshold with depth adjustment
     
     Returns:
@@ -297,5 +297,5 @@ def create_depth_priority_controller(
     return DepthPriorityGatingController(
         threshold_calibrator=threshold,
         max_qttt_steps=max_qttt_steps,
-        turboquant_enabled=turboquant_enabled
+        rabitq_enabled=rabitq_enabled
     )

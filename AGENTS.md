@@ -48,6 +48,25 @@ This is the validation framework for the paper "Adaptive Deep Networks: Integrat
 
 - **Signal**: Reconstruction loss as difficulty proxy
 - **Calibration**: EMA or target-rate threshold
+- **Ponder Gate**: Conditional qTTT triggering based on uncertainty
+  - Uses entropy + max probability heuristics
+  - Modes: 'strict', 'balanced', 'lenient'
+  - Integrated into `generate(use_qttt='adaptive')`
+- **Adaptive qTTT Config**: Dynamic adjustment of steps and LR
+  - Scales num_steps based on sequence length
+  - Adjusts learning rate based on gradient magnitude
+  - Modes: 'fast', 'balanced', 'quality'
+
+### Incremental KV Cache (NEW)
+
+- **IncrementalState**: Explicit state management for generation
+  - KV cache tracking per layer
+  - Block representation management
+  - Memory usage statistics
+- **IncrementalGenerator**: High-level API for efficient generation
+  - prefill() for O(T×L) initialization
+  - step() for O(L) per-token generation (API ready)
+  - generate() with performance stats
 - **Target**: Maintain ~30% adaptation rate
 
 ### qTTT

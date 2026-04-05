@@ -218,7 +218,58 @@ class TwoPhaseBlockAttnRes(nn.Module):
         self.block_size = block_size
         self.eps = eps
 
-        self.norm = RMSNorm(dim, eps)
+        # Pseudo-query vectors (one for attention, one for MLP)
+        # Zero initialization for stable training (as per paper §3.2.2)
+        self.pseudo_query_attn = nn.Parameter(torch.zeros(dim))
+        self.pseudo_query_mlp = nn.Parameter(torch.zeros(dim))
+
+        # RMSNorm for key normalization (critical for performance)
+        self.norm_attn = RMSNorm(dim, eps)
+        self.norm_mlp = RMSNorm(dim, eps)
+    
+    def forward(
+        self,
+        blocks: List[torch.Tensor],
+        partial_block: torch.Tensor,
+        use_attn: bool = True,
+        use_mlp: bool = True,
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Compute AttnRes-augmented hidden state.
+        
+        This is a compatibility wrapper that uses the standard block_attn_res
+        function. The full two-phase computation is managed by the model's
+        forward loop (see AdaptiveTransformer).
+
+        Args:
+            blocks: List of completed block representations
+            partial_block: Current partial block sum
+            use_attn: Whether to apply AttnRes before attention layer
+            use_mlp: Whether to apply AttnRes before MLP layer
+
+        Returns:
+            Tuple of (attn_res_input, mlp_res_input)
+        """
+        if use_attn and len(blocks) > 0:
+            h_attn = block_attn_res(
+                blocks, partial_block, self.pseudo_query_attn, self.norm_attn
+            )
+        else:
+            h_attn = partial_block
+
+        if use_mlp and len(blocks) > 0:
+            h_mlp = block_attn_res(
+                blocks, partial_block, self.pseudo_query_mlp, self.norm_mlp
+            )
+        else:
+            h_mlp = partial_block
+
+        return h_attn, h_mlp
+    
+    def reset_parameters(self):
+        """Reset pseudo-queries to zero (standard residual behavior)."""
+        nn.init.zeros_(self.pseudo_query_attn)
+        nn.init.zeros_(self.pseudo_query_mlp)
 
     def phase1_inter_block(
         self,

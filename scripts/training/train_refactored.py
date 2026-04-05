@@ -21,19 +21,11 @@ import torch.nn as nn
 from tqdm import tqdm
 
 # Import shared modules
-from scripts.training.common import (
-    get_default_paths,
-    ensure_directories,
-    setup_distributed,
-    cleanup_distributed,
-    is_main_process,
-    CheckpointManager,
-    compute_loss,
-    train_step,
-    DummyDataset,
-    get_dataloader,
-    Environment,
-)
+from scripts.common.paths import get_default_paths, ensure_directories
+from scripts.common.distributed import setup_distributed, cleanup_distributed, is_main_process
+from scripts.common.training import CheckpointManager, compute_loss, train_step
+from scripts.common.data import DummyDataset, get_dataloader
+from experiments.common import Environment
 from experiments.common import ExperimentConfig, get_device, get_logger
 
 

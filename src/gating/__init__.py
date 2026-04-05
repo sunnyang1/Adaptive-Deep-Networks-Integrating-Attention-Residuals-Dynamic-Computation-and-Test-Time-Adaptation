@@ -22,6 +22,7 @@ from .depth_priority import (
     AdaptiveThresholdWithDepthPriority,
     create_depth_priority_controller
 )
+from .ponder_gate import PonderGate, create_ponder_gate
 
 __all__ = [
     'ReconstructionLoss',
