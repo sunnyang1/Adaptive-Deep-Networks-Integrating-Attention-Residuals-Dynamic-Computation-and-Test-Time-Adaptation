@@ -205,6 +205,11 @@ docs/project/
 | Table5 边际 | `table5_margin_distribution/` | Table5 边际分布 |
 | Table8 Pareto | `table8_pareto/` | Table8 Pareto 前沿 |
 
+#### Engram 实验 (`experiments/engram/`)
+| 文件 | 说明 |
+|------|------|
+| `benchmark_engram.py` | **Engram 性能对比基准** - 对比 baseline ADN vs ADN+Engram |
+
 每个实验目录包含：`__init__.py`, `experiment.py`, `run_exp*.py`, `config.yaml`
 
 #### 文档 (`experiments/docs/`)
@@ -624,6 +629,7 @@ matdo/
 | `test_attnres.py` | AttnRes 单元测试 |
 | `test_attnres_integration.py` | AttnRes 集成测试 |
 | `test_benchmarks.py` | 基准测试 |
+| `test_engram.py` | **Engram 模块完整测试** |
 | `test_gating.py` | 门控测试 |
 | `test_incremental_state.py` | 增量状态测试 |
 | `test_layer_specific_qttt.py` | 层特定 QTTT 测试 |

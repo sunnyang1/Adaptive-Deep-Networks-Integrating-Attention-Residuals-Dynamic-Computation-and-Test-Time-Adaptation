@@ -7,6 +7,8 @@ Based on: Table A1 from Adaptive Deep Networks paper (Appendix A.2)
 from dataclasses import dataclass, field
 from typing import Optional, List
 
+from src.engram.config import EngramConfig
+
 
 @dataclass
 class ModelConfig:
@@ -30,6 +32,10 @@ class ModelConfig:
     
     # Gating
     gating_target_rate: float = 0.3
+    
+    # Engram
+    use_engram: bool = False
+    engram_config: Optional[EngramConfig] = None
     
     # Training
     dropout: float = 0.0
