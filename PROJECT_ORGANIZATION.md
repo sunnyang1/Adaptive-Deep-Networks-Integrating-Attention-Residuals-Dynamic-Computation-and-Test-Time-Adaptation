@@ -105,6 +105,7 @@ data/
 #### 指南文档 (`docs/guides/`)
 | 文件 | 说明 |
 |------|------|
+| `A100_80G_COMPLETE_GUIDE.md` | **A100 80G 新手完全指南** - 从环境设置到训练推理的详细步骤 |
 | `LARGE_MODEL_BUILD.md` | 大模型构建指南 |
 | `MNN_TURBOQUANT_IMPROVEMENTS.md` | MNN TurboQuant 改进指南 |
 | `TURBOQUANT_REFACTORED.md` | TurboQuant 重构指南 |
@@ -433,10 +434,12 @@ matdo/
 #### 设置脚本 (`scripts/setup/`)
 | 文件 | 说明 |
 |------|------|
+| `a100_setup.sh` | **A100 80G 一键环境设置脚本** - 新手推荐，自动安装所有依赖 |
 | `autodl_h20_setup.sh` | AutoDL H20 设置 |
 | `autodl_setup.sh` | AutoDL 设置 |
 | `lambda_setup.sh` | Lambda AI 设置 |
 | `quick_start_h20.sh` | H20 快速开始 |
+| `quick_train.sh` | **一键训练启动器** - 自动创建 tmux 会话并开始训练 |
 
 #### 训练脚本 (`scripts/training/`)
 | 文件 | 说明 |
