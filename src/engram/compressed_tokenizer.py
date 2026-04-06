@@ -5,6 +5,8 @@ Compresses vocabulary by merging semantically equivalent tokens
 using Unicode normalization.
 """
 
+from __future__ import annotations
+
 import numpy as np
 import torch
 from typing import Union, List

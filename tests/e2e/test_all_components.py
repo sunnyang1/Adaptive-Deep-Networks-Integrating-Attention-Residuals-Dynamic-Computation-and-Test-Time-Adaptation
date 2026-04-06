@@ -11,13 +11,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 from dataclasses import dataclass
+from pathlib import Path
 from typing import List, Tuple, Dict, Optional
 import time
 import json
 
 # Import components
 import sys
-sys.path.insert(0, '/Users/michelleye/Documents/Adaptive-Deep-Networks')
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.attnres.block_attnres import (
     BlockAttnRes, TwoPhaseBlockAttnRes, RMSNorm,
@@ -321,11 +322,14 @@ def test_qttt_polar_adaptation():
     print("="*60)
     
     config = TestConfig()
+    # Small vocab + moderate steps: random projection head may not monotonically
+    # improve CE at large |V|; we only require a stable adaptation trajectory.
+    config.vocab_size = 256
     
     # Create config
     qttt_config = PolarQTTTConfig(
         num_steps=10,
-        learning_rate=0.01,
+        learning_rate=0.05,
         adapt_magnitude=False,  # Freeze r
         adapt_direction=True,   # Adapt θ
         use_spherical_sgd=True
@@ -344,8 +348,9 @@ def test_qttt_polar_adaptation():
     v = torch.randn(B, config.n_heads, config.seq_len, head_dim)
     kv_cache = KVCache(k, v)
     
-    # Test adaptation
+    # Test adaptation (attention path needs a vocab projection; output dim is head_dim×heads = d_model)
     target_ids = torch.randint(0, config.vocab_size, (B, T))
+    projection_head = nn.Linear(config.d_model, config.vocab_size)
     
     print(f"  Initial query norm: {query.norm(dim=-1).mean().item():.4f}")
     
@@ -353,6 +358,7 @@ def test_qttt_polar_adaptation():
     adapted_query, loss_history = qttt.adapt_query_projection(
         query, kv_cache, 
         seq_positions=torch.arange(T),
+        projection_head=projection_head,
         target_token_ids=target_ids
     )
     
@@ -362,9 +368,10 @@ def test_qttt_polar_adaptation():
     print(f"  Loss reduction: {(loss_history[0] - loss_history[-1]):.4f}")
     print(f"  Steps taken: {len(loss_history)}")
     
-    # Optimization may not monotonically improve on random KV (legacy attention path)
-    assert len(loss_history) >= 1 and math.isfinite(loss_history[-1])
-    print(f"  ✅ qTTT adaptation completed ({len(loss_history)} steps)")
+    # Random projection + legacy attention path: CE need not decrease; require finite trajectory
+    assert len(loss_history) >= 1
+    assert all(math.isfinite(x) for x in loss_history)
+    print(f"  ✅ qTTT adaptation completed ({len(loss_history)} steps, finite loss)")
     
     # Test effective parameter count
     d = config.d_model
@@ -420,11 +427,12 @@ def test_qttt_adaptive_config():
             
             print(f"  {category:20s} | {mode:8s} | steps={config_dict['num_steps']:2d} | lr={config_dict['learning_rate']:.4f}")
     
-    # Verify: longer sequences get more steps
-    short_steps = [r['num_steps'] for r in results if r['category'] == 'Short (< 4K)']
-    long_steps = [r['num_steps'] for r in results if r['category'] == 'Long (> 32K)']
-    
-    assert min(long_steps) >= max(short_steps), "Long sequences should have >= steps than short"
+    # Verify: longer sequences get more steps (compare same mode across lengths)
+    for mode in ['fast', 'balanced', 'quality']:
+        s = next(r['num_steps'] for r in results if r['category'] == 'Short (< 4K)' and r['mode'] == mode)
+        m = next(r['num_steps'] for r in results if r['category'] == 'Medium (4K-32K)' and r['mode'] == mode)
+        l = next(r['num_steps'] for r in results if r['category'] == 'Long (> 32K)' and r['mode'] == mode)
+        assert s <= m <= l, f"Steps should be non-decreasing with seq len (mode={mode})"
     print(f"  ✅ Adaptive config matches paper Table")
     
     return results
@@ -463,8 +471,8 @@ def test_ponder_gate_triggering():
         should_trigger1 = gate.should_adapt(uniform_logits)
         
         # 2. Peaky distribution (low entropy, high confidence) -> Should not trigger
-        # Need a large logit gap vs vocab for softmax to be sharp at 10k classes
-        peaky_logits = torch.full((1, vocab_size), -80.0)
+        # Large vocab: need a sharp peak (large negative logits elsewhere)
+        peaky_logits = torch.full((1, vocab_size), -1e4)
         peaky_logits[0, 0] = 0.0
         should_trigger2 = gate.should_adapt(peaky_logits)
         

@@ -630,8 +630,8 @@ class AdaptiveTransformer(nn.Module):
         kv_caches = None
         adapted_query = None
         qttt_trigger_count = 0
-        
         next_token_logits = None
+
         for step in range(max_new_tokens):
             # Determine if qTTT should run this step
             should_run_qttt = use_qttt
@@ -641,8 +641,8 @@ class AdaptiveTransformer(nn.Module):
                 if isinstance(adapt_decision, torch.Tensor):
                     should_run_qttt = bool(adapt_decision.any().item())
                 else:
-                    should_run_qttt = adapt_decision
-            
+                    should_run_qttt = bool(adapt_decision)
+
             if should_run_qttt:
                 qttt_trigger_count += 1
                 # qTTT requires gradients for query adaptation
