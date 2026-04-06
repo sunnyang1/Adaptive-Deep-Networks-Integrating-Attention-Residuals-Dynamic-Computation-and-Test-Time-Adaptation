@@ -108,6 +108,15 @@ class TestReconstructionLoss:
 
         assert torch.allclose(loss, torch.tensor(0.0), atol=5e-3)
 
+    def test_compute_reconstruction_loss_zero_one_hot_rows(self):
+        """Loss is ~0 when each position is a sharp one-hot at the target."""
+        batch_size, seq_len, vocab = 2, 5, 32
+        targets = torch.randint(0, vocab, (batch_size, seq_len))
+        logits = torch.full((batch_size, seq_len, vocab), -1e9)
+        logits.scatter_(-1, targets.unsqueeze(-1), 0.0)
+        loss = compute_reconstruction_loss(logits, targets, span_length=seq_len)
+        assert torch.allclose(loss, torch.zeros(()), atol=1e-4)
+
     def test_compute_reconstruction_loss_positive(self):
         """Random logits give positive CE."""
         batch_size = 2

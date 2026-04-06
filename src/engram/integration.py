@@ -178,9 +178,9 @@ class AdaptiveTransformerWithEngram(AdaptiveTransformer):
             if hasattr(layer, 'engram') and layer.engram is not None:
                 layer_kwargs['input_ids'] = input_ids
             
-            # Forward through layer
+            # Forward through layer (first arg is residual stream for AttnRes + Engram)
             hidden, partial_block = layer(hidden, **layer_kwargs)
-        
+
         # Final AttnRes aggregation (same as AdaptiveTransformer.forward)
         if use_attnres:
             all_blocks = block_representations + [partial_block]
@@ -193,7 +193,7 @@ class AdaptiveTransformerWithEngram(AdaptiveTransformer):
             hidden = torch.einsum("n b t, n b t d -> b t d", alpha, V)
         else:
             hidden = partial_block
-        
+
         hidden = self.norm(hidden)
         logits = self.lm_head(hidden)
         
