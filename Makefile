@@ -21,6 +21,9 @@ help:
 	@echo "  make train-paper-medium - Train medium model + strict paper alignment check"
 	@echo "  make train-paper-large  - Train large model + strict paper alignment check"
 	@echo ""
+	@echo "Canonical training entrypoint:"
+	@echo "  python3 scripts/training/train_model.py --model-size small --output-dir results/small"
+	@echo ""
 
 # Installation
 install:

@@ -31,10 +31,10 @@ Training scripts for different configurations.
 | Script | Description |
 |--------|-------------|
 | `train_h20.py` | Training for H20 GPU |
-| `train_model.py` | Basic training script |
-| `train_refactored.py` | Refactored training |
+| `train_model.py` | **Canonical unified training entrypoint** (`--model-size small|medium|large|t4`) |
+| `train_refactored.py` | Deprecated compatibility wrapper (dispatches to `train_model.py`) |
 | `train_streaming.py` | Streaming training for large datasets |
-| `train_unified.py` | Unified training interface |
+| `train_unified.py` | Deprecated compatibility wrapper (dispatches to `train_model.py`) |
 
 ### evaluation/
 Benchmark and evaluation scripts.
@@ -94,14 +94,17 @@ Most scripts can be run directly:
 # Setup
 bash scripts/setup/lambda_setup.sh
 
+# Training (recommended)
+python3 scripts/training/train_model.py --model-size small --output-dir results/small
+
 # Build model
-python scripts/model/build_and_benchmark_small.py
+python3 scripts/model/build_and_benchmark_small.py
 
 # Run experiments
-python scripts/experiments/run_small_model_experiments_fast.py
+python3 scripts/experiments/run_small_model_experiments_fast.py
 
 # Evaluate
-python scripts/evaluation/run_benchmarks.py --model-size medium
+python3 scripts/evaluation/run_benchmarks.py --model-size medium
 ```
 
 ## See Also

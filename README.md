@@ -69,32 +69,43 @@ python experiments/run_experiments_unified.py --category paper
 ### Training
 
 ```bash
+# Canonical training entrypoint (recommended)
 # Small Model (1.1B params) - CPU-friendly, 1 GPU
-python scripts/training/train_small.py --output-dir results/small --epochs 3
+python3 scripts/training/train_model.py --model-size small --output-dir results/small --epochs 3
 
 # Medium Model (5.7B params) - Requires 1-4 GPUs
-python scripts/training/train_medium.py --output-dir results/medium --epochs 3
+python3 scripts/training/train_model.py --model-size medium --output-dir results/medium --epochs 3
 
 # Large Model (23B params) - Requires 8+ GPUs with distributed training
-torchrun --nproc_per_node=8 scripts/training/train_large.py --output-dir results/large
+torchrun --nproc_per_node=8 scripts/training/train_model.py --model-size large --output-dir results/large
 
 # Multi-GPU distributed training (Medium/Large)
-torchrun --nproc_per_node=4 scripts/training/train_medium.py --output-dir results/medium --distributed
+torchrun --nproc_per_node=4 scripts/training/train_model.py --model-size medium --output-dir results/medium --distributed
+
+# T4-friendly preset
+python3 scripts/training/train_model.py --model-size t4 --output-dir results/t4 --paper-preset-t4
+
+# Paper-aligned one-command wrappers (strict alignment check)
+make train-paper-small OUTPUT_DIR=results/small_paper
+make train-paper-medium OUTPUT_DIR=results/medium_paper
+make train-paper-large OUTPUT_DIR=results/large_paper
 
 # With DeepSpeed ZeRO-3 (recommended for Large model)
-deepspeed --num_gpus=8 scripts/training/train_large.py \
+deepspeed --num_gpus=8 scripts/training/train_model.py \
+    --model-size large \
     --output-dir results/large \
     --deepspeed configs/ds_config_h20.json
 
-# Streaming training (for limited disk space)
-python scripts/training/train_streaming.py --model-size small --max-steps 10000
+# Legacy compatibility entrypoints still exist and dispatch to train_model.py:
+# - scripts/training/train_unified.py
+# - scripts/training/train_refactored.py
 
 # Build and validate Small Model
-python scripts/model/build_and_benchmark_small.py
+python3 scripts/model/build_and_benchmark_small.py
 
 # Run Small Model experiments (150M experimental or 1.1B full)
-python scripts/model/run_small_model_experiments.py --experimental
-python scripts/model/run_small_model_experiments.py --full  # Requires GPU
+python3 scripts/model/run_small_model_experiments.py --experimental
+python3 scripts/model/run_small_model_experiments.py --full  # Requires GPU
 ```
 
 ### Run Tests

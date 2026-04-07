@@ -77,21 +77,24 @@ python experiments/real_model/memory_profiler.py \
 
 ## 论文声明验证清单
 
-| 声明 | 测试 | 目标值 | 文件 |
-|------|------|--------|------|
-| Table 4: NIH 4K | needle_haystack | 98.5% | needle_haystack_real.py |
-| Table 4: NIH 16K | needle_haystack | 91.3% | needle_haystack_real.py |
-| Table 4: NIH 64K | needle_haystack | 78.2% | needle_haystack_real.py |
-| Table 4: NIH 128K | needle_haystack | 68.2% | needle_haystack_real.py |
-| Table 4: NIH Avg | needle_haystack | 86.9% | needle_haystack_real.py |
-| TurboQuant: KV Cache | memory_profiler | 5.7x | memory_profiler.py |
-| TurboQuant: Compression | memory_profiler | 6x | memory_profiler.py |
-| Table 2: CV | gradient_analyzer | 0.11 | gradient_analyzer.py |
-| Throughput | validator | 110 t/s | validator.py |
+
+| 声明                      | 测试                | 目标值     | 文件                      |
+| ----------------------- | ----------------- | ------- | ----------------------- |
+| Table 4: NIH 4K         | needle_haystack   | 98.5%   | needle_haystack_real.py |
+| Table 4: NIH 16K        | needle_haystack   | 91.3%   | needle_haystack_real.py |
+| Table 4: NIH 64K        | needle_haystack   | 78.2%   | needle_haystack_real.py |
+| Table 4: NIH 128K       | needle_haystack   | 68.2%   | needle_haystack_real.py |
+| Table 4: NIH Avg        | needle_haystack   | 86.9%   | needle_haystack_real.py |
+| TurboQuant: KV Cache    | memory_profiler   | 5.7x    | memory_profiler.py      |
+| TurboQuant: Compression | memory_profiler   | 6x      | memory_profiler.py      |
+| Table 2: CV             | gradient_analyzer | 0.11    | gradient_analyzer.py    |
+| Throughput              | validator         | 110 t/s | validator.py            |
+
 
 ## 输出格式
 
 所有测试结果保存为 JSON，包含：
+
 - 原始测量数据
 - 与目标的对比
 - PASS/FAIL 状态

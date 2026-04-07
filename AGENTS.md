@@ -15,26 +15,26 @@ For the canonical directory map (root layout, `docs/`, `experiments/`, `src/`, `
 ### Core Components
 
 1. **Block AttnRes** (`src/attnres/`)
-   - Block Attention Residuals implementation
-   - Pseudo-query management
-   - Two-phase computation strategy
-
+  - Block Attention Residuals implementation
+  - Pseudo-query management
+  - Two-phase computation strategy
 2. **Dynamic Gating** (`src/gating/`)
-   - Reconstruction loss computation
-   - Threshold calibration (EMA, target-rate)
-
+  - Reconstruction loss computation
+  - Threshold calibration (EMA, target-rate)
 3. **qTTT** (`src/qttt/`)
-   - Query-only test-time training
-   - Margin maximization loss
-   - KV cache management
+  - Query-only test-time training
+  - Margin maximization loss
+  - KV cache management
 
 ### Model Configurations
 
-| Size | Params | Layers | Hidden | Heads | Blocks | d_model/L_b | H/L_b |
-|------|--------|--------|--------|-------|--------|-------------|-------|
-| Small | 1.1B | 32 | 1408 | 8 | 8 | 44.0 | 0.25 |
-| Medium | 5.7B | 56 | 2496 | 16 | 8 | 44.6 | 0.29 |
-| Large | 23.0B | 88 | 4032 | 18 | 11 | 45.8 | 0.21 |
+
+| Size   | Params | Layers | Hidden | Heads | Blocks | d_model/L_b | H/L_b |
+| ------ | ------ | ------ | ------ | ----- | ------ | ----------- | ----- |
+| Small  | 1.1B   | 32     | 1408   | 8     | 8      | 44.0        | 0.25  |
+| Medium | 5.7B   | 56     | 2496   | 16    | 8      | 44.6        | 0.29  |
+| Large  | 23.0B  | 88     | 4032   | 18    | 11     | 45.8        | 0.21  |
+
 
 > **Architecture Optimized for AttnRes (§5.4.1)**: Paper shows AttnRes shifts optimal `d_model/L_b` from ~60 (baseline) to ~45 (AttnRes), favoring deeper, narrower networks. Head ratio `H/L_b ≈ 0.3` is optimal for both.
 
@@ -84,11 +84,13 @@ For the canonical directory map (root layout, `docs/`, `experiments/`, `src/`, `
 ## Testing
 
 Run all tests:
+
 ```bash
 pytest tests/ -v --cov=src --cov-report=html
 ```
 
 Run specific module:
+
 ```bash
 pytest tests/unit/test_attnres.py -v
 ```
@@ -114,12 +116,14 @@ python experiments/matdo/run_all_experiments.py \
 ```
 
 **Key flags:**
+
 - `--use-real-model`: Enable real model mode (default: simulation)
 - `--size {small,medium,large}`: Model configuration
 - `--checkpoint PATH`: Load pretrained weights
 - `--device {cuda,mps,cpu}`: Compute device
 
 **Implementation notes:**
+
 - US1–US3 default to simulation due to O(100) model evaluations each
 - US4 MATDO uses real model; SnapKV/H2O are simulated baselines
 - US5 uses `forward(use_attnres=..., use_qttt=...)` for component ablation
@@ -135,16 +139,19 @@ python experiments/matdo/run_all_experiments.py \
 ## Lambda AI Deployment
 
 Setup:
+
 ```bash
 bash scripts/setup/lambda_setup.sh
 ```
 
 Run validation:
+
 ```bash
 python scripts/evaluation/run_benchmarks.py --model-size medium --benchmarks all
 ```
 
 Run experiments:
+
 ```bash
 python experiments/run_experiments_unified.py --category paper
 ```
@@ -172,16 +179,18 @@ python experiments/run_experiments_unified.py --category paper
 
 Commands follow the `Makefile` and `README.md`. Key commands:
 
-| Task | Command |
-|------|---------|
-| Install deps | `pip install -e ".[dev]"` then `pip install tqdm matplotlib seaborn pandas scipy` |
-| Unit tests | `pytest tests/unit/ -v --tb=short` |
-| All tests (skip legacy) | `pytest tests/ -v --tb=short --ignore=tests/legacy` |
-| Lint (black) | `black --check src/ experiments/ scripts/ tests/` |
-| Lint (ruff) | `ruff check src/ experiments/ scripts/ tests/` |
-| Type check | `mypy src/` |
-| List experiments | `python3 experiments/run_experiments_unified.py --list` |
-| Quick experiments | `python3 experiments/run_experiments_unified.py --category core --quick` |
+
+| Task                    | Command                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| Install deps            | `pip install -e ".[dev]"` then `pip install tqdm matplotlib seaborn pandas scipy` |
+| Unit tests              | `pytest tests/unit/ -v --tb=short`                                                |
+| All tests (skip legacy) | `pytest tests/ -v --tb=short --ignore=tests/legacy`                               |
+| Lint (black)            | `black --check src/ experiments/ scripts/ tests/`                                 |
+| Lint (ruff)             | `ruff check src/ experiments/ scripts/ tests/`                                    |
+| Type check              | `mypy src/`                                                                       |
+| List experiments        | `python3 experiments/run_experiments_unified.py --list`                           |
+| Quick experiments       | `python3 experiments/run_experiments_unified.py --category core --quick`          |
+
 
 ### Known issues (pre-existing)
 
@@ -190,3 +199,4 @@ Commands follow the `Makefile` and `README.md`. Key commands:
 - 11 unit tests fail due to pre-existing code/test mismatches (gating `DynamicThreshold` API changes, `TwoPhaseBlockAttnRes.norm` missing, `compute_reconstruction_loss` shape bug). These are not environment issues.
 - The unified experiment runner passes `--output-dir` (hyphenated) but individual experiment scripts expect `--output_dir` (underscored), causing exit code 2. Running experiments individually with `--output_dir` works.
 - Use `python3` not `python` (the latter is not linked by default).
+
