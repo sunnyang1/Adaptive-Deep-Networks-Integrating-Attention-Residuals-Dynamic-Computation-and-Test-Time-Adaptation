@@ -8,6 +8,8 @@ This is the validation framework for the paper "Adaptive Deep Networks: Integrat
 
 For the canonical directory map (root layout, `docs/`, `experiments/`, `src/`, `scripts/`, `tasks/`, tests, and where papers and guides live), see [PROJECT_ORGANIZATION.md](PROJECT_ORGANIZATION.md).
 
+**Submission manuscripts (keep at repo root):** `ADN_paper.md` and `matdo-e_paper.md` are the publication-target papers; when reorganizing folders, do **not** move them into `docs/` or elsewhere.
+
 ## Architecture
 
 ### Core Components
