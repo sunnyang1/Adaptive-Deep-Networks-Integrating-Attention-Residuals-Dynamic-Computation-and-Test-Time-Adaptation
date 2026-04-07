@@ -4,6 +4,10 @@
 
 This is the validation framework for the paper "Adaptive Deep Networks: Integrating Attention Residuals, Dynamic Computation, and Test-Time Adaptation".
 
+## Repository layout
+
+For the canonical directory map (root layout, `docs/`, `experiments/`, `src/`, `scripts/`, `tasks/`, tests, and where papers and guides live), see [PROJECT_ORGANIZATION.md](PROJECT_ORGANIZATION.md).
+
 ## Architecture
 
 ### Core Components
