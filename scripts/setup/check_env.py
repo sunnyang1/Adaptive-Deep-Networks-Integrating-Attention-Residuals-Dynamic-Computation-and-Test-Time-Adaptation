@@ -245,7 +245,7 @@ def main():
     if passed == total:
         print(f"\n{GREEN}✓ Environment is ready for MATDO-E!{RESET}")
         print("\nNext steps:")
-        print("  1. See MATDO_E_A100_BEGINNER_GUIDE.md for training instructions")
+        print("  1. See docs/guides/MATDO_E_A100_BEGINNER_GUIDE.md for training instructions")
         print("  2. Run: python scripts/train.py --config configs/train_small_example.yaml")
         return 0
     elif passed >= total * 0.7:

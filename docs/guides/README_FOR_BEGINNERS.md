@@ -12,7 +12,7 @@ git clone https://github.com/your-org/Adaptive-Deep-Networks.git
 cd Adaptive-Deep-Networks
 
 # 2. 运行一键启动脚本
-bash QUICKSTART.sh
+bash scripts/setup/QUICKSTART.sh
 ```
 
 如果一切正常，你会看到：
@@ -125,7 +125,7 @@ python scripts/inference_matdo_e.py \
 ## 📚 学习路径
 
 ### 第1天：理解概念
-1. 阅读论文 `matdo-e_revised_paper.md`
+1. 阅读论文 `docs/papers/matdo-e_revised_paper.md`
 2. 理解四个维度：R(量化), M(上下文), T(TTA步数), E(Engram)
 3. 运行求解器看配置变化：
    ```bash
@@ -176,10 +176,10 @@ from experiments.matdo.matdo_e.engram_manager import MockFaissIndex
 
 ## 📖 更多资源
 
-- **完整指南**: `MATDO_E_A100_BEGINNER_GUIDE.md`（详细教程）
+- **完整指南**: `docs/guides/MATDO_E_A100_BEGINNER_GUIDE.md`（详细教程）
 - **实现文档**: `experiments/matdo/MATDO_E_IMPLEMENTATION.md`（技术细节）
 - **项目架构**: `AGENTS.md`（代码结构）
-- **论文**: `matdo-e_revised_paper.md`
+- **论文**: `docs/papers/matdo-e_revised_paper.md`
 
 ## 🆘 获得帮助
 
@@ -187,7 +187,7 @@ from experiments.matdo.matdo_e.engram_manager import MockFaissIndex
 1. 查看错误日志：`checkpoints/*/training.log`
 2. 运行检查脚本：`python scripts/setup/check_env.py`
 3. 检查GPU状态：`nvidia-smi`
-4. 查看详细指南：`cat MATDO_E_A100_BEGINNER_GUIDE.md`
+4. 查看详细指南：`cat docs/guides/MATDO_E_A100_BEGINNER_GUIDE.md`
 
 ## ✅ 成功标志
 

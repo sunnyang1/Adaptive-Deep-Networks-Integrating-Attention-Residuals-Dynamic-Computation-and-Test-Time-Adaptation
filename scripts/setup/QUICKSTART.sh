@@ -1,6 +1,6 @@
 #!/bin/bash
 # MATDO-E A100 快速启动脚本
-# 使用方法: bash QUICKSTART.sh
+# 使用方法: 在仓库根目录执行 bash scripts/setup/QUICKSTART.sh
 
 set -e
 
@@ -130,5 +130,5 @@ echo "3. Start training (if you have data):"
 echo "   python scripts/train.py --config configs/train_small_example.yaml"
 echo ""
 echo "4. Read the full guide:"
-echo "   cat MATDO_E_A100_BEGINNER_GUIDE.md"
+echo "   cat docs/guides/MATDO_E_A100_BEGINNER_GUIDE.md"
 echo ""

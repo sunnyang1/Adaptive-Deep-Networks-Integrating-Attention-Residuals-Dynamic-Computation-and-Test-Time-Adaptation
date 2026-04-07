@@ -48,6 +48,8 @@ pip install -e ".[dev]"
 bash scripts/setup/lambda_setup.sh
 ```
 
+For **MATDO-E on A100**, see [docs/guides/README_FOR_BEGINNERS.md](docs/guides/README_FOR_BEGINNERS.md) or run `bash scripts/setup/QUICKSTART.sh` from the repo root.
+
 ### Run Experiments
 
 ```bash

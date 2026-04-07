@@ -3,13 +3,11 @@
 ## 目录结构
 
 ### 核心文件 (根目录)
-根目录仅保留项目核心文件：
+根目录仅保留项目核心文件（论文与新手文档见 `docs/papers/`、`docs/guides/`）：
 
 | 文件 | 说明 |
 |------|------|
 | `README.md` | 项目主文档，包含快速开始指南、安装说明、训练和评估命令 |
-| `Adaptive_Deep_Networks_Query_Optimization_REVISED.md` | 论文主文件，详细描述 ADN 架构和实验结果 |
-| `matdo_paper.tex` | LaTeX 论文源文件 |
 | `AGENTS.md` | AI Agent 开发指南，包含架构设计决策和实现细节 |
 | `PROJECT_ORGANIZATION.md` | 本文件，项目结构和文件说明 |
 | `LICENSE` | Apache 2.0 许可证 |
@@ -106,6 +104,8 @@ data/
 | 文件 | 说明 |
 |------|------|
 | `A100_80G_COMPLETE_GUIDE.md` | **A100 80G 新手完全指南** - 从环境设置到训练推理的详细步骤 |
+| `MATDO_E_A100_BEGINNER_GUIDE.md` | MATDO-E / A100 入门与排障（长教程） |
+| `README_FOR_BEGINNERS.md` | MATDO-E 新手路径与资源索引 |
 | `LARGE_MODEL_BUILD.md` | 大模型构建指南 |
 | `MNN_TURBOQUANT_IMPROVEMENTS.md` | MNN TurboQuant 改进指南 |
 | `TURBOQUANT_REFACTORED.md` | TurboQuant 重构指南 |
@@ -119,12 +119,15 @@ data/
 | `Adaptive_Deep_Networks_RaBitQ.md` | RaBitQ 论文 |
 | `Adaptive_Deep_Networks_TurboQuant.md` | TurboQuant 论文 |
 | `Adaptive_Deep_Networks_V1.md` | ADN V1 版本 |
+| `ADN_Query_Optimization_v3.md` | 查询优化论文 v3（Markdown） |
+| `matdo-e_revised_paper.md` / `matdo-e_revised_paper.tex` | MATDO-E 修订稿 |
 
 #### 项目文档 (`docs/project/`)
 ```
 docs/project/
 ├── prd/                          # 产品需求文档
 │   ├── prd.json                  # 主 PRD
+│   ├── prd-engram.json           # Engram PRD（JSON）
 │   ├── prd-incremental-kv.json   # 增量 KV PRD
 │   └── prd-optimizations.json    # 优化 PRD
 ├── progress/                     # 进度跟踪
@@ -443,6 +446,7 @@ matdo/
 | `autodl_h20_setup.sh` | AutoDL H20 设置 |
 | `autodl_setup.sh` | AutoDL 设置 |
 | `lambda_setup.sh` | Lambda AI 设置 |
+| `QUICKSTART.sh` | MATDO-E A100 一键检查环境与快速启动（在仓库根目录执行） |
 | `quick_start_h20.sh` | H20 快速开始 |
 | `quick_train.sh` | **一键训练启动器** - 自动创建 tmux 会话并开始训练 |
 
@@ -568,6 +572,8 @@ matdo/
 
 | 文件 | 说明 |
 |------|------|
+| `prd-engram-integration.md` | Engram 集成 PRD |
+| `product-brief-engram.md` | Engram 产品简报 |
 | `implementation-readiness-check.md` | 实现准备检查 |
 | `prd-adaptive-deep-networks-validation.md` | ADN 验证 PRD |
 | `prd-adaptive-transformer-integration.md` | 自适应 Transformer 集成 PRD |
@@ -660,7 +666,7 @@ C++ RaBitQ 实现：
 - `sample/` - 示例代码
 - `tests/` - 测试代码
 
-### 相关工作论文 (`related paper/`)
+### 相关工作论文 (`related_papers/`)
 相关研究论文 PDF：
 
 | 文件 | 说明 |
@@ -706,6 +712,19 @@ WorkBuddy AI 助手配置：
 ---
 
 ## 文件移动记录
+
+### 2026-04-07 根目录与任务整理
+| 原位置 | 新位置 | 说明 |
+|--------|--------|------|
+| `ADN_Query_Optimization_v3.md` | `docs/papers/` | 论文稿归档 |
+| `matdo-e_revised_paper.md` / `.tex` | `docs/papers/` | MATDO-E 修订稿 |
+| `MATDO_E_A100_BEGINNER_GUIDE.md` | `docs/guides/` | 与现有 guides 一致 |
+| `README_FOR_BEGINNERS.md` | `docs/guides/` | 新手索引 |
+| `QUICKSTART.sh` | `scripts/setup/QUICKSTART.sh` | 与安装脚本同目录 |
+| `tasks/engram/prd-engram-integration.md` | `tasks/prd-engram-integration.md` | 扁平化任务目录 |
+| `tasks/engram/product-brief.md` | `tasks/product-brief-engram.md` | 避免与根级 product-brief 重名 |
+| `tasks/engram/prd.json` | `docs/project/prd/prd-engram.json` | 与其他 PRD JSON 同目录 |
+| `related paper/`（多为被忽略的 PDF） | `related_papers/` | 去掉路径空格，便于脚本引用 |
 
 ### 已归档文件
 | 原位置 | 新位置 | 说明 |
@@ -765,5 +784,5 @@ WorkBuddy AI 助手配置：
 
 ---
 
-*整理日期: 2026-04-05*
-*最后更新: 2026-04-05 - 添加所有文件详细介绍*
+*整理日期: 2026-04-05*  
+*最后更新: 2026-04-07 - 根目录文档迁入 docs/、QUICKSTART 迁入 scripts/setup、related_papers 重命名*
