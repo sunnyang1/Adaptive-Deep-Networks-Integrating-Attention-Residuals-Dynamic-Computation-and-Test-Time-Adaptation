@@ -463,6 +463,8 @@ class PolarQTTT(nn.Module):
                 # Reshape for multi-head attention: [B, T, D] -> [B, H, T, d]
                 query_mha = query.view(B, T, self.num_heads, self.head_dim).transpose(1, 2)
                 attn_output = compute_attention_with_query(query_mha, kv_cache)
+                # [B, H, T, d] -> [B, T, D] for LM-style projection heads
+                attn_output = attn_output.transpose(1, 2).contiguous().view(B, T, D)
                 
                 # For legacy path, apply projection head to get logits if available
                 if projection_head is not None:
@@ -574,6 +576,9 @@ class PolarQTTT(nn.Module):
                 target_token_ids = target_token_ids.unsqueeze(0).expand(B, -1)
             else:
                 target_token_ids = target_token_ids.unsqueeze(0).unsqueeze(0).expand(B, T)
+        
+        # Safe token ids for cross-entropy (vocab may differ from sampling range)
+        target_token_ids = target_token_ids.clamp(0, V - 1)
         
         # Compute loss based on type
         if self.config.loss_type == "cross_entropy":

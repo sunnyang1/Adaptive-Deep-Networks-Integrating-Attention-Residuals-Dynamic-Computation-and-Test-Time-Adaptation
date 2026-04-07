@@ -226,6 +226,8 @@ class TwoPhaseBlockAttnRes(nn.Module):
         # RMSNorm for key normalization (critical for performance)
         self.norm_attn = RMSNorm(dim, eps)
         self.norm_mlp = RMSNorm(dim, eps)
+        # Alias for two-phase helpers (keys use same norm as BlockAttnRes keys)
+        self.norm = self.norm_attn
     
     def forward(
         self,
@@ -300,7 +302,8 @@ class TwoPhaseBlockAttnRes(nn.Module):
 
         # Stack block representations: [N, B, T, D]
         V = torch.stack(block_representations, dim=0)
-        K = self.norm(V)  # [N, B, T, D]
+        # Keys use the same RMSNorm as inter-block attention in block_attn_res
+        K = self.norm_attn(V)  # [N, B, T, D]
 
         # Batched attention: [S, D] @ [N, B, T, D] -> [S, N, B, T]
         logits = torch.einsum("s d, n b t d -> s n b t", pseudo_queries, K)
@@ -341,7 +344,7 @@ class TwoPhaseBlockAttnRes(nn.Module):
             merged_lse: [B, T]
         """
         # Intra-block attention (single key-value = partial_sum)
-        K = self.norm(partial_sum)  # [B, T, D]
+        K = self.norm_attn(partial_sum)  # [B, T, D]
         logits = torch.einsum("d, b t d -> b t", pseudo_query, K)
         logits = logits / (self.dim ** 0.5)
         intra_max = logits  # [B, T]
