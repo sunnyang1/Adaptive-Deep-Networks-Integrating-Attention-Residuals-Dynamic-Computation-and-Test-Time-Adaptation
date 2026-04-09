@@ -8,7 +8,7 @@ import shutil
 import torch
 import torch.nn as nn
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import Any, Dict, Optional
 from dataclasses import dataclass
 
 
@@ -53,7 +53,8 @@ class CheckpointManager:
         loss: float,
         metrics: Optional[Dict[str, float]] = None,
         config: Optional[Dict[str, Any]] = None,
-        is_best: bool = False
+        is_best: bool = False,
+        extra_state: Optional[Dict[str, Any]] = None,
     ) -> Path:
         """
         Save checkpoint.
@@ -78,6 +79,8 @@ class CheckpointManager:
             'metrics': metrics or {},
             'config': config or {},
         }
+        if extra_state:
+            checkpoint.update(extra_state)
         
         # Save latest (full state for resume)
         latest_path = self.checkpoint_dir / 'checkpoint_latest.pt'
@@ -109,7 +112,8 @@ class CheckpointManager:
         self,
         model: nn.Module,
         optimizer: Optional[torch.optim.Optimizer] = None,
-        checkpoint_path: Optional[Path] = None
+        checkpoint_path: Optional[Path] = None,
+        map_location: Any = None,
     ) -> Dict[str, Any]:
         """
         Load checkpoint.
@@ -129,7 +133,11 @@ class CheckpointManager:
             raise CheckpointError(f"Checkpoint not found: {checkpoint_path}")
         
         try:
-            checkpoint = torch.load(checkpoint_path, map_location='cpu')
+            checkpoint = torch.load(
+                checkpoint_path,
+                map_location=map_location if map_location is not None else "cpu",
+                weights_only=False,
+            )
         except Exception as e:
             raise CheckpointError(f"Failed to load checkpoint: {e}")
         
@@ -139,6 +147,12 @@ class CheckpointManager:
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         
         return checkpoint
+
+    def load_scheduler(self, scheduler: Any, checkpoint: Dict[str, Any]) -> None:
+        """Restore LR scheduler state if present in checkpoint."""
+        key = 'scheduler_state_dict'
+        if key in checkpoint and checkpoint[key] is not None:
+            scheduler.load_state_dict(checkpoint[key])
     
     def _cleanup_old_checkpoints(self):
         """Remove old checkpoints keeping only max_checkpoints."""

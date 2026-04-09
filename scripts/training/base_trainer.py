@@ -30,7 +30,13 @@ from src.models.configs import ModelConfig, AttnResSmallConfig, AttnResMediumCon
 from src.models.adaptive_transformer import AdaptiveTransformer
 from src.engram.integration import add_engram_to_config
 from src.engram.config import EngramSmallConfig, EngramMediumConfig, EngramLargeConfig
-from scripts.common.training import CheckpointManager, compute_loss, train_step, get_scheduler
+from scripts.common.training import (
+    CheckpointError,
+    CheckpointManager,
+    compute_loss,
+    get_scheduler,
+    train_step,
+)
 from scripts.common.distributed import setup_distributed, cleanup_distributed, is_main_process
 from scripts.common.data import HuggingFaceDataset, get_dataloader
 from src.models.tokenizer import create_tokenizer, get_tokenizer_for_model, TokenizerWrapper
@@ -59,6 +65,8 @@ class BaseTrainer(ABC):
         self.best_loss = float('inf')
         self.history = {'train_loss': [], 'val_loss': []}
         self.model_forward_kwargs: Dict[str, Any] = {}
+        # Next epoch index (0-based) when resuming; set in _maybe_resume()
+        self._resume_start_epoch: int = 0
 
     def _align_vocab_size_with_tokenizer(self):
         """Prevent embedding/token index mismatch between model and tokenizer."""
@@ -222,6 +230,8 @@ class BaseTrainer(ABC):
             self.args.warmup_steps,
             total_steps
         )
+
+        self._maybe_resume()
         
         print(f"\nTraining Configuration:")
         print(f"  Epochs: {self.args.epochs}")
@@ -234,7 +244,68 @@ class BaseTrainer(ABC):
         print(f"  Output dir: {self.args.output_dir}")
         print(f"  Seed: {self.args.seed}")
         print(f"  Deterministic: {self.args.deterministic}")
-    
+        if self._resume_start_epoch > 0 or self.global_step > 0:
+            print(f"  Resume: starting at epoch index {self._resume_start_epoch}, global_step={self.global_step}")
+
+    def _resolve_resume_checkpoint_path(self) -> Optional[Path]:
+        raw = getattr(self.args, "resume", None)
+        if not raw:
+            return None
+        s = str(raw).strip().lower()
+        if s in ("true", "1", "yes", "latest", "auto"):
+            p = Path(self.args.output_dir) / "checkpoints" / "checkpoint_latest.pt"
+        else:
+            p = Path(raw).expanduser()
+            if not p.is_file():
+                alt = Path(self.args.output_dir) / raw
+                if alt.is_file():
+                    p = alt
+        if not p.is_file():
+            raise FileNotFoundError(
+                f"--resume: checkpoint not found (input={raw!r}, resolved={p})"
+            )
+        return p
+
+    def _maybe_resume(self) -> None:
+        """Load model/optimizer/scheduler/step from checkpoint when --resume is set."""
+        path = self._resolve_resume_checkpoint_path()
+        if path is None:
+            return
+        try:
+            ckpt = self.checkpoint_manager.load(
+                self.model,
+                self.optimizer,
+                path,
+                map_location=self.device,
+            )
+        except CheckpointError as e:
+            raise CheckpointError(f"Resume failed: {e}") from e
+
+        if "scheduler_state_dict" in ckpt and ckpt["scheduler_state_dict"] is not None:
+            self.checkpoint_manager.load_scheduler(self.scheduler, ckpt)
+        else:
+            print(
+                "Warning: checkpoint has no scheduler_state_dict; "
+                "learning-rate schedule restarts from build-time (old checkpoint format)."
+            )
+
+        self.global_step = int(ckpt.get("global_step", 0))
+        # Saved 'epoch' is the last fully completed epoch (matches current_epoch at save time).
+        self._resume_start_epoch = int(ckpt.get("epoch", 0))
+        hist = ckpt.get("history")
+        if isinstance(hist, dict) and "train_loss" in hist and "val_loss" in hist:
+            self.history = hist
+        if "best_loss" in ckpt and ckpt["best_loss"] is not None:
+            try:
+                self.best_loss = float(ckpt["best_loss"])
+            except (TypeError, ValueError):
+                pass
+
+        print(f"\nResumed from {path}")
+        print(f"  Last completed epoch (saved): {self._resume_start_epoch}")
+        print(f"  global_step: {self.global_step}")
+        print(f"  best_loss: {self.best_loss}")
+
     def _setup_data(self):
         """Setup training and validation data loaders using HuggingFace datasets."""
         # Tokenizer configuration
@@ -385,6 +456,12 @@ class BaseTrainer(ABC):
             'global_step': self.global_step,
         }
         
+        extra_state = {
+            "global_step": self.global_step,
+            "scheduler_state_dict": self.scheduler.state_dict(),
+            "history": self.history,
+            "best_loss": self.best_loss,
+        }
         self.checkpoint_manager.save(
             model=self.model,
             optimizer=self.optimizer,
@@ -392,7 +469,8 @@ class BaseTrainer(ABC):
             loss=self.history['train_loss'][-1] if self.history['train_loss'] else 0.0,
             metrics=metrics,
             config=self.config.__dict__,
-            is_best=is_best
+            is_best=is_best,
+            extra_state=extra_state,
         )
     
     def train(self):
@@ -402,8 +480,16 @@ class BaseTrainer(ABC):
         print(f"{'='*70}\n")
         
         start_time = time.time()
+
+        start_epoch_idx = getattr(self, "_resume_start_epoch", 0)
+        if start_epoch_idx >= self.args.epochs:
+            print(
+                f"Nothing to do: resume start epoch index {start_epoch_idx} "
+                f">= total epochs {self.args.epochs}"
+            )
+            return
         
-        for epoch in range(self.args.epochs):
+        for epoch in range(start_epoch_idx, self.args.epochs):
             self.current_epoch = epoch + 1
             
             # Train
@@ -524,7 +610,14 @@ def get_common_parser() -> argparse.ArgumentParser:
     
     # Paths
     parser.add_argument('--output-dir', type=str, required=True, help='Output directory')
-    parser.add_argument('--resume', type=str, default=None, help='Resume from checkpoint')
+    parser.add_argument(
+        '--resume',
+        type=str,
+        default=None,
+        metavar='PATH',
+        help='Resume training: path to .pt file, or "latest"/"auto" for '
+        '<output-dir>/checkpoints/checkpoint_latest.pt (requires full checkpoint, not weights-only best)',
+    )
     
     # Execution
     parser.add_argument('--device', type=str, default='auto', help='Device (auto/cuda/cpu)')
