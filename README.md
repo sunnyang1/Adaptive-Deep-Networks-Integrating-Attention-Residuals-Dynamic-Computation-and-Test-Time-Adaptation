@@ -41,6 +41,15 @@ python3 scripts/training/train_model.py --model-size t4 --output-dir results/t4 
 torchrun --nproc_per_node=8 scripts/training/train_model.py --model-size large --output-dir results/large
 ```
 
+**Resume training** (same `--output-dir` and model/data settings as the run you are continuing):
+
+```bash
+python3 scripts/training/train_model.py --model-size small --output-dir results/small --resume latest
+# or: --resume results/small/checkpoints/checkpoint_epoch_1.pt
+```
+
+Checkpoints are written under `<output-dir>/checkpoints/` at the **end of each epoch** (full state: model, optimizer, LR scheduler, `global_step`, history). If `checkpoint_latest.pt` does not exist yet, `--resume latest` prints a warning and **starts from scratch** instead of failing. Use `checkpoint_best.pt` only for inference or evaluation—it is **weights-only** and cannot resume training.
+
 Paper-aligned wrappers (strict alignment check):
 
 ```bash
@@ -110,6 +119,16 @@ mypy src/
 - Use `python3` (not `python`) in this repo.
 - `scripts/training/train_unified.py` and `scripts/training/train_refactored.py` are compatibility wrappers and dispatch to `train_model.py`.
 - Submission manuscripts stay at repository root: `ADN_paper.md` and `matdo-e_paper.md`.
+
+### Hugging Face downloads
+
+Training loads tokenizers and (by default) streaming datasets from the Hugging Face Hub. If requests to `huggingface.co` fail or time out, point the client at a mirror (example for mainland China):
+
+```bash
+export HF_ENDPOINT=https://hf-mirror.com
+```
+
+On fully offline machines you must rely on a populated Hub cache or provide local paths; see `src/models/tokenizer.py` and your dataset flags.
 
 ## License
 
