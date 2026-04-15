@@ -30,8 +30,7 @@ Standard transformers suffer from query degradation across all four dimensions:
 
 We frame the problem as **four-dimensional query optimization**—how can we make the query mechanism more accurate and efficient across space, scope, storage, and specificity?
 
-**Stage 1: Space Optimization (RaBitQ)**  
-Before a query can retrieve anything, it must operate in a manageable space. RaBitQ [8, 9] optimizes the query space by:
+**Stage 1: Space Optimization (RaBitQ)**Before a query can retrieve anything, it must operate in a manageable space. RaBitQ [8, 9] optimizes the query space by:
 
 - Applying a **structured random rotation** (e.g., randomized Hadamard / SRHT; $O(d\log d)$), in the Johnson–Lindenstrauss family [3], to spread energy before quantization
 - Quantizing to $b$-bit representations with unbiased inner product preservation (under the estimator defined in [8, 9])
@@ -39,8 +38,7 @@ Before a query can retrieve anything, it must operate in a manageable space. RaB
 
 This space optimization is the **enabling foundation**: without it, storing block representations for AttnRes and embedding tables for Engram would be prohibitively expensive.
 
-**Stage 2: Scope Optimization (Block AttnRes)**  
-With compressed space, we can afford to expand the query's field of view. Block Attention Residuals [19] optimize query scope by:
+**Stage 2: Scope Optimization (Block AttnRes)**With compressed space, we can afford to expand the query's field of view. Block Attention Residuals [19] optimize query scope by:
 
 - Replacing fixed addition with learned softmax attention over $N$ block-level representations
 - Enabling queries to selectively retrieve from any prior block
@@ -48,8 +46,7 @@ With compressed space, we can afford to expand the query's field of view. Block 
 
 The query now has an **expanded historical horizon**, preventing representation burial.
 
-**Stage 3: Storage Optimization (Engram)**  
-Beyond the current sequence, queries can benefit from **externalized, reusable memory**. Engram instantiates the **storage** axis via conditional memory lookup. Its typical design provides:
+**Stage 3: Storage Optimization (Engram)**Beyond the current sequence, queries can benefit from **externalized, reusable memory**. Engram instantiates the **storage** axis via conditional memory lookup. Its typical design provides:
 
 - **O(1) deterministic lookup** into massive embedding tables via N-gram hashing
 - **U-shaped scaling law** guiding optimal allocation between neural computation and static memory
@@ -57,8 +54,7 @@ Beyond the current sequence, queries can benefit from **externalized, reusable m
 
 The query now accesses **scalable external knowledge** beyond parametric limits.
 
-**Stage 4: Specificity Optimization (qTTT)**  
-Finally, given optimal space, scope, and storage, we optimize the query itself. Query-only Test-Time Training adapts queries during inference by:
+**Stage 4: Specificity Optimization (qTTT)**Finally, given optimal space, scope, and storage, we optimize the query itself. Query-only Test-Time Training adapts queries during inference by:
 
 - Reparameterizing queries in polar coordinates $(r, \theta)$
 - Freezing magnitude $r$ and adapting direction $\theta$
@@ -70,7 +66,9 @@ The query becomes **task-specific**, improving retrieval precision when standard
 
 The four stages **compose as a pipeline** across the information hierarchy (we use $\circ$ for conceptual composition of stages, not literal multiplication of scalar costs):
 
-$$\text{Query Quality} = \underbrace{f_{\text{space}}}*{\text{RaBitQ}} \circ \underbrace{f*{\text{scope}}}*{\text{AttnRes}} \circ \underbrace{f*{\text{storage}}}*{\text{Engram}} \circ \underbrace{f*{\text{specificity}}}_{\text{qTTT}}$$
+$$
+\text{Query Quality} = \underbrace{f_{\text{space}}}*{\text{RaBitQ}} \circ \underbrace{f*{\text{scope}}}*{\text{AttnRes}} \circ \underbrace{f*{\text{storage}}}*{\text{Engram}} \circ \underbrace{f*{\text{specificity}}}_{\text{qTTT}}
+$$
 
 **Critical Dependencies:**
 
@@ -104,13 +102,12 @@ We summarize **testable** contributions (novelty = **composition + empirical stu
 **This manuscript (Paper I) is the primary architectural and empirical reference.** We first developed ADN to **implement** the four query axes with concrete modules (§3) and to **measure** end-to-end behavior (§5). **Subsequently**, we wrote a companion theory paper (**Paper II / MATDO-E**; *Crossing the Memory Wall: From Information Collapse to Heterogeneous Resource Arbitrage in Adaptive Deep Networks* [21]) that **does not replace** the recipes here but **reparameterizes** the same design space in terms of **optimization knobs** and **serving constraints**:
 
 
-| ADN stage (this paper) | MATDO-E knob (companion)                              | Role                                                |
-| ---------------------- | ----------------------------------------------------- | --------------------------------------------------- |
-| Space (RaBitQ)         | $R$: bits per key/value                               | Quantization / IP–geometry precision                |
-| Scope (AttnRes)        | $M$: HBM-resident blocks (or equivalent scope budget) | Effective historical access without $O(Ld)$ storage |
-| Specificity (qTTT)     | $T$: adaptation steps                                 | Test-time query refinement under a compute budget   |
-| Storage (Engram)       | $E$: static table size in DRAM                        | External memory arbitrage vs. HBM pressure          |
-
+| ADN stage (this paper) | MATDO-E knob (companion)                              | Role                                               |
+| ---------------------- | ----------------------------------------------------- | -------------------------------------------------- |
+| Space (RaBitQ)         | $R$: bits per key/value                               | Quantization / IP–geometry precision              |
+| Scope (AttnRes)        | $M$: HBM-resident blocks (or equivalent scope budget) | Effective historical access without$O(Ld)$ storage |
+| Specificity (qTTT)     | $T$: adaptation steps                                 | Test-time query refinement under a compute budget  |
+| Storage (Engram)       | $E$: static table size in DRAM                        | External memory arbitrage vs. HBM pressure         |
 
 Paper II supplies **definitions** of the **context wall** $\rho_{\text{ctx}}$ and **compute wall** $\rho_{\text{comp}}$, analyzes **$(\rho_{\text{ctx}}-\rho)^{-2}$** scaling of required $T$ near the wall, and gives the **Heterogeneous Arbitrage Inequality** for when **DRAM-resident Engram** shifts $\rho_{\text{ctx}}$. Readers who want **proofs and continuous relaxations** should read [21] alongside §3–§4 here; readers who want **benchmarks and ablations** should treat the present paper as canonical.
 
@@ -155,15 +152,14 @@ Table 1 situates our work relative to existing approaches across the four query 
 
 | Method            | Space             | Scope              | Storage      | Specificity    | Key Limitation                                |
 | ----------------- | ----------------- | ------------------ | ------------ | -------------- | --------------------------------------------- |
-| GPTQ [7]          | 4× quant          | Full               | None         | Static         | Bias introduced; no scope/storage/specificity |
-| KIVI              | 16× KV only       | Full               | None         | Static         | Only KV cache; no external memory             |
+| GPTQ [7]          | 4× quant         | Full               | None         | Static         | Bias introduced; no scope/storage/specificity |
+| KIVI              | 16× KV only      | Full               | None         | Static         | Only KV cache; no external memory             |
 | StreamingLLM [11] | Full              | Fixed window       | None         | Static         | Information loss outside window               |
 | H2O [12]          | Heavy hitter only | Partial            | None         | Static         | Dynamic but heuristic eviction                |
 | DenseFormer [10]  | Full              | All layers         | None         | Static         | $O(Ld)$ memory; no compression                |
 | Engram [20]       | Full              | Full               | O(1) lookup  | Static         | No compression or adaptation                  |
 | TTT-Linear [18]   | Full              | Full               | None         | Full model     | 100% parameter adaptation; prohibitive cost   |
-| **ADN (Ours)**    | **16×**           | **$O(Nd)$ blocks** | **External** | **Query-only** | **Unified four-dimensional framework**        |
-
+| **ADN (Ours)**    | **16×**          | **$O(Nd)$ blocks** | **External** | **Query-only** | **Unified four-dimensional framework**        |
 
 **Key Distinctions:**
 
@@ -183,7 +179,10 @@ This section specifies the **pipeline** and **interfaces** between stages. Unles
 #### 3.1.1 The Space Problem
 
 Attention computes:
-$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V
+$$
 
 The inner product $QK^T$ requires storing high-dimensional vectors. For a 70B model with 128K context:
 
@@ -199,22 +198,38 @@ This approaches model weights (140 GB) and creates concurrency collapse. Query s
 For query vector $q \in \mathbb{R}^d$ and key vector $k \in \mathbb{R}^d$, RaBitQ applies:
 
 **Step 1: Structured Random Rotation (Johnson–Lindenstrauss family) [3]**
-$$q' = \mathcal{R}(q), \quad k' = \mathcal{R}(k)$$
+
+$$
+q' = \mathcal{R}(q), \quad k' = \mathcal{R}(k)
+$$
+
 where $\mathcal{R}(\cdot)$ is implemented in practice as a **fast structured orthogonal map** (e.g., randomized Hadamard / FHT-based transforms) that never materializes a dense $d \times d$ matrix, matching common RaBitQ implementations [8, 9].
 
 **Step 2: Multi-Bit Quantization**
-$$\bar{q} = \text{quantize}_b(q'), \quad \bar{k} = \text{quantize}_b(k')$$
+
+$$
+\bar{q} = \text{quantize}_b(q'), \quad \bar{k} = \text{quantize}_b(k')
+$$
+
 producing $b$-bit unsigned integers with centering constant $c_b = (2^b - 1)/2$.
 
 **Step 3: Unbiased Inner Product Estimation**
 To estimate $q^Tk$ using the quantized representations, RaBitQ computes:
-$$\widehat{q^Tk} = \langle t_q \cdot (\bar{q} - c_b \cdot \mathbf{1}), t_k \cdot (\bar{k} - c_b \cdot \mathbf{1}) \rangle$$
+
+$$
+\widehat{q^Tk} = \langle t_q \cdot (\bar{q} - c_b \cdot \mathbf{1}), t_k \cdot (\bar{k} - c_b \cdot \mathbf{1}) \rangle
+$$
+
 where $t_q = q / \bar{q} - c_b \cdot \mathbf{1}$ and $t_k = k / \bar{k} - c_b \cdot \mathbf{1}$ are magnitude rescaling factors.
 
 *Practical Implementation:* For computational efficiency, typically only one side (e.g., queries) is quantized while keys remain in FP16, or both sides use quantization with pre-computed codebooks.
 
 **Statement (as in [8, 9]; informal presentation).** *Under the assumptions of the RaBitQ analysis, one obtains high-probability control of the form:*
-$$\Pr\left[\left|\widehat{q^Tk} - q^Tk\right| > \epsilon qk\right] \leq \delta$$
+
+$$
+\Pr\left[\left|\widehat{q^Tk} - q^Tk\right| > \epsilon qk\right] \leq \delta
+$$
+
 *with bit budgets consistent with the information-theoretic limitations established by Alon–Klartag [1]. We refer readers to [8, 9] for precise constants, sampling assumptions, and proofs.*
 
 **Query Space Savings (bits per dimension vs FP16):**
@@ -238,11 +253,10 @@ Space optimization must not degrade query precision. Under the estimator assumpt
 
 | Bits/Dim        | Compression vs FP16 | Relative Error* |
 | --------------- | ------------------- | --------------- |
-| FP16 (baseline) | 1×                  | 0%              |
-| 3-bit           | 5.3×                | 2.5%            |
-| 2-bit           | 8×                  | 5.8%            |
-| 1-bit           | 16×                 | 12.3%           |
-
+| FP16 (baseline) | 1×                 | 0%              |
+| 3-bit           | 5.3×               | 2.5%            |
+| 2-bit           | 8×                 | 5.8%            |
+| 1-bit           | 16×                | 12.3%           |
 
 *Measured as $|\widehat{q^Tk} - q^Tk| / (qk)$ on activation distributions. End-to-end accuracy with full ADN pipeline is reported in Table 4.
 
@@ -253,7 +267,10 @@ Space optimization must not degrade query precision. Under the estimator assumpt
 #### 3.2.1 The Scope Problem
 
 Standard residual connections:
-$$h_l = h_{l-1} + f_l(\text{LayerNorm}(h_{l-1}))$$
+
+$$
+h_l = h_{l-1} + f_l(\text{LayerNorm}(h_{l-1}))
+$$
 
 The query at layer $l$ can only directly access layer $l-1$. Early signals must propagate through $O(L)$ additions, causing representation burial.
 
@@ -261,7 +278,9 @@ The query at layer $l$ can only directly access layer $l-1$. Early signals must 
 
 Partition $L$ layers into $N$ blocks. Let $B_m$ be the output representation of block $m$ (e.g., the hidden state after the last layer of block $m$, typically with residual connection applied). The query at layer $l$ (which resides in block $n$) computes:
 
-$$h_l = \sum_{m=0}^{n-1} \alpha_{m \to l} \cdot B_m, \quad \alpha_{m \to l} = \frac{\exp\left(\frac{w_l^T \text{RMSNorm}(B_m)}{\sqrt{d}}\right)}{\sum_{j=0}^{n-1} \exp\left(\frac{w_l^T \text{RMSNorm}(B_j)}{\sqrt{d}}\right)}$$
+$$
+h_l = \sum_{m=0}^{n-1} \alpha_{m \to l} \cdot B_m, \quad \alpha_{m \to l} = \frac{\exp\left(\frac{w_l^T \text{RMSNorm}(B_m)}{\sqrt{d}}\right)}{\sum_{j=0}^{n-1} \exp\left(\frac{w_l^T \text{RMSNorm}(B_j)}{\sqrt{d}}\right)}
+$$
 
 The learned pseudo-query $w_l$ attends over all **completed** block summaries $B_0,\ldots,B_{n-1}$, expanding scope from 1 to $N$. **Implementation note:** the full block AttnRes path also includes the **current partial block** $b_n^{(i)}$ as an additional softmax element (two-phase inter-/intra-block computation); we omit it in the equation above for clarity (see [19]).
 
@@ -277,10 +296,9 @@ The learned pseudo-query $w_l$ attends over all **completed** block summaries $B
 
 | Architecture      | Query Scope             | Memory Cost | Effective Depth        |
 | ----------------- | ----------------------- | ----------- | ---------------------- |
-| Standard Residual | Layer $l-1$ only        | $O(d)$      | 18 layers (50% cutoff) |
+| Standard Residual | Layer$l-1$ only         | $O(d)$      | 18 layers (50% cutoff) |
 | DenseFormer [10]  | All prior layers        | $O(Ld)$     | 85 layers              |
 | **Block AttnRes** | **$N$ block summaries** | **$O(Nd)$** | **91 layers**          |
-
 
 For $L=128$, $N=8$: 16× memory savings vs. full depth-wise attention.
 
@@ -288,7 +306,9 @@ For $L=128$, $N=8$: 16× memory savings vs. full depth-wise attention.
 
 AttnRes improves query reliability by enabling gradient shortcuts:
 
-$$\text{CV}(\nabla) = \frac{\sigma(\nabla_1, \ldots, \nabla_L)}{\mu(\nabla_1, \ldots, \nabla_L)}$$
+$$
+\text{CV}(\nabla) = \frac{\sigma(\nabla_1, \ldots, \nabla_L)}{\mu(\nabla_1, \ldots, \nabla_L)}
+$$
 
 
 | Architecture | CV($\nabla$) | Interpretation                  |
@@ -296,7 +316,6 @@ $$\text{CV}(\nabla) = \frac{\sigma(\nabla_1, \ldots, \nabla_L)}{\mu(\nabla_1, \l
 | PreNorm      | 0.84         | Highly variable query gradients |
 | PostNorm     | 0.31         | Moderate variability            |
 | **AttnRes**  | **0.11**     | **Stable, reliable queries**    |
-
 
 ---
 
@@ -354,10 +373,9 @@ Fusion: h' = h + α · m  (where α = gate(h))
 
 | Method                  | Complexity           | Typical Latency | Memory Location |
 | ----------------------- | -------------------- | --------------- | --------------- |
-| Content-based retrieval | $O(\log N)$          | 5–10 ms         | Host/HBM        |
-| Neural Turing Machine   | $O(T_{\text{iter}})$ | 20–50 ms        | HBM             |
+| Content-based retrieval | $O(\log N)$          | 5–10 ms        | Host/HBM        |
+| Neural Turing Machine   | $O(T_{\text{iter}})$ | 20–50 ms       | HBM             |
 | **Engram (Ours)**       | **O(1)**             | **<1 ms**       | **Host**        |
-
 
 **2. U-Shaped Scaling Law:**
 Engram identifies the optimal allocation between neural computation and static memory:
@@ -369,7 +387,6 @@ Engram identifies the optimal allocation between neural computation and static m
 | MoE-only      | 27B active    | 0              | ~100B total    | Good        |
 | Engram-27B    | 20B           | 7M entries     | ~50B effective | **Best**    |
 | Memory-only   | 5B            | 22M entries    | ~40B effective | Diminishing |
-
 
 The U-shape emerges because:
 
@@ -388,11 +405,10 @@ The U-shape emerges because:
 
 | Property                     | Standard Transformer | +Engram                         | Improvement          |
 | ---------------------------- | -------------------- | ------------------------------- | -------------------- |
-| Effective Knowledge Capacity | ~30B params          | ~50B (params + memory)          | **1.7×**             |
+| Effective Knowledge Capacity | ~30B params          | ~50B (params + memory)          | **1.7×**            |
 | Rare Fact Retrieval          | 23%                  | 67%                             | **+44%**             |
 | Host Memory Offloadable      | No                   | Yes                             | **Flexible**         |
 | Early Layer Relief           | None                 | 40% less pattern reconstruction | **Deeper reasoning** |
-
 
 #### 3.3.3 Engram-ADN Integration: Compressed Storage
 
@@ -412,12 +428,11 @@ This **16×** **bitwidth reduction versus FP16** for stored table vectors (same 
 
 
 | Component                 | Without RaBitQ | With RaBitQ (16×) | Savings      |
-| ------------------------- | -------------- | ----------------- | ------------ |
-| KV Cache (128K ctx)       | 40 GB          | 2.5 GB            | 37.5 GB      |
-| Engram Table (7M entries) | 56 GB          | 3.6 GB            | 52.4 GB      |
-| AttnRes Block Cache       | 4 GB           | 0.25 GB           | 3.75 GB      |
-| **Total**                 | **100 GB**     | **6.35 GB**       | **93.65 GB** |
-
+| ------------------------- | -------------- | ------------------ | ------------ |
+| KV Cache (128K ctx)       | 40 GB          | 2.5 GB             | 37.5 GB      |
+| Engram Table (7M entries) | 56 GB          | 3.6 GB             | 52.4 GB      |
+| AttnRes Block Cache       | 4 GB           | 0.25 GB            | 3.75 GB      |
+| **Total**                 | **100 GB**     | **6.35 GB**        | **93.65 GB** |
 
 **Total memory footprint reduced from 100 GB to 6.35 GB**—enabling deployment on consumer hardware.
 
@@ -441,7 +456,10 @@ Standard inference uses fixed queries trained on the pretraining distribution. W
 #### 3.4.2 Polar-Coordinate Query Adaptation
 
 We reparameterize the pseudo-query $w_l \in \mathbb{R}^d$ in polar form:
-$$w_l = r_l \cdot u_l$$
+
+$$
+w_l = r_l \cdot u_l
+$$
 
 where $r_l = w_l$ is the magnitude and $u_l = w_l / w_l$ is the unit direction vector on the $(d-1)$-sphere $\mathcal{S}^{d-1}$.
 
@@ -481,17 +499,19 @@ def qttt_adapt(query_vec, model, input_ids, frozen_kv_caches, num_steps=10, lr=0
 
 | Property                   | Cartesian Update | Polar Update                               | Improvement                                                      |
 | -------------------------- | ---------------- | ------------------------------------------ | ---------------------------------------------------------------- |
-| Trainable DOF (query path) | $d$ scalars      | $d{-}1$ on $\mathcal{S}^{d-1}$ (effective) | ~2× fewer than full unconstrained $d$-D update along that vector |
+| Trainable DOF (query path) | $d$ scalars      | $d{-}1$ on $\mathcal{S}^{d-1}$ (effective) | ~2× fewer than full unconstrained$d$-D update along that vector |
 | Gradient Condition         | Ill-conditioned  | Well-conditioned (spherical)               | Faster convergence                                               |
-| Update Boundedness         | Unbounded        | Naturally bounded (on $\mathcal{S}^{d-1}$) | Stable optimization                                              |
-
+| Update Boundedness         | Unbounded        | Naturally bounded (on$\mathcal{S}^{d-1}$)  | Stable optimization                                              |
 
 *Note: While the direction vector $u \in \mathbb{R}^d$ has $d$ components, it is constrained to the unit sphere $u = 1$, giving $d-1$ effective degrees of freedom. Implementation uses Riemannian optimization (projection to tangent space + exponential map) rather than explicit angular parameterization.*
 
 #### 3.4.3 Margin Maximization
 
 Query specificity manifests as logit margin:
-$$\text{Margin} = z_{\text{target}} - \max_{i \neq \text{target}} z_i$$
+
+$$
+\text{Margin} = z_{\text{target}} - \max_{i \neq \text{target}} z_i
+$$
 
 qTTT maximizes this margin through gradient descent:
 
@@ -504,7 +524,6 @@ qTTT maximizes this margin through gradient descent:
 | 16K     | 9.8             | 6.1     | 12.0       | +5.9        |
 | 64K     | 11.2            | 4.3     | 11.1       | +6.8        |
 | 256K    | 13.8            | 2.1     | 9.6        | +7.5        |
-
 
 #### 3.4.4 Ponder Gate: Conditional Adaptation
 
@@ -559,14 +578,13 @@ Output Distribution
 **Query Cost Analysis (Per-token, relative to standard FP16 baseline = 1.0×):**
 
 
-| Stage              | Cost Factor | Notes                                         |
-| ------------------ | ----------- | --------------------------------------------- |
-| Space (RaBitQ)     | 0.25×       | SIMD popcount + compressed memory             |
-| Scope (AttnRes)    | 1.05×       | Block attention overhead                      |
-| Storage (Engram)   | 1.15×       | O(1) lookup + fusion                          |
-| Specificity (qTTT) | 1.08×       | Amortized (30% trigger × 3.6× per invocation) |
-| **Total**          | **~0.33×**  | **~3× speedup**                               |
-
+| Stage              | Cost Factor | Notes                                           |
+| ------------------ | ----------- | ----------------------------------------------- |
+| Space (RaBitQ)     | 0.25×      | SIMD popcount + compressed memory               |
+| Scope (AttnRes)    | 1.05×      | Block attention overhead                        |
+| Storage (Engram)   | 1.15×      | O(1) lookup + fusion                            |
+| Specificity (qTTT) | 1.08×      | Amortized (30% trigger × 3.6× per invocation) |
+| **Total**          | **~0.33×** | **~3× speedup**                                |
 
 *Illustrative accounting only: $0.25 \times 1.05 \times 1.15 \times 1.08 \approx 0.33$×. Factors are **not** guaranteed independent; measured end-to-end latency should be taken from profiling (Table 10). The qualitative point is that **RaBitQ-style space savings** can dominate when memory bandwidth is the bottleneck.*
 
@@ -623,11 +641,10 @@ We do **not** claim a general lower bound $\text{Margin}_T \ge \Omega(\log T)$ f
 
 | Compression      | Storage    | Compression Ratio | Accuracy  | Throughput    |
 | ---------------- | ---------- | ----------------- | --------- | ------------- |
-| FP16 (baseline)* | 40.0 GB    | 1.0×              | 3.2%      | 25 tok/s      |
-| 3-bit RaBitQ     | 7.5 GB     | 5.3×              | 79.2%     | 89 tok/s      |
-| 2-bit RaBitQ     | 5.0 GB     | 8.0×              | 80.1%     | 105 tok/s     |
-| **1-bit RaBitQ** | **2.5 GB** | **16.0×**         | **79.5%** | **115 tok/s** |
-
+| FP16 (baseline)* | 40.0 GB    | 1.0×             | 3.2%      | 25 tok/s      |
+| 3-bit RaBitQ     | 7.5 GB     | 5.3×             | 79.2%     | 89 tok/s      |
+| 2-bit RaBitQ     | 5.0 GB     | 8.0×             | 80.1%     | 105 tok/s     |
+| **1-bit RaBitQ** | **2.5 GB** | **16.0×**        | **79.5%** | **115 tok/s** |
 
 *FP16 baseline without any compression cannot effectively run 128K context due to memory limits; the reported 3.2% uses a **sliding-window approximation** with window length **8K tokens** (matching our long-context evaluation budget unless noted otherwise).
 
@@ -643,7 +660,6 @@ We do **not** claim a general lower bound $\text{Margin}_T \ge \Omega(\log T)$ f
 | 128K    | 3.2%     | 42.1%   | 64.5%    | 75.8%   | **79.5%**    |
 | 256K    | 1.5%     | 28.7%   | 51.2%    | 64.3%   | **69.0%**    |
 
-
 **Progressive Gains:**
 
 - RaBitQ: Enables 128K context (42.1%) via 16× compression
@@ -658,11 +674,10 @@ We do **not** claim a general lower bound $\text{Margin}_T \ge \Omega(\log T)$ f
 
 | Metric                             | Standard   | +Engram                | Improvement    |
 | ---------------------------------- | ---------- | ---------------------- | -------------- |
-| Effective Knowledge Capacity       | 30B params | ~50B (params + memory) | **1.7×**       |
+| Effective Knowledge Capacity       | 30B params | ~50B (params + memory) | **1.7×**      |
 | Rare Fact Retrieval (T-REx)        | 23%        | 67%                    | **+44%**       |
 | Early Layer Pattern Reconstruction | 100%       | 60%                    | **40% relief** |
 | Late Layer Effective Depth         | 18 layers  | 32 layers              | **+78%**       |
-
 
 **Table 7: U-Shaped Scaling Law Verification**
 
@@ -674,7 +689,6 @@ We do **not** claim a general lower bound $\text{Margin}_T \ge \Omega(\log T)$ f
 | 20B           | 7M             | 27B   | **52.8%**  |
 | 15B           | 12M            | 27B   | 48.3%      |
 | 10B           | 17M            | 27B   | 42.1%      |
-
 
 Optimal at ~25% memory allocation (7M entries out of 27M total capacity), confirming the U-shaped curve.
 
@@ -690,7 +704,6 @@ Optimal at ~25% memory allocation (7M entries out of 27M total capacity), confir
 | TTT-Linear      | Full model       | 48.9%     | 8.7B             |
 | **qTTT (Ours)** | **Query-only**   | **52.8%** | **~4.4B**        |
 
-
 *Effective params* counts only adapted components along the query pathway (Table 8). **Comparable MATH numbers for ~50B static models** vary widely by training data and prompting; we do not include a single controlled 50B baseline row here—see the abstract and §8.
 
 ### 5.6 Component synergy: ablation study
@@ -698,15 +711,14 @@ Optimal at ~25% memory allocation (7M entries out of 27M total capacity), confir
 **Table 9: Component Ablation (LongBench-v2)**
 
 
-| Configuration | Space | Scope | Storage | Specificity | Score     | Δ          |
+| Configuration | Space | Scope | Storage | Specificity | Score     | Δ         |
 | ------------- | ----- | ----- | ------- | ----------- | --------- | ---------- |
-| Full System   | ✓     | ✓     | ✓       | ✓           | **57.3%** | —          |
-| w/o qTTT      | ✓     | ✓     | ✓       | ✗           | 53.6%     | **-3.7%**  |
-| w/o Engram    | ✓     | ✓     | ✗       | ✓           | 50.6%     | **-6.7%**  |
-| w/o AttnRes   | ✓     | ✗     | ✓       | ✓           | 49.4%     | **-7.9%**  |
-| w/o RaBitQ    | ✗     | ✓     | ✓       | ✓           | 52.0%     | **-5.3%**  |
-| Baseline      | ✗     | ✗     | ✗       | ✗           | 40.1%     | **-17.2%** |
-
+| Full System   | ✓    | ✓    | ✓      | ✓          | **57.3%** | —         |
+| w/o qTTT      | ✓    | ✓    | ✓      | ✗          | 53.6%     | **-3.7%**  |
+| w/o Engram    | ✓    | ✓    | ✗      | ✓          | 50.6%     | **-6.7%**  |
+| w/o AttnRes   | ✓    | ✗    | ✓      | ✓          | 49.4%     | **-7.9%**  |
+| w/o RaBitQ    | ✗    | ✓    | ✓      | ✓          | 52.0%     | **-5.3%**  |
+| Baseline      | ✗    | ✗    | ✗      | ✗          | 40.1%     | **-17.2%** |
 
 **Synergy:** Full system (57.3%) exceeds several single-component ablations (Table 9), consistent with **interaction effects** between stages; we avoid claiming a literal multiplicative law of independent factors.
 
@@ -715,12 +727,11 @@ Optimal at ~25% memory allocation (7M entries out of 27M total capacity), confir
 **Table 10: Production Optimizations**
 
 
-| Optimization              | Target     | Result    | Status              |
-| ------------------------- | ---------- | --------- | ------------------- |
+| Optimization              | Target     | Result     | Status              |
+| ------------------------- | ---------- | ---------- | ------------------- |
 | RaBitQ KV Caching         | Speedup    | **10.5×** | Verified (internal) |
-| JIT Spherical Gradients   | Speedup    | **38%**   | Verified (internal) |
+| JIT Spherical Gradients   | Speedup    | **38%**    | Verified (internal) |
 | Parallel Batch Processing | Throughput | **2.22×** | Verified (internal) |
-
 
 ---
 
@@ -746,7 +757,6 @@ Framing transformer components as query optimization across four dimensions reve
 | **Scope**       | AttnRes   | Historical access     | Depth-wise attention prevents burial              |
 | **Storage**     | Engram    | External knowledge    | O(1) lookup scales beyond parametric limits       |
 | **Specificity** | qTTT      | Task adaptation       | Polar coordinates enable efficient adaptation     |
-
 
 ### 6.3 Implications for architecture design
 
@@ -783,14 +793,13 @@ We presented **Adaptive Deep Networks (ADN)** as a **query-centric** recipe for 
 ### Summary table
 
 
-| Metric                     | Reported ADN result              | Notes                                              |
-| -------------------------- | -------------------------------- | -------------------------------------------------- |
-| **KV compression**         | Up to **16×** vs FP16 in Table 4 | Per-dimension bitwidth vs end-to-end bytes: §3.1.2 |
-| **Long-context retrieval** | 79.5% @ 128K; 69.0% @ 256K       | Table 5; protocol-dependent                        |
-| **External memory gain**   | ~1.7× capacity proxy             | Table 6                                            |
-| **MATH**                   | 52.8% @ 8.7B                     | Table 8; not a universal large-model comparison    |
-| **Throughput**             | 115 tok/s                        | Table 4 setting                                    |
-
+| Metric                     | Reported ADN result              | Notes                                               |
+| -------------------------- | -------------------------------- | --------------------------------------------------- |
+| **KV compression**         | Up to**16×** vs FP16 in Table 4 | Per-dimension bitwidth vs end-to-end bytes: §3.1.2 |
+| **Long-context retrieval** | 79.5% @ 128K; 69.0% @ 256K       | Table 5; protocol-dependent                         |
+| **External memory gain**   | ~1.7× capacity proxy            | Table 6                                             |
+| **MATH**                   | 52.8% @ 8.7B                     | Table 8; not a universal large-model comparison     |
+| **Throughput**             | 115 tok/s                        | Table 4 setting                                     |
 
 We hope the **four-axis decomposition** (space / scope / storage / specificity) helps separate **orthogonal engineering levers** in future long-context systems. **Future work** includes learned bit-width schedules, dynamic block sizing, and tighter theory for adaptation dynamics.
 
