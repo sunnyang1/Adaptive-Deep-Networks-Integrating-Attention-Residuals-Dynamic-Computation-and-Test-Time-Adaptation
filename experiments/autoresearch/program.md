@@ -30,32 +30,54 @@ Disallowed edits (first phase):
 
 ## Trial Policy
 
-Each trial must follow:
+Each trial must follow the workflow below. **Small steps** and an **explicit, explainable hypothesis** are mandatory: trials that bundle unrelated edits or omit a clear causal story are out of policy.
 
-1. Propose a **single focused hypothesis**.
-2. Implement the smallest change required.
-3. Run a fixed, short evaluation command.
+### Explainable hypothesis (required)
+
+Before coding, the agent must state in the trial artifact (e.g. `trials/<id>/HYPOTHESIS.md` or the top of the agent transcript summary):
+
+1. **Hypothesis** — One sentence: what change in behavior or metric do you expect?
+2. **Mechanism** — Why should this work in ADN/MATDO terms? (which knob: AttnRes, qTTT, gating, Engram-side glue, etc.)
+3. **Falsifiable prediction** — What outcome would *refute* the hypothesis on the fixed `trial-cmd`?
+4. **Scope link** — How does the planned code edit map to (1)–(3)?
+
+If any of the above is missing, treat the trial as **failed policy compliance** even if metrics move.
+
+### Small-step edits (required)
+
+1. **One primary intent per trial** — A single coherent change (e.g. adjust one threshold family, or one scheduling rule), not a mixed refactor + feature + config sweep.
+2. **Minimal diff** — Touch the fewest files and lines needed to test the hypothesis; prefer one file or one module unless the hypothesis explicitly spans two layers.
+3. **Bounded surface** — Avoid drive-by renames, formatting-only sweeps, and “while we’re here” edits. No dependency or toolchain upgrades unless the hypothesis requires them.
+4. **No multi-hypothesis bundles** — If you need a second idea, run a **new** trial with a new hypothesis document.
+
+### Standard trial steps
+
+1. Propose a **single focused hypothesis** (sections above).
+2. Implement the **smallest** change that tests it.
+3. Run the fixed, short evaluation command.
 4. Score against the current best checkpoint/metric policy.
 5. Keep only if it improves objective and passes constraints.
+6. In logs or `HYPOTHESIS.md`, briefly note whether results **match** or **contradict** the prediction (one short paragraph).
 
 ## Objective and Constraints
 
 Default objective for v0:
 
-- Primary metric: `needle_128k_accuracy` (maximize)
+- Primary metric: `p99_latency_ms` (minimize)
 
 Default soft secondary signal:
 
 - `throughput_tokens_per_sec` (maximize)
+- `masking_efficiency` (maximize)
 
 Default hard constraints:
 
-- `p99_latency_ms<=400`
-- `peak_memory_gb<=78`
+- (optional) `p99_latency_ms<=1200`
 
 ## Experiment hygiene
 
-- One hypothesis per trial.
+- One hypothesis per trial, documented per **Explainable hypothesis** and **Small-step edits** above.
+- The runner creates `trials/<trial_id>/HYPOTHESIS.md` from a template at trial start; the agent must fill it before coding (see `agent_driver.py` prompt).
 - Log every trial in JSONL.
 - Keep a patch artifact for every trial.
 - Promote only tested improvements.
@@ -86,11 +108,10 @@ export AUTORESEARCH_AGENT_CMD_TEMPLATE='echo "Plug in your real agent CLI here: 
 
 python3 experiments/autoresearch/run_agent.py \
   --iterations 5 \
-  --trial-cmd "python3 experiments/run_experiments_unified.py --category core --quick" \
-  --primary-metric needle_128k_accuracy \
-  --primary-direction max \
-  --constraint "p99_latency_ms<=400" \
-  --constraint "peak_memory_gb<=78"
+  --trial-cmd "python3 experiments/matdo/vllm_integration/latency_profiler.py" \
+  --primary-metric p99_latency_ms \
+  --primary-direction min \
+  --constraint "p99_latency_ms<=1200"
 ```
 
 Dry-run check (plans commands without executing agent/training/scoring):
@@ -98,10 +119,14 @@ Dry-run check (plans commands without executing agent/training/scoring):
 ```bash
 python3 experiments/autoresearch/run_agent.py \
   --iterations 1 \
-  --trial-cmd "python3 experiments/run_experiments_unified.py --category core --quick" \
+  --trial-cmd "python3 experiments/matdo/vllm_integration/latency_profiler.py" \
   --dry-run
 ```
 
 If `AUTORESEARCH_AGENT_CMD_TEMPLATE` is not set, `run_agent.py` invokes
 `agent_driver.py`, which defaults to:
 `cursor-agent -p --trust --workspace <trial_worktree> "<generated_prompt>"`.
+
+Scoring: `score_trial.py` writes `failure_reasons` in each trial’s `score.json` when a run is invalid.
+For **dual objective** (throughput + P99 latency), pass `--objective dual` and ensure the trial emits
+both `throughput_tokens_per_sec` and `p99_latency_ms` (see `docs/guides/AUTORESEARCH_GUIDE.md`).

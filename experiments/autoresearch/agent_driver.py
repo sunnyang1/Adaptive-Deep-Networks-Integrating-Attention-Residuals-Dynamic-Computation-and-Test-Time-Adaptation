@@ -29,7 +29,14 @@ import os
 import shlex
 import subprocess
 import shutil
+import sys
 from pathlib import Path
+
+
+_ad = str(Path(__file__).resolve().parent)
+if _ad not in sys.path:
+    sys.path.insert(0, _ad)
+from hypothesis_stub import write_hypothesis_stub  # noqa: E402
 
 
 def _read_text(path: Path) -> str:
@@ -41,20 +48,29 @@ def _write_text(path: Path, text: str) -> None:
     path.write_text(text, encoding="utf-8")
 
 
-def _build_prompt(program_text: str, workspace: Path, trial_id: str) -> str:
+def _build_prompt(
+    program_text: str,
+    workspace: Path,
+    trial_id: str,
+    hypothesis_path: Path,
+) -> str:
+    hp = str(hypothesis_path)
     return (
         "You are running one ADN autoresearch trial.\n\n"
         f"Trial ID: {trial_id}\n"
-        f"Workspace: {workspace}\n\n"
+        f"Workspace: {workspace}\n"
+        f"Hypothesis file (required): {hp}\n\n"
         "Read and follow this program policy:\n"
         "----- PROGRAM START -----\n"
         f"{program_text}\n"
         "----- PROGRAM END -----\n\n"
         "Task:\n"
-        "1) Propose one small hypothesis.\n"
-        "2) Apply minimal code/config change in the workspace.\n"
-        "3) Keep edits scoped to allowed paths.\n"
-        "4) Do not run destructive git operations.\n"
+        f"1) Edit {hp}: replace the placeholder sections with your explainable hypothesis "
+        "(sections 1–4 per program.md) before coding.\n"
+        "2) Apply one minimal code/config change in the workspace that tests that hypothesis.\n"
+        "3) Keep edits scoped to allowed paths; small-step edits only.\n"
+        "4) After the trial run, fill section 5 in the hypothesis file (match vs contradict).\n"
+        "5) Do not run destructive git operations.\n"
     )
 
 
@@ -75,8 +91,11 @@ def main() -> int:
     if not program.exists():
         raise FileNotFoundError(f"Program file not found: {program}")
 
+    write_hypothesis_stub(trial_dir, args.trial_id)
+    hypothesis_path = trial_dir / "HYPOTHESIS.md"
+
     program_text = _read_text(program)
-    prompt_text = _build_prompt(program_text, workspace, args.trial_id)
+    prompt_text = _build_prompt(program_text, workspace, args.trial_id, hypothesis_path)
     prompt_file = trial_dir / "agent_prompt.txt"
     _write_text(prompt_file, prompt_text)
 

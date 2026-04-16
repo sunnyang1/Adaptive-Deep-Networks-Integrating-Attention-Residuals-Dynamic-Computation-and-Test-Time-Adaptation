@@ -24,9 +24,15 @@ import subprocess
 import sys
 import time
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+
+_ad = str(Path(__file__).resolve().parent)
+if _ad not in sys.path:
+    sys.path.insert(0, _ad)
+from hypothesis_stub import write_hypothesis_stub  # noqa: E402
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -102,6 +108,12 @@ def _score_trial(
     primary_metric: str,
     primary_direction: str,
     constraints: list[str],
+    objective: str,
+    dual_w_throughput: float,
+    dual_w_latency: float,
+    agent_returncode: int | None,
+    trial_returncode: int | None,
+    invalidate_on_trial_failure: bool,
 ) -> subprocess.CompletedProcess[str]:
     cmd = [
         shlex.quote(sys.executable),
@@ -110,11 +122,25 @@ def _score_trial(
         shlex.quote(str(workspace)),
         "--output-json",
         shlex.quote(str(output_json)),
+        "--objective",
+        shlex.quote(objective),
         "--primary-metric",
         shlex.quote(primary_metric),
         "--primary-direction",
         shlex.quote(primary_direction),
+        "--dual-w-throughput",
+        str(dual_w_throughput),
+        "--dual-w-latency",
+        str(dual_w_latency),
     ]
+    if agent_returncode is not None:
+        cmd.extend(["--agent-returncode", str(agent_returncode)])
+    if trial_returncode is not None:
+        cmd.extend(["--trial-returncode", str(trial_returncode)])
+    if invalidate_on_trial_failure:
+        cmd.append("--invalidate-on-trial-failure")
+    else:
+        cmd.append("--no-invalidate-on-trial-failure")
     for c in constraints:
         cmd.extend(["--constraint", shlex.quote(c)])
     return _run(" ".join(cmd), REPO_ROOT)
@@ -146,11 +172,35 @@ def main() -> int:
     )
     parser.add_argument("--trial-timeout-sec", type=int, default=1800)
     parser.add_argument("--agent-timeout-sec", type=int, default=600)
+    parser.add_argument(
+        "--objective",
+        choices=("single", "dual"),
+        default="single",
+        help="single: one primary metric; dual: w_tps*throughput - w_lat*p99 (both required).",
+    )
     parser.add_argument("--primary-metric", type=str, default="needle_128k_accuracy")
     parser.add_argument(
         "--primary-direction",
         choices=("max", "min"),
         default="max",
+    )
+    parser.add_argument(
+        "--dual-w-throughput",
+        type=float,
+        default=1.0,
+        help="Dual objective: weight on throughput_tokens_per_sec.",
+    )
+    parser.add_argument(
+        "--dual-w-latency",
+        type=float,
+        default=0.01,
+        help="Dual objective: weight on p99_latency_ms (subtracted).",
+    )
+    parser.add_argument(
+        "--invalidate-on-trial-failure",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="When trial command exits non-zero, mark score invalid (default: true).",
     )
     parser.add_argument(
         "--constraint",
@@ -205,8 +255,9 @@ def main() -> int:
         workspace = trial_dir / "workspace"
         logs_dir = trial_dir / "logs"
         logs_dir.mkdir(parents=True, exist_ok=True)
+        write_hypothesis_stub(trial_dir, trial_id)
 
-        started = datetime.utcnow().isoformat() + "Z"
+        started = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         add = _run(
             f"git worktree add -b {shlex.quote(branch)} {shlex.quote(str(workspace))} HEAD",
@@ -260,8 +311,11 @@ def main() -> int:
                     (
                         "[dry-run] planned score invocation:\n"
                         f"{sys.executable} {SCORE_SCRIPT} --run-dir {workspace} "
-                        f"--output-json {score_json} --primary-metric {args.primary_metric} "
+                        f"--output-json {score_json} --objective {args.objective} "
+                        f"--primary-metric {args.primary_metric} "
                         f"--primary-direction {args.primary_direction} "
+                        f"--dual-w-throughput {args.dual_w_throughput} "
+                        f"--dual-w-latency {args.dual_w_latency} "
                         + " ".join([f'--constraint "{c}"' for c in args.constraint])
                         + "\n"
                     ),
@@ -275,6 +329,7 @@ def main() -> int:
                             "valid": False,
                             "score": None,
                             "dry_run": True,
+                            "failure_reasons": ["dry-run: scoring not executed"],
                         },
                         indent=2,
                     ),
@@ -299,6 +354,12 @@ def main() -> int:
                     primary_metric=args.primary_metric,
                     primary_direction=args.primary_direction,
                     constraints=args.constraint,
+                    objective=args.objective,
+                    dual_w_throughput=args.dual_w_throughput,
+                    dual_w_latency=args.dual_w_latency,
+                    agent_returncode=agent_rc,
+                    trial_returncode=trial_rc,
+                    invalidate_on_trial_failure=args.invalidate_on_trial_failure,
                 )
                 score_rc = score_run.returncode
                 _write_text(logs_dir / "score.stdout.log", score_run.stdout)
@@ -323,8 +384,11 @@ def main() -> int:
                             {
                                 "trial_id": trial_id,
                                 "score": best_score,
+                                "objective": args.objective,
                                 "primary_metric": args.primary_metric,
                                 "primary_direction": args.primary_direction,
+                                "dual_w_throughput": args.dual_w_throughput,
+                                "dual_w_latency": args.dual_w_latency,
                                 "constraints": args.constraint,
                             },
                             indent=2,
@@ -332,7 +396,7 @@ def main() -> int:
                         encoding="utf-8",
                     )
         finally:
-            ended = datetime.utcnow().isoformat() + "Z"
+            ended = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             rec = TrialRecord(
                 trial_id=trial_id,
                 branch=branch,
@@ -363,8 +427,11 @@ def main() -> int:
         "iterations": args.iterations,
         "program": str(program_path),
         "trial_cmd": args.trial_cmd,
+        "objective": args.objective,
         "primary_metric": args.primary_metric,
         "primary_direction": args.primary_direction,
+        "dual_w_throughput": args.dual_w_throughput,
+        "dual_w_latency": args.dual_w_latency,
         "constraints": args.constraint,
         "best_score": best_score,
         "best_trial_id": best_trial_id,

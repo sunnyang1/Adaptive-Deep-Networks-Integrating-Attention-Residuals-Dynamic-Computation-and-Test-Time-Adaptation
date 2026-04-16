@@ -74,10 +74,42 @@ python3 experiments/run_experiments_unified.py --category paper
 python3 scripts/evaluation/run_benchmarks.py --model-size medium --benchmarks all
 ```
 
+### 4) AutoResearch loop (optional)
+
+Use the lightweight autonomous loop under `experiments/autoresearch/` to run hypothesis -> edit -> quick eval -> score cycles in isolated git worktrees.
+
+```bash
+# One-time Cursor CLI auth
+cursor-agent login
+
+# Dry-run first (plans commands, no training execution)
+python3 experiments/autoresearch/run_agent.py \
+  --iterations 1 \
+  --trial-cmd "python3 experiments/matdo/vllm_integration/latency_profiler.py" \
+  --dry-run \
+  --skip-clean-check
+
+# Real run
+python3 experiments/autoresearch/run_agent.py \
+  --iterations 5 \
+  --trial-cmd "python3 experiments/matdo/vllm_integration/latency_profiler.py" \
+  --primary-metric p99_latency_ms \
+  --primary-direction min \
+  --constraint "p99_latency_ms<=1200"
+
+# Dual objective (requires trial outputs with both throughput and P99 latency; see guide)
+# python3 experiments/autoresearch/run_agent.py ... --objective dual --dual-w-throughput 1 --dual-w-latency 0.01
+```
+
+Each trial’s `score.json` includes `failure_reasons` when scoring fails (missing metrics, constraints, or non-zero agent/trial exit codes).
+
+By default, `agent_driver.py` uses `cursor-agent` when `AUTORESEARCH_AGENT_CMD_TEMPLATE` is unset.
+
 ## Recommended Guides
 
 - [A100 80G ADN Complete Guide](docs/A100_80G_ADN_COMPLETE_GUIDE.md)
 - [MATDO-E A100 Beginner Guide](docs/guides/MATDO_E_A100_BEGINNER_GUIDE.md)
+- [AutoResearch Guide](docs/guides/AUTORESEARCH_GUIDE.md)
 - [Documentation Index](docs/README.md)
 
 ## Project Layout

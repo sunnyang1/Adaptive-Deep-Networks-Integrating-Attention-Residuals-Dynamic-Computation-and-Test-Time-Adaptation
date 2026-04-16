@@ -261,6 +261,10 @@ results/
 benchmark_results/
 ablation_results/
 
+# AutoResearch local runs (generated per machine; not source)
+experiments/autoresearch/trials/
+experiments/autoresearch/best/
+
 # Large output files
 *.json.gz
 *.csv.gz
