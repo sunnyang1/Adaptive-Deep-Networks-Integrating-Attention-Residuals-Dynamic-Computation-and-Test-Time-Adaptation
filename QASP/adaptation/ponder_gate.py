@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import torch
 
 
-@dataclass(slots=True)
+@dataclass
 class PonderGate:
     """Gate adaptation using entropy and confidence heuristics."""
 

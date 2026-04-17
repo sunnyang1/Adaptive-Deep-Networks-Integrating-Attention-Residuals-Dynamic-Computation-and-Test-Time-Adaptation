@@ -6,7 +6,7 @@ from QASP.configs.model import ModelConfig
 from QASP.configs.qasp import QASPConfig
 
 
-@dataclass(slots=True)
+@dataclass
 class ExperimentConfig:
     """Top-level experiment configuration for lightweight QASP runs."""
 
