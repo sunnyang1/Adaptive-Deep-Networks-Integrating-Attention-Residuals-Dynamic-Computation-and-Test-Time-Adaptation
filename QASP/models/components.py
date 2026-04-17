@@ -10,7 +10,7 @@ import torch.nn.functional as F
 from torch import Tensor
 
 
-@dataclass(slots=True)
+@dataclass
 class QASPTransformerConfig:
     """Configuration for the lightweight QASP transformer stack."""
 

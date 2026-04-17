@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass
 class QASPConfig:
     """Hyperparameters controlling matrix-space adaptation."""
 

@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 
 
-@dataclass(slots=True)
+@dataclass
 class ModelConfig:
     """Basic model metadata needed by adaptation utilities."""
 
