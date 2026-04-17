@@ -5,11 +5,16 @@ Provides incremental KV cache update to avoid O(T×L) reconstruction.
 Simplified implementation for stability.
 """
 
+from __future__ import annotations
+
 import torch
-from typing import List, Optional, Tuple
+from typing import TYPE_CHECKING, List, Optional, Tuple
 from dataclasses import dataclass
 
 from src.qttt.adaptation import KVCache
+
+if TYPE_CHECKING:
+    from src.models.adaptive_transformer import AdaptiveTransformer
 
 
 @dataclass
@@ -52,7 +57,7 @@ class IncrementalKVCacheManager:
     def initialize(
         self,
         input_ids: torch.Tensor,
-        model: 'AdaptiveTransformer'
+        model: AdaptiveTransformer
     ) -> List[KVCache]:
         """
         Initialize KV cache from prompt (full forward pass).
@@ -84,7 +89,7 @@ class IncrementalKVCacheManager:
     def update(
         self,
         new_token_id: torch.Tensor,
-        model: 'AdaptiveTransformer',
+        model: AdaptiveTransformer,
         use_attnres: bool = True
     ) -> List[KVCache]:
         """
@@ -133,7 +138,7 @@ class IncrementalKVCacheManager:
 
 
 def create_incremental_manager(
-    model: 'AdaptiveTransformer'
+    model: AdaptiveTransformer
 ) -> IncrementalKVCacheManager:
     """
     Factory function to create incremental cache manager.

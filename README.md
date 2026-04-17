@@ -13,7 +13,23 @@ Adaptive Deep Networks is a research codebase for training and validating archit
 
 The repository includes training scripts, benchmark/evaluation tooling, and real-model validation workflows used to reproduce paper-facing results.
 
-## Quick Start
+## Quick Start (QASP)
+
+`QASP/` is the primary path for the paper-aligned QASP workflow (generation, inference, experiments):
+
+```bash
+python3 QASP/scripts/run_generation.py
+python3 QASP/scripts/run_inference.py
+python3 QASP/scripts/run_experiments.py --quick
+```
+
+Artifacts from quick experiments are written to `results/qasp/quick/` by default.
+
+## Legacy ADN (Deprecated)
+
+The remaining README sections describe the legacy ADN workflow for compatibility and historical reference.
+
+## Legacy ADN Quick Start
 
 ### 1) Install
 
