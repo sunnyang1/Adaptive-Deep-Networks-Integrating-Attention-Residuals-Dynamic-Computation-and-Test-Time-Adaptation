@@ -90,6 +90,8 @@ jobs:
         pip install torch --index-url https://download.pytorch.org/whl/cpu
         pip install pytest pytest-cov hypothesis
         pip install numpy scipy
+        # Match pyproject/runtime imports: Engram → CompressedTokenizer needs HuggingFace tokenizers.
+        pip install "transformers>=4.35.0" typing-extensions
     
     - name: Run unit tests
       run: |
