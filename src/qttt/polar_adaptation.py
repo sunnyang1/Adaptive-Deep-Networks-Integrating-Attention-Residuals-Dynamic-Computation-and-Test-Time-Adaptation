@@ -10,13 +10,18 @@ Key innovations:
 4. Integration with TurboQuant for 8× cost reduction
 """
 
+from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Optional, Tuple, List, Dict
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 
 from .adaptation import KVCache, compute_attention_with_query
+
+if TYPE_CHECKING:
+    from src.models.adaptive_transformer import AdaptiveTransformer
 
 
 @dataclass
@@ -393,7 +398,7 @@ class PolarQTTT(nn.Module):
         distractor_positions: Optional[torch.Tensor] = None,
         projection_head: Optional[nn.Module] = None,
         target_token_ids: Optional[torch.Tensor] = None,
-        model: Optional['AdaptiveTransformer'] = None,
+        model: Optional[AdaptiveTransformer] = None,
         input_ids: Optional[torch.Tensor] = None,
         kv_caches: Optional[List['KVCache']] = None,
     ) -> Tuple[torch.Tensor, List[float]]:
