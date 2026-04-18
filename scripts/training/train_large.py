@@ -41,15 +41,15 @@ from src.models.configs import AttnResLargeConfig, ModelConfig
 
 class LargeModelTrainer(BaseTrainer):
     """Trainer for Large model (23B params)."""
-    
+
     def _get_model_config(self) -> ModelConfig:
         """Return Large model configuration."""
         return AttnResLargeConfig()
-    
+
     def get_model_size_name(self) -> str:
         """Return model size name."""
         return "large"
-    
+
     def print_model_info(self):
         """Print Large model specific information."""
         config = self.config
@@ -71,31 +71,31 @@ class LargeModelTrainer(BaseTrainer):
         print(f"  Recommended: 8x H20 96GB or 16x A100 80GB")
         print(f"  Training time: ~3-7 days on 8x A100 for 3 epochs")
         print(f"{'='*70}\n")
-    
+
     def validate_hardware(self):
         """Validate that hardware is sufficient for large model."""
         import torch
-        
+
         if not torch.cuda.is_available():
             print("WARNING: Large model requires GPU. CPU training is not practical.")
             print("Consider using the Small or Medium model instead.")
             response = input("Continue anyway? (y/N): ")
-            if response.lower() != 'y':
+            if response.lower() != "y":
                 sys.exit(1)
-        
+
         num_gpus = torch.cuda.device_count()
         if num_gpus < 4:
             print(f"WARNING: Large model training requires at least 4 GPUs (found {num_gpus}).")
             print("Consider using DeepSpeed ZeRO-3 with CPU offloading.")
             response = input("Continue anyway? (y/N): ")
-            if response.lower() != 'y':
+            if response.lower() != "y":
                 sys.exit(1)
 
 
 def main():
     parser = get_common_parser()
-    parser.description = 'Train Large Model (AttnRes-L, ~23B params)'
-    
+    parser.description = "Train Large Model (AttnRes-L, ~23B params)"
+
     # Large model specific defaults
     parser.set_defaults(
         epochs=3,
@@ -106,31 +106,40 @@ def main():
         val_samples=10000,
         grad_accum=4,  # Gradient accumulation for effective larger batch
     )
-    
+
     # Add distributed training options (required for large model)
-    parser.add_argument('--distributed', action='store_true',
-                       help='Enable distributed training (required for large model)')
-    parser.add_argument('--local_rank', type=int, default=-1,
-                       help='Local rank for distributed training')
-    parser.add_argument('--deepspeed', type=str, default=None,
-                       help='DeepSpeed config file path (highly recommended)')
-    parser.add_argument('--skip-hardware-check', action='store_true',
-                       help='Skip hardware validation')
-    
+    parser.add_argument(
+        "--distributed",
+        action="store_true",
+        help="Enable distributed training (required for large model)",
+    )
+    parser.add_argument(
+        "--local_rank", type=int, default=-1, help="Local rank for distributed training"
+    )
+    parser.add_argument(
+        "--deepspeed",
+        type=str,
+        default=None,
+        help="DeepSpeed config file path (highly recommended)",
+    )
+    parser.add_argument(
+        "--skip-hardware-check", action="store_true", help="Skip hardware validation"
+    )
+
     args = parser.parse_args()
-    
+
     # Create trainer
     trainer = LargeModelTrainer(args)
     trainer.print_model_info()
-    
+
     # Validate hardware
     if not args.skip_hardware_check:
         trainer.validate_hardware()
-    
+
     # Setup and train
     trainer.setup()
     trainer.train()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

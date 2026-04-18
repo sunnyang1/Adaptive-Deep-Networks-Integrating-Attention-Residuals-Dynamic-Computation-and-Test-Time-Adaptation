@@ -46,9 +46,15 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Upgrade ADN checkpoint to Engram-enabled checkpoint.")
     p.add_argument("--in", dest="in_path", required=True, help="Input checkpoint path")
     p.add_argument("--out", dest="out_path", required=True, help="Output checkpoint path")
-    p.add_argument("--size", choices=["small", "medium", "large"], default="medium", help="Model size config")
+    p.add_argument(
+        "--size", choices=["small", "medium", "large"], default="medium", help="Model size config"
+    )
     p.add_argument("--device", default="cpu", help="cpu|cuda (loading/saving can be done on cpu)")
-    p.add_argument("--strict-base", action="store_true", help="If set, require base weights to match strictly (excluding Engram)")
+    p.add_argument(
+        "--strict-base",
+        action="store_true",
+        help="If set, require base weights to match strictly (excluding Engram)",
+    )
     args = p.parse_args()
 
     in_path = Path(args.in_path)
@@ -59,7 +65,11 @@ def main() -> None:
     base_sd = _extract_state_dict(ckpt)
 
     base_cfg = get_config(args.size)
-    engram_cfg = {"small": EngramSmallConfig, "medium": EngramMediumConfig, "large": EngramLargeConfig}[args.size]
+    engram_cfg = {
+        "small": EngramSmallConfig,
+        "medium": EngramMediumConfig,
+        "large": EngramLargeConfig,
+    }[args.size]
     cfg = add_engram_to_config(base_cfg, engram_cfg)
 
     model = AdaptiveTransformer(cfg).to(args.device)
@@ -75,7 +85,9 @@ def main() -> None:
     if args.strict_base:
         non_engram_missing = [k for k in missing if "engram" not in k]
         if non_engram_missing:
-            raise RuntimeError(f"Missing non-Engram keys under --strict-base: {non_engram_missing[:10]}")
+            raise RuntimeError(
+                f"Missing non-Engram keys under --strict-base: {non_engram_missing[:10]}"
+            )
 
     # Save new checkpoint as raw state_dict for compatibility with loader
     torch.save(model.state_dict(), out_path)
@@ -90,12 +102,22 @@ def main() -> None:
                 "use_engram": True,
                 "engram_config": {
                     "enabled": cfg.engram_config.enabled if cfg.engram_config else None,
-                    "engram_vocab_size": cfg.engram_config.engram_vocab_size if cfg.engram_config else None,
-                    "max_ngram_size": cfg.engram_config.max_ngram_size if cfg.engram_config else None,
-                    "n_embed_per_ngram": cfg.engram_config.n_embed_per_ngram if cfg.engram_config else None,
-                    "n_head_per_ngram": cfg.engram_config.n_head_per_ngram if cfg.engram_config else None,
+                    "engram_vocab_size": (
+                        cfg.engram_config.engram_vocab_size if cfg.engram_config else None
+                    ),
+                    "max_ngram_size": (
+                        cfg.engram_config.max_ngram_size if cfg.engram_config else None
+                    ),
+                    "n_embed_per_ngram": (
+                        cfg.engram_config.n_embed_per_ngram if cfg.engram_config else None
+                    ),
+                    "n_head_per_ngram": (
+                        cfg.engram_config.n_head_per_ngram if cfg.engram_config else None
+                    ),
                     "layer_ids": cfg.engram_config.layer_ids if cfg.engram_config else None,
-                    "tokenizer_name_or_path": cfg.engram_config.tokenizer_name_or_path if cfg.engram_config else None,
+                    "tokenizer_name_or_path": (
+                        cfg.engram_config.tokenizer_name_or_path if cfg.engram_config else None
+                    ),
                 },
             },
             indent=2,
@@ -107,4 +129,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

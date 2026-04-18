@@ -36,17 +36,27 @@ PAPER_TABLE5 = {
 }
 
 
-def run_one(model, device: str, lengths: list[int], num_samples: int, generate_kwargs: dict[str, Any]) -> dict[str, Any]:
+def run_one(
+    model, device: str, lengths: list[int], num_samples: int, generate_kwargs: dict[str, Any]
+) -> dict[str, Any]:
     v = NeedleHaystackValidator(model, device=device, generate_kwargs=generate_kwargs)
     return v.run_test(context_lengths=lengths, num_samples=num_samples)
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Benchmark Table 5 component sweep (Needle-in-Haystack).")
+    p = argparse.ArgumentParser(
+        description="Benchmark Table 5 component sweep (Needle-in-Haystack)."
+    )
     p.add_argument("--checkpoint", type=str, default="", help="Checkpoint path (recommended)")
     p.add_argument("--size", type=str, default="medium", choices=["small", "medium", "large"])
     p.add_argument("--device", type=str, default="cuda")
-    p.add_argument("--lengths", type=int, nargs="+", default=[4096, 32768, 131072], help="Context lengths to test")
+    p.add_argument(
+        "--lengths",
+        type=int,
+        nargs="+",
+        default=[4096, 32768, 131072],
+        help="Context lengths to test",
+    )
     p.add_argument("--num-samples", type=int, default=10)
     p.add_argument("--rabitq-bits", type=int, default=1, choices=[1, 2, 3])
     p.add_argument("--qttt-steps", type=int, default=10)
@@ -61,17 +71,32 @@ def main() -> None:
 
     # Define sweep configs (Table 5 style)
     configs: list[tuple[str, dict[str, Any]]] = [
-        ("baseline", {"use_attnres": False, "use_engram": False, "use_qttt": False, "use_rabitq": False}),
-        ("+rabitq", {"use_attnres": False, "use_engram": False, "use_qttt": False, "use_rabitq": True}),
-        ("+attnres", {"use_attnres": True, "use_engram": False, "use_qttt": False, "use_rabitq": True}),
-        ("+engram", {"use_attnres": True, "use_engram": True, "use_qttt": False, "use_rabitq": True}),
-        ("full(+qttt)", {
-            "use_attnres": True,
-            "use_engram": True,
-            "use_qttt": True,
-            "use_rabitq": True,
-            "qttt_config": {"num_steps": int(args.qttt_steps)},
-        }),
+        (
+            "baseline",
+            {"use_attnres": False, "use_engram": False, "use_qttt": False, "use_rabitq": False},
+        ),
+        (
+            "+rabitq",
+            {"use_attnres": False, "use_engram": False, "use_qttt": False, "use_rabitq": True},
+        ),
+        (
+            "+attnres",
+            {"use_attnres": True, "use_engram": False, "use_qttt": False, "use_rabitq": True},
+        ),
+        (
+            "+engram",
+            {"use_attnres": True, "use_engram": True, "use_qttt": False, "use_rabitq": True},
+        ),
+        (
+            "full(+qttt)",
+            {
+                "use_attnres": True,
+                "use_engram": True,
+                "use_qttt": True,
+                "use_rabitq": True,
+                "qttt_config": {"num_steps": int(args.qttt_steps)},
+            },
+        ),
     ]
 
     # Prepare RaBitQ caches once if any config needs it
@@ -91,7 +116,10 @@ def main() -> None:
         },
         "paper_table5_reference": PAPER_TABLE5,
         "runs": {},
-        "engram": {"status": "RUNTIME_TOGGLE", "reason": "Engram enabled/disabled via use_engram flag."},
+        "engram": {
+            "status": "RUNTIME_TOGGLE",
+            "reason": "Engram enabled/disabled via use_engram flag.",
+        },
     }
 
     for name, gen_kwargs in configs:
@@ -109,4 +137,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -15,6 +15,7 @@ from dataclasses import dataclass
 @dataclass
 class qTTTConfig:
     """Configuration for qTTT adaptation."""
+
     num_steps: int = 16
     learning_rate: float = 0.005
     span_length: int = 128
@@ -26,23 +27,23 @@ class qTTTConfig:
 class KVCache:
     """
     Frozen Key-Value Cache from initial prefill.
-    
+
     Critical for efficiency: keys and values are computed once
     and reused across all qTTT steps.
     """
-    
+
     def __init__(
         self,
         keys: torch.Tensor,  # [B, num_heads, T, head_dim]
-        values: torch.Tensor  # [B, num_heads, T, head_dim]
+        values: torch.Tensor,  # [B, num_heads, T, head_dim]
     ):
         self.keys = keys.detach().clone()
         self.values = values.detach().clone()
         self.is_frozen = True
-    
+
     def __len__(self):
         return self.keys.size(2)  # T
-    
+
     def get_kv(self) -> Tuple[torch.Tensor, torch.Tensor]:
         """Return keys and values (detached, no grad)."""
         return self.keys, self.values
@@ -51,34 +52,34 @@ class KVCache:
 def compute_attention_with_query(
     query: torch.Tensor,  # [B, num_heads, k, head_dim]
     kv_cache: KVCache,
-    mask: Optional[torch.Tensor] = None
+    mask: Optional[torch.Tensor] = None,
 ) -> torch.Tensor:
     """
     Compute attention with query against frozen KV cache.
-    
+
     Args:
         query: Query tensor [B, num_heads, k, head_dim]
         kv_cache: Frozen key-value cache
         mask: Optional attention mask
-    
+
     Returns:
         Attention output [B, num_heads, k, head_dim]
     """
     keys, values = kv_cache.get_kv()
-    
+
     # Scaled dot-product attention
     # Q @ K^T: [B, H, k, d] @ [B, H, T, d]^T -> [B, H, k, T]
     scores = torch.matmul(query, keys.transpose(-2, -1))
     scores = scores / (query.size(-1) ** 0.5)
-    
+
     if mask is not None:
-        scores = scores.masked_fill(mask == 0, float('-inf'))
-    
+        scores = scores.masked_fill(mask == 0, float("-inf"))
+
     attn_weights = F.softmax(scores, dim=-1)  # [B, H, k, T]
-    
+
     # Attn @ V: [B, H, k, T] @ [B, H, T, d] -> [B, H, k, d]
     output = torch.matmul(attn_weights, values)
-    
+
     return output
 
 
@@ -90,7 +91,7 @@ def qttt_adapt(
     num_steps: int = 16,
     learning_rate: float = 0.005,
     projection_head: Optional[nn.Module] = None,
-    target_token_ids: Optional[torch.Tensor] = None
+    target_token_ids: Optional[torch.Tensor] = None,
 ) -> Tuple[torch.Tensor, List[float]]:
     """
     Query-only Test-Time Training adaptation.
@@ -119,13 +120,13 @@ def qttt_adapt(
     """
     # Clone and enable gradients
     query = initial_query.clone().detach().requires_grad_(True)
-    
+
     loss_history = []
-    
+
     for step in range(num_steps):
         # Forward pass with current adapted query
         attn_output = compute_attention_with_query(query, kv_cache)
-        
+
         # Compute margin maximization loss if projection available
         if projection_head is not None and target_token_ids is not None:
             # Project to logits: [B, H, k, V]
@@ -137,8 +138,12 @@ def qttt_adapt(
             target_logits = logits[
                 torch.arange(logits.size(0), device=logits.device).view(-1, 1, 1),  # [B, 1, 1]
                 torch.arange(logits.size(1), device=logits.device).view(1, -1, 1),  # [1, H, 1]
-                seq_positions.view(1, 1, -1).expand(logits.size(0), logits.size(1), -1),  # [B, H, k]
-                target_token_ids.view(1, 1, -1).expand(logits.size(0), logits.size(1), -1)  # [B, H, k]
+                seq_positions.view(1, 1, -1).expand(
+                    logits.size(0), logits.size(1), -1
+                ),  # [B, H, k]
+                target_token_ids.view(1, 1, -1).expand(
+                    logits.size(0), logits.size(1), -1
+                ),  # [B, H, k]
             ]
 
             if distractor_positions is not None:
@@ -158,55 +163,50 @@ def qttt_adapt(
         else:
             # Simple reconstruction-like loss if no targets
             loss = attn_output.pow(2).mean()
-        
+
         loss_history.append(loss.item())
-        
+
         # Backward and update (only query!)
         grad = torch.autograd.grad(loss, query)[0]
-        
+
         with torch.no_grad():
             query = query - learning_rate * grad
-        
+
         # Re-enable gradients for next step
         query = query.detach().requires_grad_(True)
-    
+
     return query.detach(), loss_history
 
 
 class QueryOnlyTTT(nn.Module):
     """
     Query-only Test-Time Training module.
-    
+
     Provides a clean interface for qTTT with support for:
     - Pseudo-query adaptation (per-layer)
     - Query projection adaptation (per-token)
     - Mixed adaptation (both)
     """
-    
-    def __init__(
-        self,
-        config: qTTTConfig,
-        hidden_dim: int,
-        num_heads: int = 32
-    ):
+
+    def __init__(self, config: qTTTConfig, hidden_dim: int, num_heads: int = 32):
         super().__init__()
         self.config = config
         self.hidden_dim = hidden_dim
         self.num_heads = num_heads
         self.head_dim = hidden_dim // num_heads
-        
+
         # Optional projection head for margin maximization
         if config.target_type == "query_projection":
             self.query_projection = nn.Linear(hidden_dim, hidden_dim)
         else:
             self.query_projection = None
-    
+
     def adapt_pseudo_query(
         self,
         pseudo_query: torch.Tensor,  # [D]
         kv_cache: KVCache,
         seq_positions: torch.Tensor,
-        distractor_positions: Optional[torch.Tensor] = None
+        distractor_positions: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, List[float]]:
         """
         Adapt a pseudo-query vector.
@@ -233,7 +233,7 @@ class QueryOnlyTTT(nn.Module):
             seq_positions,
             distractor_positions,
             num_steps=self.config.num_steps,
-            learning_rate=self.config.learning_rate
+            learning_rate=self.config.learning_rate,
         )
 
         # Reshape back to [D]
@@ -245,7 +245,7 @@ class QueryOnlyTTT(nn.Module):
         queries: torch.Tensor,  # [B, T, D]
         kv_cache: KVCache,
         seq_positions: Optional[torch.Tensor] = None,
-        distractor_positions: Optional[torch.Tensor] = None
+        distractor_positions: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, List[float]]:
         """
         Adapt query projection matrix.
@@ -274,7 +274,7 @@ class QueryOnlyTTT(nn.Module):
             distractor_positions,
             num_steps=self.config.num_steps,
             learning_rate=self.config.learning_rate,
-            projection_head=self.query_projection if self.query_projection else None
+            projection_head=self.query_projection if self.query_projection else None,
         )
 
         # Reshape back: [B, H, T, d] -> [B, T, D]
@@ -282,18 +282,13 @@ class QueryOnlyTTT(nn.Module):
         adapted = adapted.view(B, T, D)
 
         return adapted, losses
-    
-    def compute_flops(
-        self,
-        batch_size: int,
-        seq_len: int,
-        span_len: int
-    ) -> dict:
+
+    def compute_flops(self, batch_size: int, seq_len: int, span_len: int) -> dict:
         """
         Compute FLOPs for qTTT adaptation.
-        
+
         For comparison with thinking token generation.
-        
+
         Returns:
             Dictionary with FLOP counts per component
         """
@@ -302,52 +297,48 @@ class QueryOnlyTTT(nn.Module):
         k = span_len
         T = seq_len
         N = self.config.num_steps
-        
+
         # Per-step FLOPs
         # Query projection: B * H * k * d^2
         query_proj_flops = batch_size * H * k * d * d
-        
+
         # Attention: B * H * k * T * d
         attn_flops = batch_size * H * k * T * d
-        
+
         # Backward (roughly 2x forward for query-only)
         backward_flops = 2 * (query_proj_flops + attn_flops)
-        
+
         step_flops = query_proj_flops + attn_flops + backward_flops
         total_flops = N * step_flops
-        
+
         return {
-            'per_step': step_flops,
-            'total': total_flops,
-            'num_steps': N,
-            'query_projection': query_proj_flops * N,
-            'attention': attn_flops * N,
-            'backward': backward_flops * N
+            "per_step": step_flops,
+            "total": total_flops,
+            "num_steps": N,
+            "query_projection": query_proj_flops * N,
+            "attention": attn_flops * N,
+            "backward": backward_flops * N,
         }
 
 
 class AdaptiveInference:
     """
     High-level interface for adaptive inference with qTTT.
-    
+
     Combines gating decision with qTTT execution.
     """
-    
-    def __init__(
-        self,
-        qttt_module: QueryOnlyTTT,
-        gating_controller: Optional[nn.Module] = None
-    ):
+
+    def __init__(self, qttt_module: QueryOnlyTTT, gating_controller: Optional[nn.Module] = None):
         self.qttt = qttt_module
         self.gating = gating_controller
-    
+
     def forward(
         self,
         hidden_states: torch.Tensor,
         kv_cache: KVCache,
         reconstruction_loss: Optional[float] = None,
         seq_positions: Optional[torch.Tensor] = None,
-        distractor_positions: Optional[torch.Tensor] = None
+        distractor_positions: Optional[torch.Tensor] = None,
     ) -> Tuple[torch.Tensor, dict]:
         """
         Conditional forward pass with optional qTTT.
@@ -363,17 +354,11 @@ class AdaptiveInference:
             output_states: Possibly adapted hidden states
             metadata: Information about adaptation
         """
-        metadata = {
-            'adapted': False,
-            'num_steps': 0,
-            'loss_history': []
-        }
+        metadata = {"adapted": False, "num_steps": 0, "loss_history": []}
 
         # Gating decision
         if self.gating is not None and reconstruction_loss is not None:
-            should_adapt, num_steps, threshold = self.gating.decide(
-                reconstruction_loss
-            )
+            should_adapt, num_steps, threshold = self.gating.decide(reconstruction_loss)
         else:
             should_adapt = True
             num_steps = self.qttt.config.num_steps
@@ -384,13 +369,13 @@ class AdaptiveInference:
                 hidden_states,
                 kv_cache,
                 seq_positions=seq_positions,
-                distractor_positions=distractor_positions
+                distractor_positions=distractor_positions,
             )
-            
-            metadata['adapted'] = True
-            metadata['num_steps'] = num_steps
-            metadata['loss_history'] = losses
-            
+
+            metadata["adapted"] = True
+            metadata["num_steps"] = num_steps
+            metadata["loss_history"] = losses
+
             return adapted_states, metadata
-        
+
         return hidden_states, metadata

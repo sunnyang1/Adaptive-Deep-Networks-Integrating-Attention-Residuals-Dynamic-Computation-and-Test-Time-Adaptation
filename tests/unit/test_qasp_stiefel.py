@@ -32,4 +32,3 @@ def test_project_to_stiefel_raises_when_rows_less_than_cols() -> None:
     invalid = torch.randn(4, 6)
     with pytest.raises(ValueError, match="rows >= cols"):
         project_to_stiefel(invalid)
-

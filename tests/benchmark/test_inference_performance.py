@@ -20,31 +20,38 @@ def benchmark_ponder_gate_savings():
     print("=" * 70)
     print("BENCHMARK: Ponder Gate Compute Savings")
     print("=" * 70)
-    
-    config = get_config('small')
+
+    config = get_config("small")
     model = AdaptiveTransformer(config)
     model.eval()
-    
+
     input_ids = torch.randint(0, 32000, (1, 50))
     max_new_tokens = 10
-    
+
     print("\n1. Baseline (no qTTT)...")
     start = time.time()
     model.generate(input_ids, max_new_tokens=max_new_tokens, use_qttt=False)
     time_baseline = time.time() - start
     print(f"   Time: {time_baseline:.3f}s")
-    
+
     print("\n2. Unconditional qTTT...")
     start = time.time()
-    model.generate(input_ids, max_new_tokens=max_new_tokens, use_qttt=True, qttt_config={'num_steps': 2})
+    model.generate(
+        input_ids, max_new_tokens=max_new_tokens, use_qttt=True, qttt_config={"num_steps": 2}
+    )
     time_uncond = time.time() - start
     print(f"   Time: {time_uncond:.3f}s")
-    
-    for mode in ['strict', 'balanced', 'lenient']:
+
+    for mode in ["strict", "balanced", "lenient"]:
         print(f"\n3. Adaptive qTTT ({mode} mode)...")
         start = time.time()
-        model.generate(input_ids, max_new_tokens=max_new_tokens, use_qttt='adaptive', 
-                      ponder_gate_mode=mode, qttt_config={'num_steps': 2})
+        model.generate(
+            input_ids,
+            max_new_tokens=max_new_tokens,
+            use_qttt="adaptive",
+            ponder_gate_mode=mode,
+            qttt_config={"num_steps": 2},
+        )
         time_adaptive = time.time() - start
         savings = (time_uncond - time_adaptive) / time_uncond * 100
         print(f"   Time: {time_adaptive:.3f}s (saved ~{savings:.0f}%)")
@@ -55,12 +62,12 @@ def benchmark_adaptive_config_scaling():
     print("\n" + "=" * 70)
     print("BENCHMARK: Adaptive Config Sequence Length Scaling")
     print("=" * 70)
-    
+
     from src.qttt.adaptive_config import create_adaptive_config
-    
-    cfg = create_adaptive_config('balanced')
+
+    cfg = create_adaptive_config("balanced")
     seq_lengths = [32, 128, 256, 512, 1024, 2048]
-    
+
     print("\nSequence Length -> qTTT Steps:")
     for seq_len in seq_lengths:
         steps = cfg.get_steps_for_seq_len(seq_len)

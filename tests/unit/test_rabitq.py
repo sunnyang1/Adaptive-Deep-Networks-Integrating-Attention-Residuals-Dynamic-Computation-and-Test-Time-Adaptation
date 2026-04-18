@@ -109,6 +109,7 @@ class TestBitPacking:
         ex_bits = 3
         ex_code = torch.randint(0, 1 << ex_bits, (dim,), dtype=torch.int16)
         from src.rabitq.packing import pack_ex_code_generic, unpack_ex_code_generic
+
         packed = pack_ex_code_generic(ex_code.unsqueeze(0), ex_bits)
         unpacked = unpack_ex_code_generic(packed, dim, ex_bits).squeeze(0)
         assert torch.equal(ex_code, unpacked)
@@ -179,13 +180,13 @@ class TestRaBitQAPI:
         stats = rq.memory_stats(seq_len=128, num_layers=1, batch_size=2, num_heads=4)
         # Note: true 1-bit compression with per-vector reconstruction metadata
         # achieves ~3-8x per-tensor vs fp16 depending on head_dim and overhead.
-        assert stats['compression_ratio'] > 3.0
+        assert stats["compression_ratio"] > 3.0
 
     def test_memory_stats_monotonic(self):
         rq = create_k2(head_dim=64)
         stats1 = rq.memory_stats(seq_len=128, num_layers=1, num_heads=8)
         stats2 = rq.memory_stats(seq_len=256, num_layers=1, num_heads=8)
-        assert stats2['compressed_mb'] > stats1['compressed_mb']
+        assert stats2["compressed_mb"] > stats1["compressed_mb"]
 
     def test_all_recommended_configs(self):
         for name, factory in RECOMMENDED.items():
@@ -201,9 +202,9 @@ class TestEstimatorAligned:
         data = torch.randn(dim)
         query = torch.randn(dim)
         centroid = torch.zeros(dim)
-        config = RabitqConfig(total_bits=1, metric_type='ip')
+        config = RabitqConfig(total_bits=1, metric_type="ip")
         qv = quantize_vector(data, centroid, config)
-        q = make_full_single_query(query, centroid, metric_type='ip', total_bits=1)
+        q = make_full_single_query(query, centroid, metric_type="ip", total_bits=1)
         bin_code = unpack_binary_code(qv.binary_code_packed, qv.dim)
         ip = float((q.rotated_query * bin_code.float()).sum().item())
         est_neg_ip, _ = full_est_dist(ip, qv.f_add, qv.f_rescale, q)
@@ -217,9 +218,9 @@ class TestEstimatorAligned:
         data = torch.randn(dim)
         query = torch.randn(dim)
         centroid = torch.zeros(dim)
-        config = RabitqConfig(total_bits=1, metric_type='l2')
+        config = RabitqConfig(total_bits=1, metric_type="l2")
         qv = quantize_vector(data, centroid, config)
-        q = make_full_single_query(query, centroid, metric_type='l2', total_bits=1)
+        q = make_full_single_query(query, centroid, metric_type="l2", total_bits=1)
         bin_code = unpack_binary_code(qv.binary_code_packed, qv.dim)
         ip = float((q.rotated_query * bin_code.float()).sum().item())
         est_dist, _ = full_est_dist(ip, qv.f_add, qv.f_rescale, q)
@@ -232,18 +233,19 @@ class TestEstimatorAligned:
         data = torch.randn(dim)
         query = torch.randn(dim)
         centroid = torch.zeros(dim)
-        config = RabitqConfig(total_bits=3, metric_type='ip')
+        config = RabitqConfig(total_bits=3, metric_type="ip")
         qv = quantize_vector(data, centroid, config)
-        q = make_full_single_query(query, centroid, metric_type='ip', total_bits=3)
+        q = make_full_single_query(query, centroid, metric_type="ip", total_bits=3)
         bin_code = unpack_binary_code(qv.binary_code_packed, qv.dim)
         ip_x0_qr, est_coarse, low_coarse = split_single_estdist(
             qv.f_add, qv.f_rescale, qv.f_error, bin_code, q
         )
         if qv.ex_bits > 0:
-            ex_code = unpack_ex_code_cpp_compat(qv.ex_code_packed.unsqueeze(0), dim, qv.ex_bits).squeeze(0)
+            ex_code = unpack_ex_code_cpp_compat(
+                qv.ex_code_packed.unsqueeze(0), dim, qv.ex_bits
+            ).squeeze(0)
             est_fine, low_fine = split_single_fulldist(
-                qv.f_add_ex, qv.f_rescale_ex, qv.f_error,
-                ex_code, qv.ex_bits, ip_x0_qr, q
+                qv.f_add_ex, qv.f_rescale_ex, qv.f_error, ex_code, qv.ex_bits, ip_x0_qr, q
             )
             true_ip = torch.dot(query, data).item()
             rel_err_fine = abs(-est_fine - true_ip) / (abs(true_ip) + 1e-6)
@@ -260,6 +262,7 @@ class TestEstimatorAligned:
 
     def test_faster_config(self):
         from src.rabitq.api import faster_config
+
         cfg = faster_config(64, 3)
         assert cfg.total_bits == 3
         assert cfg.t_const is not None
@@ -308,5 +311,5 @@ class TestRaBitQCache:
             assert cache.get_seq_length(layer) == 32
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

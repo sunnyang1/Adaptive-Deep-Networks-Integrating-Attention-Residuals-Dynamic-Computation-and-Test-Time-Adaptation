@@ -29,4 +29,3 @@ def test_qasp_experiment_runner_quick_writes_outputs(tmp_path: Path) -> None:
     assert metrics["efficiency"]["tokens_per_second"] > 0.0
     assert metrics["efficiency"]["memory_gb"] > 0.0
     assert metrics["efficiency"]["latency_ms"] > 0.0
-

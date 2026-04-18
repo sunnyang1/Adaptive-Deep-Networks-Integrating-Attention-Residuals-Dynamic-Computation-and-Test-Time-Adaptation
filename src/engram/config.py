@@ -10,10 +10,10 @@ from typing import List, Optional
 class EngramConfig:
     """
     Configuration for Engram module.
-    
+
     Engram enhances Transformer with explicit n-gram memory through
     hash-based embeddings at specific layers.
-    
+
     Attributes:
         enabled: Whether to enable Engram
         engram_vocab_size: Vocabulary sizes for each n-gram level
@@ -26,7 +26,7 @@ class EngramConfig:
         seed: Random seed for hashing
         kernel_size: ShortConv kernel size
     """
-    
+
     enabled: bool = False
     engram_vocab_size: List[int] = field(default_factory=lambda: [100000, 100000])
     max_ngram_size: int = 3
@@ -37,14 +37,16 @@ class EngramConfig:
     pad_id: int = 2
     seed: int = 0
     kernel_size: int = 4
-    
+
     def __post_init__(self):
         """Validate configuration."""
         assert self.max_ngram_size >= 2, "max_ngram_size must be >= 2"
-        assert len(self.engram_vocab_size) == self.max_ngram_size - 1, \
-            f"engram_vocab_size must have {self.max_ngram_size - 1} elements"
-        assert self.n_embed_per_ngram % self.n_head_per_ngram == 0, \
-            "n_embed_per_ngram must be divisible by n_head_per_ngram"
+        assert (
+            len(self.engram_vocab_size) == self.max_ngram_size - 1
+        ), f"engram_vocab_size must have {self.max_ngram_size - 1} elements"
+        assert (
+            self.n_embed_per_ngram % self.n_head_per_ngram == 0
+        ), "n_embed_per_ngram must be divisible by n_head_per_ngram"
 
 
 # Predefined configurations

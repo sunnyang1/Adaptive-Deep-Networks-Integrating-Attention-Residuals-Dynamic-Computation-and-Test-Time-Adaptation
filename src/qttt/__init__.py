@@ -7,34 +7,28 @@ Provides:
 - DepthPriorityController: Computation allocation policy
 """
 
-from .adaptation import (
-    qTTTConfig,
-    KVCache,
-    qttt_adapt,
-    QueryOnlyTTT,
-    AdaptiveInference
-)
+from .adaptation import qTTTConfig, KVCache, qttt_adapt, QueryOnlyTTT, AdaptiveInference
 from .margin_loss import MarginMaximizationLoss
 from .polar_adaptation import (
     PolarQTTTConfig,
     SphericalSGD,
     QueryAdaptationPolarAdapter,
     PolarQTTT,
-    DepthPriorityController
+    DepthPriorityController,
 )
 
 __all__ = [
-    'qTTTConfig',
-    'KVCache',
-    'qttt_adapt',
-    'QueryOnlyTTT',
-    'AdaptiveInference',
-    'MarginMaximizationLoss',
-    'PolarQTTTConfig',
-    'SphericalSGD',
-    'QueryAdaptationPolarAdapter',
-    'PolarQTTT',
-    'DepthPriorityController',
+    "qTTTConfig",
+    "KVCache",
+    "qttt_adapt",
+    "QueryOnlyTTT",
+    "AdaptiveInference",
+    "MarginMaximizationLoss",
+    "PolarQTTTConfig",
+    "SphericalSGD",
+    "QueryAdaptationPolarAdapter",
+    "PolarQTTT",
+    "DepthPriorityController",
 ]
 
 # Backward compatibility aliases

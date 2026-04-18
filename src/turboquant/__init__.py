@@ -22,7 +22,7 @@ For HuggingFace Integration:
     >>> model.generate(..., past_key_values=cache)
 """
 
-__version__ = '3.0.0'
+__version__ = "3.0.0"
 
 # ============================================================================
 # Main API (Recommended)
@@ -69,24 +69,23 @@ from .cache import (
 
 __all__ = [
     # Main API
-    'TurboQuantV3',
-    'TurboQuantConfig',
-    'create_k4_v2',
-    'create_k3_v2',
-    'create_k2_v2',
-    'RECOMMENDED',
-    
+    "TurboQuantV3",
+    "TurboQuantConfig",
+    "create_k4_v2",
+    "create_k3_v2",
+    "create_k2_v2",
+    "RECOMMENDED",
     # Components
-    'RandomRotation',
-    'fwht',
-    'fwht_inverse',
-    'LloydMaxQuantizer',
-    'MSECompressor',
-    'CompressorConfig',
-    'pack_bits',
-    'unpack_bits',
-    'V3Cache',
-    'CacheConfig',
+    "RandomRotation",
+    "fwht",
+    "fwht_inverse",
+    "LloydMaxQuantizer",
+    "MSECompressor",
+    "CompressorConfig",
+    "pack_bits",
+    "unpack_bits",
+    "V3Cache",
+    "CacheConfig",
 ]
 
 
@@ -95,16 +94,14 @@ def __getattr__(name):
     Provide helpful error messages for legacy imports.
     """
     legacy_imports = {
-        'TurboQuant': 'This class has been removed. Use TurboQuantV3 instead.',
-        'PolarQuant': 'This class has been moved to turboquant.legacy.polar_quant',
-        'QJLCompressor': 'QJL has been removed from V3. Use MSECompressor instead.',
-        'TurboQuantCompressorV2': 'This class has been removed. Use TurboQuantV3.',
-        'TurboQuantPipeline': 'This class has been removed. Use TurboQuantV3.',
+        "TurboQuant": "This class has been removed. Use TurboQuantV3 instead.",
+        "PolarQuant": "This class has been moved to turboquant.legacy.polar_quant",
+        "QJLCompressor": "QJL has been removed from V3. Use MSECompressor instead.",
+        "TurboQuantCompressorV2": "This class has been removed. Use TurboQuantV3.",
+        "TurboQuantPipeline": "This class has been removed. Use TurboQuantV3.",
     }
-    
+
     if name in legacy_imports:
-        raise ImportError(
-            f"'{name}' is no longer available in turboquant. {legacy_imports[name]}"
-        )
-    
+        raise ImportError(f"'{name}' is no longer available in turboquant. {legacy_imports[name]}")
+
     raise AttributeError(f"module 'turboquant' has no attribute '{name}'")

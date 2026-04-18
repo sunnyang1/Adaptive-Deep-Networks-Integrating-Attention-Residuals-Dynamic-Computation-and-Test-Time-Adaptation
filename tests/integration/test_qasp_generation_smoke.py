@@ -92,7 +92,7 @@ def test_incremental_generation_matches_full_autoregressive_loop():
 
     inference = IncrementalInference(model)
     state = inference.prefill(input_ids)
-    generated: list[Tensor] = []
+    generated: list[torch.Tensor] = []
     for _ in range(num_new):
         generated.append(inference.step(state))
     incremental_output = torch.cat([input_ids] + generated, dim=1)

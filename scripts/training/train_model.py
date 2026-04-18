@@ -26,10 +26,39 @@ from src.models.configs import (
 
 
 SIZE_DEFAULTS = {
-    "small": {"epochs": 3, "batch_size": 4, "lr": 3e-4, "seq_len": 512, "train_samples": 10000, "val_samples": 1000},
-    "medium": {"epochs": 3, "batch_size": 2, "lr": 2e-4, "seq_len": 512, "train_samples": 50000, "val_samples": 5000},
-    "large": {"epochs": 3, "batch_size": 1, "lr": 1e-4, "seq_len": 512, "train_samples": 100000, "val_samples": 10000, "grad_accum": 4},
-    "t4": {"epochs": 1, "batch_size": 1, "lr": 3e-4, "seq_len": 128, "train_samples": 1000, "val_samples": 128},
+    "small": {
+        "epochs": 3,
+        "batch_size": 4,
+        "lr": 3e-4,
+        "seq_len": 512,
+        "train_samples": 10000,
+        "val_samples": 1000,
+    },
+    "medium": {
+        "epochs": 3,
+        "batch_size": 2,
+        "lr": 2e-4,
+        "seq_len": 512,
+        "train_samples": 50000,
+        "val_samples": 5000,
+    },
+    "large": {
+        "epochs": 3,
+        "batch_size": 1,
+        "lr": 1e-4,
+        "seq_len": 512,
+        "train_samples": 100000,
+        "val_samples": 10000,
+        "grad_accum": 4,
+    },
+    "t4": {
+        "epochs": 1,
+        "batch_size": 1,
+        "lr": 3e-4,
+        "seq_len": 128,
+        "train_samples": 1000,
+        "val_samples": 128,
+    },
 }
 
 

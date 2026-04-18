@@ -32,12 +32,13 @@ K_CONST_EPSILON = 1.9
 class QuantizedVector:
     """
     RaBitQ quantized representation of a single vector.
-    
+
     For batch efficiency, the API stores lists/tensors of these fields,
     but this dataclass defines the conceptual per-vector structure.
     """
+
     binary_code_packed: torch.Tensor  # uint8, ceil(dim/8)
-    ex_code_packed: torch.Tensor      # uint8, variable size
+    ex_code_packed: torch.Tensor  # uint8, variable size
     ex_bits: int
     dim: int
     delta: float
@@ -53,19 +54,22 @@ class QuantizedVector:
 @dataclass
 class RabitqConfig:
     """Configuration for RaBitQ quantization."""
-    total_bits: int = 1           # 1 means binary-only; 2 means 1+1; 3 means 1+2, etc.
+
+    total_bits: int = 1  # 1 means binary-only; 2 means 1+1; 3 means 1+2, etc.
     t_const: Optional[float] = None  # Constant scaling factor for fast quantization
-    metric_type: str = 'ip'       # 'l2' or 'ip'
+    metric_type: str = "ip"  # 'l2' or 'ip'
 
     @property
     def ex_bits(self) -> int:
         return max(0, self.total_bits - 1)
 
 
-def compute_const_scaling_factor(dim: int, ex_bits: int, seed: int = 42, num_samples: int = 100) -> float:
+def compute_const_scaling_factor(
+    dim: int, ex_bits: int, seed: int = 42, num_samples: int = 100
+) -> float:
     """
     Pre-compute a constant scaling factor t for fast quantization.
-    
+
     Sampling random Gaussian vectors and averaging their optimal t values
     yields a t_const that is 100-500x faster than per-vector optimization
     with <1% accuracy loss.
@@ -88,7 +92,7 @@ def compute_const_scaling_factor(dim: int, ex_bits: int, seed: int = 42, num_sam
 def _best_rescale_factor(o_abs: List[float], ex_bits: int) -> float:
     """
     Find optimal rescaling factor t for extended-bit quantization.
-    
+
     Translated from the heap-based C++ algorithm in rabitq-rs.
     """
     dim = len(o_abs)
@@ -107,7 +111,7 @@ def _best_rescale_factor(o_abs: List[float], ex_bits: int) -> float:
     for idx, val in enumerate(o_abs):
         cur = int(t_start * val + K_EPS)
         cur_o_bar[idx] = cur
-        sqr_denominator += (cur * cur + cur)
+        sqr_denominator += cur * cur + cur
         numerator += (cur + 0.5) * val
 
     # Min-heap of (t, idx)
@@ -143,10 +147,12 @@ def _best_rescale_factor(o_abs: List[float], ex_bits: int) -> float:
     return best_t if best_t > 0.0 else t_start
 
 
-def _quantize_ex_with_inv(residual: torch.Tensor, ex_bits: int, t: float) -> Tuple[torch.Tensor, float]:
+def _quantize_ex_with_inv(
+    residual: torch.Tensor, ex_bits: int, t: float
+) -> Tuple[torch.Tensor, float]:
     """
     Quantize absolute values of residual into ex_bits extended code.
-    
+
     Returns:
         ex_code: [dim] uint16 tensor
         ipnorm_inv: inverse of inner product norm factor
@@ -162,7 +168,7 @@ def _quantize_ex_with_inv(residual: torch.Tensor, ex_bits: int, t: float) -> Tup
     max_val = (1 << ex_bits) - 1
 
     code = torch.clamp((t * normalized_abs + K_EPS).long(), 0, max_val).to(torch.int16)
-    
+
     ipnorm = ((code.float() + 0.5) * normalized_abs).sum().item()
     ipnorm_inv = 1.0 / ipnorm if ipnorm > 0.0 else 1.0
 
@@ -176,18 +182,21 @@ def _quantize_ex_with_inv(residual: torch.Tensor, ex_bits: int, t: float) -> Tup
     return code, float(ipnorm_inv)
 
 
-def _compute_one_bit_factors(residual: torch.Tensor, centroid: torch.Tensor,
-                             binary_code: torch.Tensor,
-                             metric_type: str = 'ip') -> Tuple[float, float, float, float]:
+def _compute_one_bit_factors(
+    residual: torch.Tensor,
+    centroid: torch.Tensor,
+    binary_code: torch.Tensor,
+    metric_type: str = "ip",
+) -> Tuple[float, float, float, float]:
     """
     Compute factors for 1-bit RaBitQ under L2 or InnerProduct metric.
-    
+
     Args:
         residual: residual vector
         centroid: centroid vector
         binary_code: binary quantization code
         metric_type: 'l2' or 'ip'
-    
+
     Returns:
         (f_add, f_rescale, f_error, l2_norm)
     """
@@ -203,7 +212,7 @@ def _compute_one_bit_factors(residual: torch.Tensor, centroid: torch.Tensor,
 
     denom = ip_resi_xucb
     if abs(denom) <= 1e-12:
-        denom = float('inf')
+        denom = float("inf")
 
     tmp_error = 0.0
     if dim > 1:
@@ -211,11 +220,11 @@ def _compute_one_bit_factors(residual: torch.Tensor, centroid: torch.Tensor,
         if math.isfinite(ratio) and ratio > 0.0:
             tmp_error = l2_norm * K_CONST_EPSILON * math.sqrt(max(0.0, ratio / (dim - 1)))
 
-    if metric_type == 'l2':
+    if metric_type == "l2":
         f_add = l2_sqr + (2 * l2_sqr * ip_cent_xucb / denom)
         f_rescale = -2 * l2_sqr / denom
         f_error = 2 * tmp_error
-    elif metric_type == 'ip':
+    elif metric_type == "ip":
         f_add = 1.0 - dot_residual_centroid + l2_sqr * ip_cent_xucb / denom
         f_rescale = -l2_sqr / denom
         f_error = 1 * tmp_error
@@ -225,16 +234,21 @@ def _compute_one_bit_factors(residual: torch.Tensor, centroid: torch.Tensor,
     return f_add, f_rescale, f_error, l2_norm
 
 
-def _compute_extended_factors(residual: torch.Tensor, centroid: torch.Tensor,
-                              binary_code: torch.Tensor, ex_code: torch.Tensor,
-                              ipnorm_inv: float, ex_bits: int,
-                              metric_type: str = 'ip') -> Tuple[float, float]:
+def _compute_extended_factors(
+    residual: torch.Tensor,
+    centroid: torch.Tensor,
+    binary_code: torch.Tensor,
+    ex_code: torch.Tensor,
+    ipnorm_inv: float,
+    ex_bits: int,
+    metric_type: str = "ip",
+) -> Tuple[float, float]:
     """
     Compute extended factors for L2 or InnerProduct metric.
-    
+
     Args:
         metric_type: 'l2' or 'ip'
-    
+
     Returns:
         (f_add_ex, f_rescale_ex)
     """
@@ -249,12 +263,12 @@ def _compute_extended_factors(residual: torch.Tensor, centroid: torch.Tensor,
     ip_cent_xucb = (centroid * xu_cb).sum().item()
     dot_residual_centroid = (residual * centroid).sum().item()
 
-    safe_denom = ip_resi_xucb if abs(ip_resi_xucb) > 1e-12 else float('inf')
+    safe_denom = ip_resi_xucb if abs(ip_resi_xucb) > 1e-12 else float("inf")
 
-    if metric_type == 'l2':
+    if metric_type == "l2":
         f_add_ex = l2_sqr + (2 * l2_sqr * ip_cent_xucb / safe_denom)
         f_rescale_ex = -2 * l2_norm * ipnorm_inv
-    elif metric_type == 'ip':
+    elif metric_type == "ip":
         f_add_ex = 1.0 - dot_residual_centroid + l2_sqr * ip_cent_xucb / safe_denom
         f_rescale_ex = -l2_norm * ipnorm_inv
     else:
@@ -263,16 +277,17 @@ def _compute_extended_factors(residual: torch.Tensor, centroid: torch.Tensor,
     return f_add_ex, f_rescale_ex
 
 
-def quantize_vector(data: torch.Tensor, centroid: torch.Tensor,
-                    config: RabitqConfig) -> QuantizedVector:
+def quantize_vector(
+    data: torch.Tensor, centroid: torch.Tensor, config: RabitqConfig
+) -> QuantizedVector:
     """
     Quantize a single vector with RaBitQ.
-    
+
     Args:
         data: [dim] float tensor (in rotated space)
         centroid: [dim] float tensor
         config: RabitqConfig
-        
+
     Returns:
         QuantizedVector
     """
@@ -287,8 +302,11 @@ def quantize_vector(data: torch.Tensor, centroid: torch.Tensor,
 
     # Extended code
     if ex_bits > 0:
-        t = config.t_const if config.t_const is not None else \
-            compute_const_scaling_factor(dim, ex_bits)
+        t = (
+            config.t_const
+            if config.t_const is not None
+            else compute_const_scaling_factor(dim, ex_bits)
+        )
         ex_code, ipnorm_inv = _quantize_ex_with_inv(residual, ex_bits, t)
     else:
         ex_code = torch.zeros(dim, dtype=torch.int16, device=data.device)
@@ -304,7 +322,7 @@ def quantize_vector(data: torch.Tensor, centroid: torch.Tensor,
     norm_residual = residual.norm().item()
     norm_quant = math.sqrt(norm_quan_sqr) if norm_quan_sqr > 0 else 0.0
 
-    denom = (norm_residual * norm_quant)
+    denom = norm_residual * norm_quant
     cos_similarity = (dot_residual_quant / denom) if denom > 1e-12 else 0.0
     cos_similarity = max(-1.0, min(1.0, cos_similarity))
 
@@ -325,8 +343,13 @@ def quantize_vector(data: torch.Tensor, centroid: torch.Tensor,
 
     # Pack codes
     from .packing import pack_binary_code, pack_ex_code_cpp_compat
+
     binary_packed = pack_binary_code(binary_code)
-    ex_packed = pack_ex_code_cpp_compat(ex_code.unsqueeze(0), ex_bits).squeeze(0) if ex_bits > 0 else torch.empty(0, dtype=torch.uint8, device=data.device)
+    ex_packed = (
+        pack_ex_code_cpp_compat(ex_code.unsqueeze(0), ex_bits).squeeze(0)
+        if ex_bits > 0
+        else torch.empty(0, dtype=torch.uint8, device=data.device)
+    )
 
     return QuantizedVector(
         binary_code_packed=binary_packed,
@@ -344,19 +367,20 @@ def quantize_vector(data: torch.Tensor, centroid: torch.Tensor,
     )
 
 
-def quantize_scalar(data: torch.Tensor, bits: int,
-                      config: Optional[RabitqConfig] = None) -> Tuple[torch.Tensor, float, float]:
+def quantize_scalar(
+    data: torch.Tensor, bits: int, config: Optional[RabitqConfig] = None
+) -> Tuple[torch.Tensor, float, float]:
     """
     Format 1: Scalar quantization as a drop-in replacement.
-    
+
     Quantizes a vector uniformly into `bits` per dimension.
     This matches the RaBitQ-Library `quantize_scalar` API.
-    
+
     Args:
         data: [dim] float tensor
         bits: number of bits per dimension
         config: optional config (not used for scalar quant, kept for API consistency)
-    
+
     Returns:
         code: [dim] uint32 tensor of quantized codes
         delta: rescaling factor
@@ -372,7 +396,7 @@ def quantize_scalar(data: torch.Tensor, bits: int,
         delta = (vr - vl) / max_val
     if delta < 1e-12:
         delta = 1.0
-    
+
     code = torch.clamp(((data - vl) / delta).long(), 0, max_val).to(torch.int32)
     return code, float(delta), float(vl)
 
@@ -385,11 +409,11 @@ def dequantize_scalar(code: torch.Tensor, delta: float, vl: float) -> torch.Tens
 def reconstruct_vector(centroid: torch.Tensor, qv: QuantizedVector) -> torch.Tensor:
     """
     Reconstruct a vector from its RaBitQ quantized form.
-    
+
     Args:
         centroid: [dim] float tensor
         qv: QuantizedVector
-        
+
     Returns:
         reconstructed: [dim] float tensor
     """
@@ -397,7 +421,9 @@ def reconstruct_vector(centroid: torch.Tensor, qv: QuantizedVector) -> torch.Ten
 
     binary_code = unpack_binary_code(qv.binary_code_packed, qv.dim)
     if qv.ex_bits > 0:
-        ex_code = unpack_ex_code_cpp_compat(qv.ex_code_packed.unsqueeze(0), qv.dim, qv.ex_bits).squeeze(0)
+        ex_code = unpack_ex_code_cpp_compat(
+            qv.ex_code_packed.unsqueeze(0), qv.dim, qv.ex_bits
+        ).squeeze(0)
     else:
         ex_code = torch.zeros(qv.dim, dtype=torch.int16, device=centroid.device)
 

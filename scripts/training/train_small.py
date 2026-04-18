@@ -68,15 +68,15 @@ from src.models.configs import AttnResSmallConfig, ModelConfig
 
 class SmallModelTrainer(BaseTrainer):
     """Trainer for Small model (1.1B params)."""
-    
+
     def _get_model_config(self) -> ModelConfig:
         """Return Small model configuration."""
         return AttnResSmallConfig()
-    
+
     def get_model_size_name(self) -> str:
         """Return model size name."""
         return "small"
-    
+
     def print_model_info(self):
         """Print Small model specific information."""
         config = self.config
@@ -98,8 +98,8 @@ class SmallModelTrainer(BaseTrainer):
 
 def main():
     parser = get_common_parser()
-    parser.description = 'Train Small Model (AttnRes-S, ~1.1B params)'
-    
+    parser.description = "Train Small Model (AttnRes-S, ~1.1B params)"
+
     # Small model specific defaults
     parser.set_defaults(
         epochs=3,
@@ -109,17 +109,17 @@ def main():
         train_samples=10000,
         val_samples=1000,
     )
-    
+
     args = parser.parse_args()
-    
+
     # Create trainer
     trainer = SmallModelTrainer(args)
     trainer.print_model_info()
-    
+
     # Setup and train
     trainer.setup()
     trainer.train()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

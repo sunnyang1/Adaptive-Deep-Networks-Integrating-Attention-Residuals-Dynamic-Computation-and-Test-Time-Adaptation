@@ -31,7 +31,7 @@ def test_adapt_at_test_time_noop_under_confident_logits() -> None:
     confident_logits[..., 0] = 1e3
 
     def loss_fn(_idx: int, weights: torch.Tensor) -> torch.Tensor:
-        return (weights ** 2).sum()
+        return (weights**2).sum()
 
     fired = model.adapt_at_test_time(loss_fn, confident_logits)
     assert fired is False
@@ -48,6 +48,7 @@ def test_adapt_at_test_time_updates_layers_and_preserves_stiefel() -> None:
     uniform_logits = torch.zeros(1, 4, model.config.vocab_size)
 
     targets = [torch.randn_like(w) for w in before]
+
     def loss_fn(idx: int, weights: torch.Tensor) -> torch.Tensor:
         return ((weights - targets[idx]) ** 2).sum()
 
@@ -73,6 +74,7 @@ def test_adapt_at_test_time_respects_quality_scores() -> None:
 
     uniform_logits = torch.zeros(1, 4, model.config.vocab_size)
     targets = [torch.randn_like(w) for w in before]
+
     def loss_fn(idx: int, weights: torch.Tensor) -> torch.Tensor:
         return ((weights - targets[idx]) ** 2).sum()
 

@@ -37,15 +37,15 @@ from src.models.configs import AttnResMediumConfig, ModelConfig
 
 class MediumModelTrainer(BaseTrainer):
     """Trainer for Medium model (5.7B params)."""
-    
+
     def _get_model_config(self) -> ModelConfig:
         """Return Medium model configuration."""
         return AttnResMediumConfig()
-    
+
     def get_model_size_name(self) -> str:
         """Return model size name."""
         return "medium"
-    
+
     def print_model_info(self):
         """Print Medium model specific information."""
         config = self.config
@@ -70,8 +70,8 @@ class MediumModelTrainer(BaseTrainer):
 
 def main():
     parser = get_common_parser()
-    parser.description = 'Train Medium Model (AttnRes-M, ~5.7B params)'
-    
+    parser.description = "Train Medium Model (AttnRes-M, ~5.7B params)"
+
     # Medium model specific defaults
     parser.set_defaults(
         epochs=3,
@@ -81,25 +81,24 @@ def main():
         train_samples=50000,
         val_samples=5000,
     )
-    
+
     # Add distributed training option
-    parser.add_argument('--distributed', action='store_true',
-                       help='Enable distributed training')
-    parser.add_argument('--local_rank', type=int, default=-1,
-                       help='Local rank for distributed training')
-    parser.add_argument('--deepspeed', type=str, default=None,
-                       help='DeepSpeed config file path')
-    
+    parser.add_argument("--distributed", action="store_true", help="Enable distributed training")
+    parser.add_argument(
+        "--local_rank", type=int, default=-1, help="Local rank for distributed training"
+    )
+    parser.add_argument("--deepspeed", type=str, default=None, help="DeepSpeed config file path")
+
     args = parser.parse_args()
-    
+
     # Create trainer
     trainer = MediumModelTrainer(args)
     trainer.print_model_info()
-    
+
     # Setup and train
     trainer.setup()
     trainer.train()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

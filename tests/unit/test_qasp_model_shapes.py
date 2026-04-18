@@ -131,7 +131,7 @@ def test_value_weighted_attnres_matches_paper_eq8() -> None:
 
     residual = module(hidden, block_repr, block_quality).squeeze()
 
-    affinity = (block_repr[0] @ module.pseudo_query)
+    affinity = block_repr[0] @ module.pseudo_query
     scores = affinity * block_quality[0] / math.sqrt(hidden_size)
     expected_weights = torch.softmax(scores, dim=-1)
     expected_pooled = (expected_weights.unsqueeze(-1) * block_repr[0]).sum(dim=0)
@@ -185,4 +185,3 @@ def test_qasp_transformer_forward_without_attnres_or_engram() -> None:
     logits = model(input_ids)
 
     assert logits.shape == (2, 6, 64)
-

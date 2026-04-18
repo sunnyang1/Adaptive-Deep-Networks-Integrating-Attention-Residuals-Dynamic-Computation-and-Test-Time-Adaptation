@@ -14,7 +14,7 @@ import warnings
 warnings.warn(
     "turboquant.legacy is deprecated. Use turboquant (the refactored API) instead.",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 # Make legacy modules available
@@ -27,11 +27,11 @@ from . import tensor_core
 from . import turbo_quant
 
 __all__ = [
-    'v3_improved',
-    'core',
-    'mnn_improved',
-    'polar_quant',
-    'qjl',
-    'tensor_core',
-    'turbo_quant',
+    "v3_improved",
+    "core",
+    "mnn_improved",
+    "polar_quant",
+    "qjl",
+    "tensor_core",
+    "turbo_quant",
 ]

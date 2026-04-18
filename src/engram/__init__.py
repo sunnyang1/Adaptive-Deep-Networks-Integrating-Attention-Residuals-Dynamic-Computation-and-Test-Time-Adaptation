@@ -11,14 +11,14 @@ from .embeddings import MultiHeadEmbedding, ShortConv
 from .engram_module import Engram
 
 __all__ = [
-    'EngramConfig',
-    'EngramSmallConfig',
-    'EngramMediumConfig', 
-    'EngramLargeConfig',
-    'CompressedTokenizer',
-    'NgramHashMapping',
-    'NgramHashConfig',
-    'MultiHeadEmbedding',
-    'ShortConv',
-    'Engram',
+    "EngramConfig",
+    "EngramSmallConfig",
+    "EngramMediumConfig",
+    "EngramLargeConfig",
+    "CompressedTokenizer",
+    "NgramHashMapping",
+    "NgramHashConfig",
+    "MultiHeadEmbedding",
+    "ShortConv",
+    "Engram",
 ]

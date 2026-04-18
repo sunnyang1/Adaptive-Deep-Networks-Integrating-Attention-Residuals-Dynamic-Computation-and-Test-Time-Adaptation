@@ -43,6 +43,7 @@ def h():
 # RMSNorm
 # =============================================================================
 
+
 class TestRMSNorm:
     """Tests for RMSNorm layer."""
 
@@ -67,7 +68,7 @@ class TestRMSNorm:
         output = rmsnorm(x)
 
         # RMS of output should be close to 1 (with weight=1)
-        rms = torch.sqrt(torch.mean(output ** 2))
+        rms = torch.sqrt(torch.mean(output**2))
         assert torch.allclose(rms, torch.tensor(1.0), atol=1e-5)
 
     def test_rmsnorm_learnable_weight(self):
@@ -75,7 +76,7 @@ class TestRMSNorm:
         dim = 128
         rmsnorm = RMSNorm(dim)
 
-        assert hasattr(rmsnorm, 'weight')
+        assert hasattr(rmsnorm, "weight")
         assert rmsnorm.weight.shape == (dim,)
         assert rmsnorm.weight.requires_grad
 
@@ -113,6 +114,7 @@ class TestRMSNorm:
 # block_attn_res
 # =============================================================================
 
+
 class TestBlockAttnRes:
     """Tests for block_attn_res function."""
 
@@ -135,10 +137,7 @@ class TestBlockAttnRes:
         batch, seq_len, dim = 1, 1, 4
 
         # Create simple blocks
-        blocks = [
-            torch.ones(batch, seq_len, dim) * i
-            for i in range(3)
-        ]
+        blocks = [torch.ones(batch, seq_len, dim) * i for i in range(3)]
         partial_block = torch.ones(batch, seq_len, dim) * 3
         pseudo_query = torch.randn(dim)
         norm = RMSNorm(dim)
@@ -181,6 +180,7 @@ class TestBlockAttnRes:
 # BlockAttnRes layer
 # =============================================================================
 
+
 class TestBlockAttnResLayer:
     """Tests for BlockAttnRes layer."""
 
@@ -193,8 +193,8 @@ class TestBlockAttnResLayer:
 
         assert layer.dim == dim
         assert layer.num_blocks == num_blocks
-        assert hasattr(layer, 'pseudo_query_attn')
-        assert hasattr(layer, 'pseudo_query_mlp')
+        assert hasattr(layer, "pseudo_query_attn")
+        assert hasattr(layer, "pseudo_query_mlp")
 
     def test_block_attn_res_layer_zero_init(self):
         """Test that pseudo-queries are initialized to zero."""
@@ -239,9 +239,7 @@ class TestBlockAttnResLayer:
         _, h_mlp_only = layer(block_reprs, hidden, use_attn=False, use_mlp=True)
 
         # Neither (just returns hidden)
-        h_neither_attn, h_neither_mlp = layer(
-            block_reprs, hidden, use_attn=False, use_mlp=False
-        )
+        h_neither_attn, h_neither_mlp = layer(block_reprs, hidden, use_attn=False, use_mlp=False)
 
         assert torch.allclose(h_neither_attn, hidden)
         assert torch.allclose(h_neither_mlp, hidden)
@@ -290,6 +288,7 @@ class TestBlockAttnResLayer:
 # StandardResidualModel
 # =============================================================================
 
+
 class TestStandardResiduals:
     def test_model_output_shape(self, h):
         """Stacking standard residual blocks should preserve the hidden-state shape."""
@@ -310,6 +309,7 @@ class TestStandardResiduals:
 # =============================================================================
 # full_attn_res
 # =============================================================================
+
 
 class TestFullAttnRes:
     def _make_inputs(self, n_sources):
@@ -359,11 +359,11 @@ class TestFullAttnRes:
         w = torch.randn(D)
         srcs = [torch.randn(B, T, D) for _ in range(n)]
 
-        V = torch.stack(srcs, dim=0)          # [n, B, T, D]
+        V = torch.stack(srcs, dim=0)  # [n, B, T, D]
         K = norm(V)
         logits = torch.einsum("d, n b t d -> n b t", w, K)
-        alpha = logits.softmax(dim=0)          # [n, B, T]
-        sums = alpha.sum(dim=0)                # [B, T]
+        alpha = logits.softmax(dim=0)  # [n, B, T]
+        sums = alpha.sum(dim=0)  # [B, T]
         assert torch.allclose(sums, torch.ones(B, T), atol=1e-5)
 
     def test_more_sources_still_correct_shape(self):
@@ -376,6 +376,7 @@ class TestFullAttnRes:
 # =============================================================================
 # FullAttnResTransformerBlock / FullAttnResModel
 # =============================================================================
+
 
 class TestFullAttnRes_Block:
     def test_sources_grow_by_two(self, h):
@@ -421,14 +422,13 @@ class TestFullAttnRes_Block:
         n = 4
         std = StandardResidualModel(D, n)
         full = FullAttnResModel(D, n)
-        assert sum(p.numel() for p in full.parameters()) > sum(
-            p.numel() for p in std.parameters()
-        )
+        assert sum(p.numel() for p in full.parameters()) > sum(p.numel() for p in std.parameters())
 
 
 # =============================================================================
 # BlockAttnResTransformerBlock / BlockAttnResModel
 # =============================================================================
+
 
 class TestBlockAttnRes_Block:
     def _initial_state(self, h):
@@ -513,6 +513,7 @@ class TestBlockAttnRes_Block:
 # =============================================================================
 # Cross-model: gradient flow
 # =============================================================================
+
 
 class TestGradientFlow:
     """Ensure gradients reach all learnable parameters (no dead subgraph)."""

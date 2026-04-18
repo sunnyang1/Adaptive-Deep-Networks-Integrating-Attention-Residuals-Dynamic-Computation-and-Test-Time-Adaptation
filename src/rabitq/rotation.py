@@ -37,8 +37,7 @@ def fwht(x: torch.Tensor) -> torch.Tensor:
     h = 2
     while h <= n:
         x = x.reshape(*x.shape[:-1], n // h, h)
-        x = torch.stack([x[..., ::2] + x[..., 1::2],
-                         x[..., ::2] - x[..., 1::2]], dim=-1)
+        x = torch.stack([x[..., ::2] + x[..., 1::2], x[..., ::2] - x[..., 1::2]], dim=-1)
         x = x.reshape(*x.shape[:-3], n)
         h *= 2
     return x
@@ -63,12 +62,12 @@ class MatrixRotator:
     Generates a random Gaussian matrix and applies Gram-Schmidt (via QR).
     """
 
-    def __init__(self, dim: int, seed: int = 42, device: str = 'cpu'):
+    def __init__(self, dim: int, seed: int = 42, device: str = "cpu"):
         self._dim = dim
         self._padded_dim = dim  # No padding required for matrix, but we may pad
         # QR is not supported on all devices (e.g., MPS), do it on CPU
-        generator = torch.Generator(device='cpu').manual_seed(seed)
-        A = torch.randn(dim, dim, generator=generator, device='cpu')
+        generator = torch.Generator(device="cpu").manual_seed(seed)
+        A = torch.randn(dim, dim, generator=generator, device="cpu")
         Q, _ = torch.linalg.qr(A)
         self._matrix = Q.to(device)  # [dim, dim]
         self._device = device
@@ -87,7 +86,7 @@ class MatrixRotator:
     def original_dim(self) -> int:
         return self._dim
 
-    def to(self, device: str) -> 'MatrixRotator':
+    def to(self, device: str) -> "MatrixRotator":
         self._device = device
         self._matrix = self._matrix.to(device)
         return self
@@ -100,12 +99,14 @@ class FhtKacRotator:
     Pads dimension to the next multiple of 64 (for RaBitQ SIMD alignment).
     """
 
-    def __init__(self, dim: int, seed: int = 42, device: str = 'cpu'):
+    def __init__(self, dim: int, seed: int = 42, device: str = "cpu"):
         self._orig_dim = dim
         # Pad to power of 2 for FWHT, and at least to multiple of 64
         self._padded_dim = _round_up_to_multiple(_next_power_of_2(dim), 64)
         generator = torch.Generator(device=device).manual_seed(seed)
-        self._scales = (torch.randint(0, 2, (self._padded_dim,), generator=generator, device=device) * 2 - 1).float()
+        self._scales = (
+            torch.randint(0, 2, (self._padded_dim,), generator=generator, device=device) * 2 - 1
+        ).float()
         self._device = device
 
     def rotate(self, x: torch.Tensor) -> torch.Tensor:
@@ -120,7 +121,7 @@ class FhtKacRotator:
         x = fwht_inverse(x)
         x = x * self._scales
         if self._orig_dim < self._padded_dim:
-            x = x[..., :self._orig_dim]
+            x = x[..., : self._orig_dim]
         return x
 
     def padded_dim(self) -> int:
@@ -129,7 +130,7 @@ class FhtKacRotator:
     def original_dim(self) -> int:
         return self._orig_dim
 
-    def to(self, device: str) -> 'FhtKacRotator':
+    def to(self, device: str) -> "FhtKacRotator":
         self._device = device
         self._scales = self._scales.to(device)
         return self
@@ -138,7 +139,7 @@ class FhtKacRotator:
 class IdentityRotator:
     """No-op rotation for debugging/baseline."""
 
-    def __init__(self, dim: int, device: str = 'cpu'):
+    def __init__(self, dim: int, device: str = "cpu"):
         self._dim = dim
         self._padded_dim = dim
         self._device = device
@@ -155,6 +156,6 @@ class IdentityRotator:
     def original_dim(self) -> int:
         return self._dim
 
-    def to(self, device: str) -> 'IdentityRotator':
+    def to(self, device: str) -> "IdentityRotator":
         self._device = device
         return self

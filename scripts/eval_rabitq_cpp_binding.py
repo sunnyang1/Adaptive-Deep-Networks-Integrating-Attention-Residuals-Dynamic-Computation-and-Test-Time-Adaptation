@@ -34,7 +34,7 @@ import time
 # ---------------------------------------------------------------------------
 # Minimal C++ source wrapping rabitqlib::quant::rabitq_impl::one_bit::one_bit_code_with_factor
 # ---------------------------------------------------------------------------
-CPP_SOURCE = r'''
+CPP_SOURCE = r"""
 #include <torch/extension.h>
 #include <vector>
 #include "rabitqlib/quantization/rabitq_impl.hpp"
@@ -99,7 +99,7 @@ py::dict quantize_one_bit_batch_cpp(torch::Tensor data, torch::Tensor centroid, 
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("quantize_one_bit_batch_cpp", &quantize_one_bit_batch_cpp, "Reference C++ one-bit quantizer");
 }
-'''
+"""
 
 # ---------------------------------------------------------------------------
 # Compile the extension on-the-fly
@@ -124,6 +124,7 @@ print("Compilation done.")
 # ---------------------------------------------------------------------------
 from src.rabitq.quantizer import _compute_one_bit_factors
 from src.rabitq.packing import pack_binary_code
+
 
 def py_quantize_one_bit_batch(data: torch.Tensor, centroid: torch.Tensor, metric_type: str):
     num, dim = data.shape

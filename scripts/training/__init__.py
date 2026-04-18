@@ -23,4 +23,4 @@ Usage:
 
 from .base_trainer import BaseTrainer, get_common_parser
 
-__all__ = ['BaseTrainer', 'get_common_parser']
+__all__ = ["BaseTrainer", "get_common_parser"]

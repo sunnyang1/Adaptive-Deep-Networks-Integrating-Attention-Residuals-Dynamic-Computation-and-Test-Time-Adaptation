@@ -181,16 +181,12 @@ class BlockAttnRes(nn.Module):
             Tuple of (attn_res_input, mlp_res_input)
         """
         if use_attn and len(blocks) > 0:
-            h_attn = block_attn_res(
-                blocks, partial_block, self.pseudo_query_attn, self.norm_attn
-            )
+            h_attn = block_attn_res(blocks, partial_block, self.pseudo_query_attn, self.norm_attn)
         else:
             h_attn = partial_block
 
         if use_mlp and len(blocks) > 0:
-            h_mlp = block_attn_res(
-                blocks, partial_block, self.pseudo_query_mlp, self.norm_mlp
-            )
+            h_mlp = block_attn_res(blocks, partial_block, self.pseudo_query_mlp, self.norm_mlp)
         else:
             h_mlp = partial_block
 
@@ -228,7 +224,7 @@ class TwoPhaseBlockAttnRes(nn.Module):
         self.norm_mlp = RMSNorm(dim, eps)
         # Alias for two-phase helpers (keys use same norm as BlockAttnRes keys)
         self.norm = self.norm_attn
-    
+
     def forward(
         self,
         blocks: List[torch.Tensor],
@@ -238,7 +234,7 @@ class TwoPhaseBlockAttnRes(nn.Module):
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Compute AttnRes-augmented hidden state.
-        
+
         This is a compatibility wrapper that uses the standard block_attn_res
         function. The full two-phase computation is managed by the model's
         forward loop (see AdaptiveTransformer).
@@ -253,21 +249,17 @@ class TwoPhaseBlockAttnRes(nn.Module):
             Tuple of (attn_res_input, mlp_res_input)
         """
         if use_attn and len(blocks) > 0:
-            h_attn = block_attn_res(
-                blocks, partial_block, self.pseudo_query_attn, self.norm_attn
-            )
+            h_attn = block_attn_res(blocks, partial_block, self.pseudo_query_attn, self.norm_attn)
         else:
             h_attn = partial_block
 
         if use_mlp and len(blocks) > 0:
-            h_mlp = block_attn_res(
-                blocks, partial_block, self.pseudo_query_mlp, self.norm_mlp
-            )
+            h_mlp = block_attn_res(blocks, partial_block, self.pseudo_query_mlp, self.norm_mlp)
         else:
             h_mlp = partial_block
 
         return h_attn, h_mlp
-    
+
     def reset_parameters(self):
         """Reset pseudo-queries to zero (standard residual behavior)."""
         nn.init.zeros_(self.pseudo_query_attn)
@@ -307,7 +299,7 @@ class TwoPhaseBlockAttnRes(nn.Module):
 
         # Batched attention: [S, D] @ [N, B, T, D] -> [S, N, B, T]
         logits = torch.einsum("s d, n b t d -> s n b t", pseudo_queries, K)
-        logits = logits / (self.dim ** 0.5)
+        logits = logits / (self.dim**0.5)
 
         # Compute softmax stats
         max_vals = logits.max(dim=1, keepdim=True).values  # [S, 1, B, T]
@@ -346,7 +338,7 @@ class TwoPhaseBlockAttnRes(nn.Module):
         # Intra-block attention (single key-value = partial_sum)
         K = self.norm_attn(partial_sum)  # [B, T, D]
         logits = torch.einsum("d, b t d -> b t", pseudo_query, K)
-        logits = logits / (self.dim ** 0.5)
+        logits = logits / (self.dim**0.5)
         intra_max = logits  # [B, T]
 
         # Online softmax merge
@@ -361,9 +353,10 @@ class TwoPhaseBlockAttnRes(nn.Module):
 
         norm = weight_inter + weight_intra  # [B, T]
         merged_output = (
-            weight_inter.unsqueeze(-1) * inter_output
-            + weight_intra.unsqueeze(-1) * partial_sum
-        ) / norm.unsqueeze(-1)  # [B, T, D]
+            weight_inter.unsqueeze(-1) * inter_output + weight_intra.unsqueeze(-1) * partial_sum
+        ) / norm.unsqueeze(
+            -1
+        )  # [B, T, D]
 
         merged_lse = torch.log(norm) + merged_max  # [B, T]
 

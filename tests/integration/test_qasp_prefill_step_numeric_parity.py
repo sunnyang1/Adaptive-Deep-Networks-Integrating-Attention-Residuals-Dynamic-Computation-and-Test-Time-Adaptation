@@ -1,4 +1,13 @@
-"""Strict numerical-parity contract between ``prefill + step`` and ``forward``.
+"""Numerical-parity contract between ``prefill + step`` and ``forward``.
+
+Paper alignment (Path A)
+------------------------
+The QASP manuscript defines value-weighted AttnRes on a **full-sequence**
+forward pass.  The implementation matches that in :meth:`QASPTransformer.forward`
+and :meth:`QASPTransformer.prefill`.  :meth:`QASPTransformer.step` uses
+prefix-based block statistics when AttnRes is on, so it is **not** part of the
+canonical definition; parity with ``forward`` is only required where the paper
+commits to it (see strict-causal configs below).
 
 Context
 -------

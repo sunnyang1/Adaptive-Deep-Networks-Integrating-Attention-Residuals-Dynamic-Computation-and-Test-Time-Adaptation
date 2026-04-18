@@ -42,8 +42,10 @@ def torch_rng():
 @pytest.fixture
 def sample_tensor():
     """Return a sample tensor for testing."""
+
     def _create(shape: Tuple[int, ...], dtype=torch.float32):
         return torch.randn(shape, dtype=dtype)
+
     return _create
 
 
@@ -85,7 +87,9 @@ def reset_torch_seed():
 # Markers for test categorization
 def pytest_configure(config):
     """Configure pytest markers."""
-    config.addinivalue_line("markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')")
+    config.addinivalue_line(
+        "markers", "slow: marks tests as slow (deselect with '-m \"not slow\"')"
+    )
     config.addinivalue_line("markers", "gpu: marks tests that require GPU")
     config.addinivalue_line("markers", "unit: marks unit tests")
     config.addinivalue_line("markers", "integration: marks integration tests")

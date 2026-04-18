@@ -118,4 +118,3 @@ def test_matrix_qasp_loss_fn_must_return_scalar() -> None:
     matrix = torch.eye(4)
     with pytest.raises(ValueError, match="scalar"):
         matrix_qasp_update(matrix, loss_fn=lambda w: w * 2.0)
-

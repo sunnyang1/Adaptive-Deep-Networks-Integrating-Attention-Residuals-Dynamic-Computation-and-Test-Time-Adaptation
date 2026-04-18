@@ -27,7 +27,7 @@ For HuggingFace Integration:
     >>> model.generate(..., past_key_values=cache)
 """
 
-__version__ = '2.0.0'
+__version__ = "2.0.0"
 
 # ============================================================================
 # Main API (Recommended)
@@ -89,39 +89,38 @@ from .cache import (
 
 __all__ = [
     # Main API
-    'RaBitQ',
-    'RaBitQConfig',
-    'CompressedKV',
-    'create_k1',
-    'create_k2',
-    'create_k3',
-    'create_k4_v2',
-    'create_k3_v2',
-    'create_k2_v2',
-    'RECOMMENDED',
-    
+    "RaBitQ",
+    "RaBitQConfig",
+    "CompressedKV",
+    "create_k1",
+    "create_k2",
+    "create_k3",
+    "create_k4_v2",
+    "create_k3_v2",
+    "create_k2_v2",
+    "RECOMMENDED",
     # Components
-    'FhtKacRotator',
-    'MatrixRotator',
-    'IdentityRotator',
-    'QuantizedVector',
-    'RabitqConfig',
-    'quantize_vector',
-    'reconstruct_vector',
-    'compute_const_scaling_factor',
-    'estimate_inner_product',
-    'FullSingleQuery',
-    'SplitSingleQuery',
-    'SplitBatchQuery',
-    'make_full_single_query',
-    'full_est_dist',
-    'split_single_estdist',
-    'split_single_fulldist',
-    'split_distance_boosting',
-    'quantize_scalar',
-    'dequantize_scalar',
-    'RaBitQCache',
-    'CacheConfig',
+    "FhtKacRotator",
+    "MatrixRotator",
+    "IdentityRotator",
+    "QuantizedVector",
+    "RabitqConfig",
+    "quantize_vector",
+    "reconstruct_vector",
+    "compute_const_scaling_factor",
+    "estimate_inner_product",
+    "FullSingleQuery",
+    "SplitSingleQuery",
+    "SplitBatchQuery",
+    "make_full_single_query",
+    "full_est_dist",
+    "split_single_estdist",
+    "split_single_fulldist",
+    "split_distance_boosting",
+    "quantize_scalar",
+    "dequantize_scalar",
+    "RaBitQCache",
+    "CacheConfig",
 ]
 
 
@@ -129,20 +128,19 @@ __all__ = [
 # Legacy import helpers
 # ============================================================================
 
+
 def __getattr__(name):
     """Provide helpful error messages for legacy imports."""
     legacy_imports = {
-        'LloydMaxQuantizer': 'This class has been removed. RaBitQ uses binary+extended quantization.',
-        'MSECompressor': 'This class has been removed. Use RaBitQ instead.',
-        'CompressorConfig': 'This class has been removed. Use RaBitQConfig instead.',
-        'pack_bits': 'Moved to rabitq.packing module.',
-        'unpack_bits': 'Moved to rabitq.packing module.',
-        'V3Cache': 'This class has been renamed to RaBitQCache.',
+        "LloydMaxQuantizer": "This class has been removed. RaBitQ uses binary+extended quantization.",
+        "MSECompressor": "This class has been removed. Use RaBitQ instead.",
+        "CompressorConfig": "This class has been removed. Use RaBitQConfig instead.",
+        "pack_bits": "Moved to rabitq.packing module.",
+        "unpack_bits": "Moved to rabitq.packing module.",
+        "V3Cache": "This class has been renamed to RaBitQCache.",
     }
-    
+
     if name in legacy_imports:
-        raise ImportError(
-            f"'{name}' is no longer available in rabitq. {legacy_imports[name]}"
-        )
-    
+        raise ImportError(f"'{name}' is no longer available in rabitq. {legacy_imports[name]}")
+
     raise AttributeError(f"module 'rabitq' has no attribute '{name}'")

@@ -98,14 +98,18 @@ def measure_forward(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Benchmark Table 4 bitwidth sweep (prefill throughput).")
+    p = argparse.ArgumentParser(
+        description="Benchmark Table 4 bitwidth sweep (prefill throughput)."
+    )
     p.add_argument("--checkpoint", type=str, default="", help="Checkpoint path (recommended)")
     p.add_argument("--size", type=str, default="medium", choices=["small", "medium", "large"])
     p.add_argument("--device", type=str, default="cuda")
     p.add_argument("--context-len", type=int, default=131072)
     p.add_argument("--batch-size", type=int, default=1)
     p.add_argument("--repeats", type=int, default=3)
-    p.add_argument("--use-attnres", action="store_true", help="Enable AttnRes (default off for isolation)")
+    p.add_argument(
+        "--use-attnres", action="store_true", help="Enable AttnRes (default off for isolation)"
+    )
     p.add_argument("--output", type=str, required=True, help="Output JSON path")
     args = p.parse_args()
 
@@ -174,4 +178,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

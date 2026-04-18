@@ -18,8 +18,8 @@ from typing import Any
 
 
 NEEDLE_TARGETS = {
-    4096: 98.5,    # 4K
-    32768: 91.8,   # 32K
+    4096: 98.5,  # 4K
+    32768: 91.8,  # 32K
     131072: 79.5,  # 128K
     262144: 69.0,  # 256K
 }
@@ -49,7 +49,9 @@ def _status(ok: bool) -> str:
     return "PASS" if ok else "FLAG"
 
 
-def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) -> tuple[str, dict[str, Any]]:
+def build_report(
+    run_dir: Path, needle_tol_pp: float, throughput_target: float
+) -> tuple[str, dict[str, Any]]:
     static_consistency = _load_json(run_dir / "static_consistency.json")
     needle = _load_json(run_dir / "needle_haystack_real.json")
     throughput = _load_json(run_dir / "throughput_result.json")
@@ -95,12 +97,16 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
         delta = actual - target
         ok = abs(delta) <= needle_tol_pp
         needle_statuses.append(ok)
-        lines.append(f"| {ctx//1024}K | {target:.1f} | {actual:.1f} | {delta:+.1f} | {_status(ok)} |")
+        lines.append(
+            f"| {ctx//1024}K | {target:.1f} | {actual:.1f} | {delta:+.1f} | {_status(ok)} |"
+        )
 
     needle_overall = all(needle_statuses) if needle_statuses else False
     summary["checks"]["needle_table5"] = {"passed": needle_overall}
     lines.append("")
-    lines.append(f"- Needle check overall: **{_status(needle_overall)}** (tolerance: ±{needle_tol_pp:.1f} pp)")
+    lines.append(
+        f"- Needle check overall: **{_status(needle_overall)}** (tolerance: ±{needle_tol_pp:.1f} pp)"
+    )
     lines.append("")
 
     lines.append("### Throughput (Table 4 setting)")
@@ -118,7 +124,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
         summary["checks"]["throughput"] = {"passed": ok, "actual": tps, "target": throughput_target}
         lines.append(f"- Actual throughput: `{tps:.2f} tok/s`")
         lines.append(f"- Target throughput: `{throughput_target:.1f} tok/s`")
-        lines.append(f"- Status: **{_status(ok)}** (pass threshold: >= {0.9 * throughput_target:.1f})")
+        lines.append(
+            f"- Status: **{_status(ok)}** (pass threshold: >= {0.9 * throughput_target:.1f})"
+        )
     lines.append("")
 
     lines.append("### FLOP Equivalence (Section 4 support)")
@@ -144,7 +152,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
     if not table4:
         lines.append("- `table4_bitsweep.json` not found.")
     else:
-        lines.append("| Setting | Paper tok/s | Measured tok/s | Peak mem (GB) | Time/forward (s) | Note |")
+        lines.append(
+            "| Setting | Paper tok/s | Measured tok/s | Peak mem (GB) | Time/forward (s) | Note |"
+        )
         lines.append("|---|---:|---:|---:|---:|---|")
         meas = table4.get("measurements", {})
         for key in ["fp16", "3bit", "2bit", "1bit"]:
@@ -154,13 +164,17 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
             tps = m.get("tokens_per_sec")
             peak = m.get("peak_allocated_gb")
             tmean = m.get("time_mean_s")
-            note = "prefill-style (full forward over T)" if key == "fp16" else "RaBitQ prefill-style"
+            note = (
+                "prefill-style (full forward over T)" if key == "fp16" else "RaBitQ prefill-style"
+            )
             lines.append(
                 f"| {key} | {paper if paper is not None else 'N/A'} | "
                 f"{_fmt(tps)} | {_fmt(peak)} | {_fmt(tmean)} | {note} |"
             )
         lines.append("")
-        lines.append("- This section measures **prefill throughput**, not incremental decode throughput with KV reuse.")
+        lines.append(
+            "- This section measures **prefill throughput**, not incremental decode throughput with KV reuse."
+        )
     lines.append("")
 
     lines.append("### Table 5 Component Sweep (Needle-in-Haystack ablations)")
@@ -168,7 +182,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
     if not table5:
         lines.append("- `table5_components.json` not found.")
     else:
-        lines.append("- Note: This sweep uses the real-model NeedleDataset protocol with runtime toggles.")
+        lines.append(
+            "- Note: This sweep uses the real-model NeedleDataset protocol with runtime toggles."
+        )
         lines.append("")
         lengths = (table5.get("meta") or {}).get("lengths") or []
         runs = table5.get("runs") or {}
@@ -243,7 +259,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
 
             lines.append(f"- Context used for gains: `{chosen//1024}K`")
             if None in (b, q, a, e, f):
-                lines.append("- Progressive gains unavailable (missing one or more component results).")
+                lines.append(
+                    "- Progressive gains unavailable (missing one or more component results)."
+                )
             else:
                 g_rq = q - b
                 g_ar = a - q
@@ -255,7 +273,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
                 lines.append(f"- qTTT gain: `{g_qt:+.1f} pp`")
 
                 # Compare with paper reference if available
-                paper_ref = (table5.get("paper_table5_reference") or {}).get(chosen) or (table5.get("paper_table5_reference") or {}).get(str(chosen))
+                paper_ref = (table5.get("paper_table5_reference") or {}).get(chosen) or (
+                    table5.get("paper_table5_reference") or {}
+                ).get(str(chosen))
                 if isinstance(paper_ref, dict):
                     pr_b = float(paper_ref.get("baseline", 0))
                     pr_q = float(paper_ref.get("rabitq", 0))
@@ -297,7 +317,9 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
         kv = static_consistency.get("kv_cache", {})
         comp = static_consistency.get("compression_table4", {})
         ponder = static_consistency.get("ponder_amortized", {})
-        lines.append(f"- KV total (80 layers @128K): `{_fmt(kv.get('gb_total_80_layers'))} GB` (paper text: 40 GB)")
+        lines.append(
+            f"- KV total (80 layers @128K): `{_fmt(kv.get('gb_total_80_layers'))} GB` (paper text: 40 GB)"
+        )
         lines.append(
             "- Compression-derived storage: "
             f"`3-bit={_fmt(comp.get('3bit_gb'))} GB`, "
@@ -314,11 +336,19 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
     lines.append("## Coverage Notes")
     lines.append("")
     lines.append("- This report aggregates outputs from the A100 verification runner.")
-    lines.append("- Full reproduction of Table 4 bit-width sweep, Table 8 MATH, and Table 9 LongBench ablations requires dedicated benchmark runs with trained checkpoints.")
-    lines.append("- Scripts in `experiments/validation/` and `scripts/evaluation/eval_5_2.py` are target-replay/simulated and should not be used as primary evidence.")
+    lines.append(
+        "- Full reproduction of Table 4 bit-width sweep, Table 8 MATH, and Table 9 LongBench ablations requires dedicated benchmark runs with trained checkpoints."
+    )
+    lines.append(
+        "- Scripts in `experiments/validation/` and `scripts/evaluation/eval_5_2.py` are target-replay/simulated and should not be used as primary evidence."
+    )
     lines.append("")
 
-    overall = all(v.get("passed", False) for v in summary["checks"].values()) if summary["checks"] else False
+    overall = (
+        all(v.get("passed", False) for v in summary["checks"].values())
+        if summary["checks"]
+        else False
+    )
     summary["overall_passed"] = overall
     lines.append(f"## Overall P0 Status: **{_status(overall)}**")
     lines.append("")
@@ -327,11 +357,24 @@ def build_report(run_dir: Path, needle_tol_pp: float, throughput_target: float) 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Collect ADN P0 verification outputs into markdown report.")
-    parser.add_argument("--run-dir", type=str, default="", help="Path to results/paper_verify_<timestamp> directory")
-    parser.add_argument("--base-dir", type=str, default="results", help="Base directory for auto-discovery")
-    parser.add_argument("--needle-tol-pp", type=float, default=5.0, help="Tolerance in percentage points for Needle checks")
-    parser.add_argument("--throughput-target", type=float, default=115.0, help="Throughput target in tok/s")
+    parser = argparse.ArgumentParser(
+        description="Collect ADN P0 verification outputs into markdown report."
+    )
+    parser.add_argument(
+        "--run-dir", type=str, default="", help="Path to results/paper_verify_<timestamp> directory"
+    )
+    parser.add_argument(
+        "--base-dir", type=str, default="results", help="Base directory for auto-discovery"
+    )
+    parser.add_argument(
+        "--needle-tol-pp",
+        type=float,
+        default=5.0,
+        help="Tolerance in percentage points for Needle checks",
+    )
+    parser.add_argument(
+        "--throughput-target", type=float, default=115.0, help="Throughput target in tok/s"
+    )
     args = parser.parse_args()
 
     run_dir = Path(args.run_dir) if args.run_dir else _pick_latest_run(Path(args.base_dir))
