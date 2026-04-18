@@ -96,6 +96,7 @@ class QASPTransformer(nn.Module):
                 block_repr, block_quality = compute_block_representations(
                     hidden_states,
                     num_blocks=self.config.attnres_blocks,
+                    quality_window_size=self.config.quality_window_size,
                 )
 
             hidden_states = layer(
@@ -144,6 +145,7 @@ class QASPTransformer(nn.Module):
                 block_repr, block_quality = compute_block_representations(
                     hidden_states,
                     num_blocks=self.config.attnres_blocks,
+                    quality_window_size=self.config.quality_window_size,
                 )
 
             hidden_states, k, v = layer.forward_with_cache(
@@ -216,6 +218,7 @@ class QASPTransformer(nn.Module):
                 block_repr, block_quality = compute_block_representations(
                     layer_input_history,
                     num_blocks=self.config.attnres_blocks,
+                    quality_window_size=self.config.quality_window_size,
                 )
 
             hidden, new_k, new_v = layer.step(

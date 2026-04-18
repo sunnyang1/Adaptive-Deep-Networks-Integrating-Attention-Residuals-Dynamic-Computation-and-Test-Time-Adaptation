@@ -38,6 +38,7 @@ class QASPTransformerConfig:
     stiefel_overlay_scale: float = 0.0
     quantize_kv: bool = False
     kv_codec_seed: int = 0
+    quality_window_size: int | None = None
 
 
 class RMSNorm(nn.Module):
@@ -225,12 +226,17 @@ def compute_block_representations(
     hidden_states: Tensor,
     num_blocks: int,
     low_pass_ratio: float = 0.25,
+    *,
+    quality_window_size: int | None = None,
 ) -> tuple[Tensor, Tensor]:
     """Pool hidden states into block summaries and block-level quality.
 
     Implements label ``eq:block-quality`` in ``QASP_paper.tex`` (block-level mean
     quality ``ρ̄_m = (1/|B_m|) Σ_{t∈B_m} ρ(t)``), with ``ρ(t)`` from the spectral
     quality score (``eq:quality-score``, Sec.~3.2).
+
+    ``quality_window_size`` forwards to :func:`compute_quality_score` (optional
+    sliding-window batching along ``T``; ``None`` = one FFT over the full sequence).
 
     **Canonical use.**  Pass the **entire** sequence tensor ``[B, T, D]`` from
     one forward pass so that ``B_m`` and ``ρ̄_m`` match the paper's
@@ -242,7 +248,11 @@ def compute_block_representations(
     chunks = torch.chunk(hidden_states, chunks=max(1, num_blocks), dim=1)
     block_vectors = torch.stack([chunk.mean(dim=1) for chunk in chunks], dim=1)
 
-    per_token_quality = compute_quality_score(hidden_states, low_pass_ratio=low_pass_ratio)
+    per_token_quality = compute_quality_score(
+        hidden_states,
+        low_pass_ratio=low_pass_ratio,
+        window_size=quality_window_size,
+    )
     quality_chunks = torch.chunk(per_token_quality, chunks=max(1, num_blocks), dim=1)
     block_quality = torch.stack([chunk.mean(dim=1) for chunk in quality_chunks], dim=1)
     return block_vectors, block_quality
