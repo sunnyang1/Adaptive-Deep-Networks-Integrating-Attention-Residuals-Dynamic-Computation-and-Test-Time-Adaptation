@@ -33,4 +33,12 @@ Two configuration objects share a name but **different roles**:
 
 When set, the driver computes the paper policy once (for the current legacy `config`), prints it, stores it under `results["paper_policy_bridge"]` in the returned summary, and writes `paper_policy_bridge.json` under the run output directory.
 
-US4–US6 **do not yet** automatically swap the real-model path to `MATDO-new`’s runtime backend; this hook is for **telemetry and parity checks**. Wiring `MaterializedPolicy` into `load_matdo_model` / generation is a follow-up.
+### US4 real model (`us4_use_paper_runtime`)
+
+When `experiments.matdo.common.config.MATDOConfig.us4_use_paper_runtime` is **True** (CLI: `--us4-paper-runtime` on `run_all_experiments.py` with `--use-real-model`), US4’s Needle evaluation calls `evaluate_needle_haystack(..., use_paper_runtime=True, rho_hbm=<trial ρ>)`. That path:
+
+1. Runs `solve_policy_from_legacy` → `MaterializedPolicy`
+2. Builds `AdaptiveTransformerRuntimeBackend` + `MATDOModel` around the loaded `AdaptiveTransformer`
+3. Decodes with `matdo_new.runtime.generation.generate_tokens` (greedy), passing the materialized policy into prefill/decode
+
+Engram is only activated if **both** the policy requests it **and** `model.config.use_engram` is true (weights present).
