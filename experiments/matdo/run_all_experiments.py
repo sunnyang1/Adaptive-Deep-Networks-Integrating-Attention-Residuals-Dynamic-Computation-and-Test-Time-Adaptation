@@ -9,7 +9,7 @@ import json
 import numpy as np
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional, Tuple
 
 # 添加项目路径
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -42,6 +42,10 @@ def run_all_matdo_experiments(
     checkpoint_path: str = None,
     model_size: str = "small",
     device: str = "cuda",
+    *,
+    us4_num_trials: Optional[int] = None,
+    us4_enable_qttt: Optional[bool] = None,
+    rls_ctx_lengths_override: Optional[Tuple[int, ...]] = None,
 ) -> Dict:
     """
     运行所有MATDO实验
@@ -54,7 +58,10 @@ def run_all_matdo_experiments(
     Args:
         skip_usX: 是否跳过特定实验
         output_dir: 输出目录
-    
+        us4_num_trials: 若给定，写入 ``config.us4_num_trials``（US4 试验次数）
+        us4_enable_qttt: 若给定，写入 ``config.us4_enable_qttt``
+        rls_ctx_lengths_override: 若给定，写入 ``config.rls_ctx_lengths_override``（US6）
+
     Returns:
         all_results: 所有实验结果汇总
     """
@@ -77,6 +84,14 @@ def run_all_matdo_experiments(
             print("注意: 未提供检查点，将使用随机初始化权重")
     else:
         print_banner("MATDO实验套件启动")
+
+    # Optional US4 / US6 knobs (also used from CLI; see experiments/matdo/README.md)
+    if us4_num_trials is not None:
+        matdo_config.us4_num_trials = us4_num_trials
+    if us4_enable_qttt is not None:
+        matdo_config.us4_enable_qttt = us4_enable_qttt
+    if rls_ctx_lengths_override is not None:
+        matdo_config.rls_ctx_lengths_override = rls_ctx_lengths_override
     
     # 设置随机种子确保可复现
     np.random.seed(42)
@@ -167,9 +182,15 @@ def run_all_matdo_experiments(
     if not skip_us4:
         print_banner("运行 US4: SOTA对比实验")
         try:
+            # ``us4_num_trials`` lets CPU smoke runs shrink the 10× trial
+            # loop down to something that finishes; the paper defaults
+            # stay at 10 when the knob is left as ``None``.
+            us4_trials = getattr(matdo_config, "us4_num_trials", None)
+            if us4_trials is None:
+                us4_trials = 10
             us4_results = run_sota_comparison(
                 rho_test=0.9,
-                num_trials=10,
+                num_trials=int(us4_trials),
                 output_dir=output_dir / "sota_comparison"
             )
             all_results['US4'] = us4_results
@@ -247,9 +268,21 @@ def run_all_matdo_experiments(
         print(f"         gap = {all_results['US2'].get('gap', 'N/A'):.4f}")
     
     if 'US4' in all_results and 'acceptance' in all_results['US4']:
-        imp = all_results['US4'].get('improvements', {})
-        print(f"  • US4: vs SnapKV +{imp.get('vs_snapkv_pct', 'N/A'):.1f}%")
-        print(f"         vs H2O +{imp.get('vs_h2o_pct', 'N/A'):.1f}%")
+        # ``compare_baselines.run_sota_comparison`` was refactored to emit a
+        # ``stats`` dict keyed by method instead of the older
+        # ``improvements`` block. Compute the percentages on the fly for the
+        # summary, falling back to 'N/A' when the new schema is absent.
+        us4_stats = all_results['US4'].get('stats', {})
+        matdo_e = us4_stats.get('MATDO-E (4D)', {}).get('mean_accuracy')
+
+        def _pct_delta(baseline_name: str) -> str:
+            base = us4_stats.get(baseline_name, {}).get('mean_accuracy')
+            if matdo_e is None or base in (None, 0):
+                return 'N/A'
+            return f"{(matdo_e - base) / base * 100:+.1f}%"
+
+        print(f"  • US4: vs SnapKV {_pct_delta('SnapKV')}")
+        print(f"         vs H2O    {_pct_delta('H2O')}")
     
     # 保存总结果
     summary = {
@@ -274,10 +307,24 @@ def run_all_matdo_experiments(
     return summary
 
 
+def _parse_rls_ctx_lengths(s: Optional[str]) -> Optional[Tuple[int, ...]]:
+    """Parse ``--rls-ctx-lengths`` like ``128,256,512`` into a tuple of ints."""
+
+    if s is None or not str(s).strip():
+        return None
+    parts = [p.strip() for p in str(s).split(",") if p.strip()]
+    if not parts:
+        return None
+    return tuple(int(p) for p in parts)
+
+
 if __name__ == "__main__":
     import argparse
-    
-    parser = argparse.ArgumentParser(description="运行MATDO实验套件")
+
+    parser = argparse.ArgumentParser(
+        description="运行MATDO实验套件",
+        epilog="US4/US6 调参说明见 experiments/matdo/README.md",
+    )
     parser.add_argument("--skip-us1", action="store_true", help="跳过US1")
     parser.add_argument("--skip-us2", action="store_true", help="跳过US2")
     parser.add_argument("--skip-us3", action="store_true", help="跳过US3")
@@ -289,9 +336,31 @@ if __name__ == "__main__":
     parser.add_argument("--checkpoint", type=str, default=None, help="模型检查点路径")
     parser.add_argument("--size", type=str, default="small", choices=["small", "medium", "large"], help="模型大小")
     parser.add_argument("--device", type=str, default="cuda", help="计算设备")
-    
+    parser.add_argument(
+        "--us4-num-trials",
+        type=int,
+        default=None,
+        metavar="N",
+        help="US4 SOTA 对比重复试验次数；缺省使用配置（未在配置中设置时为 10）",
+    )
+    parser.add_argument(
+        "--us4-no-qttt",
+        action="store_true",
+        help="US4 真实模型路径中关闭 qTTT（CPU 上显著缩短单次 generate 时间）",
+    )
+    parser.add_argument(
+        "--rls-ctx-lengths",
+        type=str,
+        default=None,
+        metavar="L1,L2,...",
+        help=(
+            "US6 RLS：逗号分隔的上下文长度，覆盖默认的 ctx_len=M*N_block；"
+            "例: 128,256,512"
+        ),
+    )
+
     args = parser.parse_args()
-    
+
     run_all_matdo_experiments(
         skip_us1=args.skip_us1,
         skip_us2=args.skip_us2,
@@ -304,4 +373,7 @@ if __name__ == "__main__":
         checkpoint_path=args.checkpoint,
         model_size=args.size,
         device=args.device,
+        us4_num_trials=args.us4_num_trials,
+        us4_enable_qttt=False if args.us4_no_qttt else None,
+        rls_ctx_lengths_override=_parse_rls_ctx_lengths(args.rls_ctx_lengths),
     )

@@ -63,3 +63,59 @@ def test_matrix_qasp_raises_for_empty_quality_scores() -> None:
     with pytest.raises(ValueError, match="non-empty"):
         matrix_qasp_update(matrix, gradient, quality_scores=torch.tensor([]))
 
+
+def test_matrix_qasp_requires_loss_fn_or_gradient() -> None:
+    """At least one of loss_fn or gradient must be provided."""
+
+    matrix = torch.eye(4)
+    with pytest.raises(ValueError, match="loss_fn"):
+        matrix_qasp_update(matrix)
+
+
+def test_matrix_qasp_rejects_both_loss_fn_and_gradient() -> None:
+    """Both loss_fn and gradient cannot be provided simultaneously."""
+
+    matrix = torch.eye(4)
+    with pytest.raises(ValueError, match="exactly one"):
+        matrix_qasp_update(
+            matrix,
+            gradient=torch.ones_like(matrix),
+            loss_fn=lambda w: (w * w).sum(),
+        )
+
+
+def test_matrix_qasp_with_loss_fn_decreases_loss_and_stays_on_stiefel() -> None:
+    """loss_fn path follows paper Alg 2 Step 1: gradient is recomputed each step."""
+
+    from QASP.adaptation.stiefel import project_to_stiefel
+
+    torch.manual_seed(0)
+    target = project_to_stiefel(torch.randn(8, 4, dtype=torch.float64), num_iters=8)
+    start = project_to_stiefel(torch.randn(8, 4, dtype=torch.float64), num_iters=8)
+
+    def loss_fn(weights: torch.Tensor) -> torch.Tensor:
+        return ((weights - target) ** 2).sum()
+
+    initial_loss = loss_fn(start).item()
+    updated = matrix_qasp_update(
+        matrix=start,
+        loss_fn=loss_fn,
+        step_size=0.5,
+        num_adapt_steps=10,
+        ns_iters=5,
+    )
+    final_loss = loss_fn(updated).item()
+
+    assert final_loss < initial_loss
+    gram = updated.transpose(0, 1) @ updated
+    identity = torch.eye(updated.shape[1], dtype=updated.dtype)
+    assert torch.allclose(gram, identity, atol=1e-3, rtol=1e-3)
+
+
+def test_matrix_qasp_loss_fn_must_return_scalar() -> None:
+    """loss_fn returning a non-scalar tensor should fail fast."""
+
+    matrix = torch.eye(4)
+    with pytest.raises(ValueError, match="scalar"):
+        matrix_qasp_update(matrix, loss_fn=lambda w: w * 2.0)
+

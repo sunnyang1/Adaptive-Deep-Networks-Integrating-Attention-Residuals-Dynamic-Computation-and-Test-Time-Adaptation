@@ -73,6 +73,23 @@ class MATDOConfig:
     real_model_eval_tasks: Tuple[str, ...] = ("needle",)
     real_model_num_samples: int = 5
     real_model_context_lengths: Tuple[int, ...] = (4096, 16384, 65536)
+
+    # US6 RLS sweep context length override. ``rls_estimator`` otherwise
+    # derives ``ctx_len = min(M * N_block, cfg.max_seq_len)`` which produces
+    # 16K–64K token prompts on ``small`` and is infeasible on CPU. When set,
+    # the tuple replaces that derivation and each grid point ``t`` uses
+    # ``rls_ctx_lengths_override[t % len(rls_ctx_lengths_override)]``.
+    # ``None`` preserves the original physically-meaningful behaviour.
+    rls_ctx_lengths_override: Optional[Tuple[int, ...]] = None
+
+    # US4 SOTA-comparison knobs. The driver hard-codes ``num_trials=10`` and
+    # ``_ensure_matdo_model`` hard-codes ``enable_qttt=True``; on CPU every
+    # trial runs query-only TTT per generated token so even one trial is
+    # minutes. ``us4_num_trials`` overrides the trial count, and
+    # ``us4_enable_qttt`` turns off qTTT when False (``True`` preserves the
+    # existing behaviour). ``None`` / ``True`` leave the defaults alone.
+    us4_num_trials: Optional[int] = None
+    us4_enable_qttt: bool = True
     
     # Engram索引配置
     engram_index_path: Optional[str] = None

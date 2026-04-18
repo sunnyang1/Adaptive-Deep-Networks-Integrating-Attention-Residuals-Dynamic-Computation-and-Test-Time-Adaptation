@@ -1,19 +1,40 @@
-"""Projection utilities for Stiefel-constrained adaptation matrices."""
+"""Projection utilities for Stiefel-constrained adaptation matrices.
+
+Implements the matrix sign function ``msign(W) = W (W^T W)^{-1/2}`` via the
+Newton-Schulz iteration of QASP paper Algorithm 1 (Section 4.3):
+
+    Y_0 = W / ||W||_2                           # spectral normalisation
+    Y_{t+1} = 0.5 * Y_t (3 I_k - Y_t^T Y_t)     # degree-3 polynomial step
+
+The iteration acts directly on ``W`` (rather than on ``W^T W``) and converges
+superlinearly to the nearest Stiefel matrix whenever ``||I - Y_0^T Y_0||_F < 1``
+(QASP paper, Lemma 1). Spectral normalisation ensures ``||Y_0||_2 = 1``, which
+satisfies this assumption for full column rank ``W``.
+"""
 
 from __future__ import annotations
+
+from typing import cast
 
 import torch
 
 
 def project_to_stiefel(
     matrix: torch.Tensor,
-    num_iters: int = 8,
+    num_iters: int = 5,
     eps: float = 1e-6,
 ) -> torch.Tensor:
-    """Project a matrix onto the Stiefel manifold using Newton-Schulz iterations.
+    """Project ``matrix`` onto the Stiefel manifold via Newton-Schulz.
 
-    This projection enforces near-orthonormal columns by computing:
-    `W_proj = W (W^T W + eps I)^(-1/2)`.
+    Args:
+        matrix: ``[d, k]`` tensor with ``d >= k`` and full column rank.
+        num_iters: Number of Newton-Schulz polynomial steps ``T``. The QASP
+            paper (Table 2) uses ``T = 5``.
+        eps: Small positive constant used to guard the spectral-norm
+            normalisation against zero matrices.
+
+    Returns:
+        A ``[d, k]`` tensor whose columns are approximately orthonormal.
     """
 
     if matrix.ndim != 2:
@@ -27,20 +48,14 @@ def project_to_stiefel(
     if eps <= 0:
         raise ValueError("`eps` must be positive.")
 
+    spectral_norm = torch.linalg.matrix_norm(matrix, ord=2).clamp_min(eps)
+    y = matrix / spectral_norm
+
     cols = matrix.shape[1]
     eye = torch.eye(cols, device=matrix.device, dtype=matrix.dtype)
-    gram = matrix.transpose(0, 1) @ matrix + eps * eye
-
-    # Normalize for Newton-Schulz stability.
-    norm_gram = gram.norm(p="fro").clamp_min(eps)
-    y = gram / norm_gram
-    z = eye.clone()
 
     for _ in range(num_iters):
-        t = 0.5 * (3.0 * eye - z @ y)
-        y = y @ t
-        z = t @ z
+        gram = y.transpose(-2, -1) @ y
+        y = 0.5 * y @ (3.0 * eye - gram)
 
-    inv_sqrt_gram = z / torch.sqrt(norm_gram)
-    return matrix @ inv_sqrt_gram
-
+    return cast(torch.Tensor, y)

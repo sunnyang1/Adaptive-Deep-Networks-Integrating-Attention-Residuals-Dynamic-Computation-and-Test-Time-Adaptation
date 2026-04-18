@@ -114,8 +114,16 @@ def simulate_online_queries(
             R = grid_R[t % len(grid_R)]
             M = grid_M[(t // len(grid_R)) % len(grid_M)]
             T = grid_T[(t // (len(grid_R) * len(grid_M))) % len(grid_T)]
-            
-            ctx_len = min(M * config.N_block, getattr(cfg, "max_seq_len", 32768))
+
+            # Prefer the explicit ``rls_ctx_lengths_override`` if set so that
+            # sanity / smoke runs on CPU can drive prompts down to a handful
+            # of tokens. The physically-meaningful derivation
+            # ``ctx_len = M * N_block`` stays as the default.
+            override = getattr(config, "rls_ctx_lengths_override", None)
+            if override:
+                ctx_len = override[t % len(override)]
+            else:
+                ctx_len = min(M * config.N_block, getattr(cfg, "max_seq_len", 32768))
             orig_qttt_steps = cfg.max_qttt_steps
             cfg.max_qttt_steps = min(T, orig_qttt_steps)
             

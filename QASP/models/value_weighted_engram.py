@@ -1,4 +1,16 @@
-"""Value-weighted engram fusion module."""
+"""Value-weighted Engram fusion (QASP Section 5.3, Eq. 9).
+
+Implements
+
+    h' = h + α · σ(ρ_mem) · m,   α = σ(w_g · h),
+
+where ``w_g`` is a learned content-dependent gate vector (paper Section 2.3,
+Eq. 4) and ``σ(ρ_mem)`` modulates the contribution by the average information
+quality stored alongside the memory entry.
+
+For test/debug use, ``forward`` accepts an explicit ``gate`` override that
+replaces ``α``; the default path computes ``α`` from the hidden state itself.
+"""
 
 from __future__ import annotations
 
@@ -8,12 +20,12 @@ from torch import Tensor
 
 
 class ValueWeightedEngram(nn.Module):
-    """Fuse hidden states with memory vectors and quality-aware gating."""
+    """Fuse hidden states with retrieved memory under a quality-aware gate."""
 
-    def __init__(self, hidden_size: int, init_gate: float = 1.0) -> None:
+    def __init__(self, hidden_size: int) -> None:
         super().__init__()
         self.hidden_size = hidden_size
-        self.default_gate = nn.Parameter(torch.tensor(float(init_gate)))
+        self.gate_proj = nn.Linear(hidden_size, 1, bias=True)
 
     def forward(
         self,
@@ -22,6 +34,8 @@ class ValueWeightedEngram(nn.Module):
         memory_quality: Tensor,
         gate: Tensor | float | None = None,
     ) -> Tensor:
+        if hidden_states.ndim != 3:
+            raise ValueError("hidden_states must have shape [B, T, D]")
         batch_size, seq_len, _ = hidden_states.shape
 
         if memory_vector.ndim == 2:
@@ -31,23 +45,40 @@ class ValueWeightedEngram(nn.Module):
 
         if memory_quality.ndim == 1:
             memory_quality = memory_quality.unsqueeze(1).expand(-1, seq_len)
-        quality = torch.sigmoid(memory_quality).unsqueeze(-1)
+        if memory_quality.shape != (batch_size, seq_len):
+            raise ValueError("memory_quality must broadcast to [B, T]")
+        quality_gate = torch.sigmoid(memory_quality).unsqueeze(-1)
 
-        gate_term = self.default_gate if gate is None else gate
-        if not torch.is_tensor(gate_term):
-            gate_term = torch.tensor(float(gate_term), device=hidden_states.device, dtype=hidden_states.dtype)
+        if gate is None:
+            content_gate = torch.sigmoid(self.gate_proj(hidden_states))
         else:
-            gate_term = gate_term.to(device=hidden_states.device, dtype=hidden_states.dtype)
-            if gate_term.ndim == 1:
-                if gate_term.shape[0] != batch_size:
-                    raise ValueError("1D gate tensor must have shape [B]")
-                gate_term = gate_term.view(batch_size, 1, 1)
-            elif gate_term.ndim == 2:
-                if gate_term.shape != (batch_size, seq_len):
-                    raise ValueError("2D gate tensor must have shape [B, T]")
-                gate_term = gate_term.unsqueeze(-1)
-            elif gate_term.ndim != 0:
-                raise ValueError("gate must be scalar, [B], or [B, T]")
+            content_gate = self._coerce_gate(gate, hidden_states, batch_size, seq_len)
 
-        return hidden_states + gate_term * quality * memory_vector
+        return hidden_states + content_gate * quality_gate * memory_vector
 
+    def _coerce_gate(
+        self,
+        gate: Tensor | float,
+        hidden_states: Tensor,
+        batch_size: int,
+        seq_len: int,
+    ) -> Tensor:
+        if not torch.is_tensor(gate):
+            return torch.tensor(
+                float(gate),
+                device=hidden_states.device,
+                dtype=hidden_states.dtype,
+            )
+
+        gate_term = gate.to(device=hidden_states.device, dtype=hidden_states.dtype)
+        if gate_term.ndim == 0:
+            return gate_term
+        if gate_term.ndim == 1:
+            if gate_term.shape[0] != batch_size:
+                raise ValueError("1D gate tensor must have shape [B]")
+            return gate_term.view(batch_size, 1, 1)
+        if gate_term.ndim == 2:
+            if gate_term.shape != (batch_size, seq_len):
+                raise ValueError("2D gate tensor must have shape [B, T]")
+            return gate_term.unsqueeze(-1)
+        raise ValueError("gate must be scalar, [B], or [B, T]")

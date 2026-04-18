@@ -26,23 +26,48 @@ class AblationResult:
     error: float
 
 
-_global_model_cache = {}
+_global_model_cache: dict = {}
 
 
-def _get_model(enable_rabitq: bool, enable_attnres: bool, enable_qttt: bool):
-    """缓存模型实例，避免重复加载"""
-    key = (enable_rabitq, enable_attnres, enable_qttt, config.model_size, config.checkpoint_path, config.device)
+def _get_shared_model():
+    """Return a *single* cached ``(model, cfg)`` pair for the current run.
+
+    Earlier this function keyed the cache on ``(enable_rabitq,
+    enable_attnres, enable_qttt, ...)`` which caused a fresh
+    :class:`AdaptiveTransformer` instance (≈2.2B params ≈8 GB fp32 for
+    ``size=small``) to be materialised for every flag combination. On CPU
+    that produced ~4× that footprint (~33 GB) and either OOM'd or
+    thrashed.
+
+    The three ``enable_*`` flags never change module topology — they are
+    plain markers read later by
+    :func:`experiments.matdo.common.real_model_bridge.evaluate_needle_haystack`
+    via ``getattr(config, "enable_*", ...)``. So we can share one model
+    instance across all ablation variants and only mutate the config's
+    flag attributes in place.
+    """
+
+    key = (config.model_size, config.checkpoint_path, config.device)
     if key not in _global_model_cache:
         model, cfg = load_matdo_model(
             checkpoint_path=config.checkpoint_path,
             model_size=config.model_size,
             device=config.device,
-            enable_rabitq=enable_rabitq,
-            enable_attnres=enable_attnres,
-            enable_qttt=enable_qttt,
+            enable_rabitq=True,
+            enable_attnres=True,
+            enable_qttt=True,
         )
         _global_model_cache[key] = (model, cfg)
     return _global_model_cache[key]
+
+
+def _set_flags(cfg, *, enable_rabitq: bool, enable_attnres: bool, enable_qttt: bool):
+    """In-place toggle of the ablation flags on a shared model config."""
+
+    cfg.enable_rabitq = enable_rabitq
+    cfg.enable_attnres = enable_attnres
+    cfg.enable_qttt = enable_qttt
+    return cfg
 
 
 def evaluate_rabitq_only(rho: float) -> AblationResult:
@@ -52,7 +77,8 @@ def evaluate_rabitq_only(rho: float) -> AblationResult:
     只有Space维度优化
     """
     if config.use_real_model:
-        model, cfg = _get_model(enable_rabitq=True, enable_attnres=False, enable_qttt=False)
+        model, cfg = _get_shared_model()
+        _set_flags(cfg, enable_rabitq=True, enable_attnres=False, enable_qttt=False)
         result = evaluate_on_task(
             model, "needle", cfg,
             device=config.device,
@@ -94,7 +120,8 @@ def evaluate_attnres_only(rho: float) -> AblationResult:
     只有Scope维度优化
     """
     if config.use_real_model:
-        model, cfg = _get_model(enable_rabitq=False, enable_attnres=True, enable_qttt=False)
+        model, cfg = _get_shared_model()
+        _set_flags(cfg, enable_rabitq=False, enable_attnres=True, enable_qttt=False)
         result = evaluate_on_task(
             model, "needle", cfg,
             device=config.device,
@@ -136,7 +163,8 @@ def evaluate_qttt_only(rho: float) -> AblationResult:
     只有Specificity维度优化
     """
     if config.use_real_model:
-        model, cfg = _get_model(enable_rabitq=False, enable_attnres=False, enable_qttt=True)
+        model, cfg = _get_shared_model()
+        _set_flags(cfg, enable_rabitq=False, enable_attnres=False, enable_qttt=True)
         result = evaluate_on_task(
             model, "needle", cfg,
             device=config.device,
@@ -183,7 +211,8 @@ def evaluate_matdo_full(rho: float) -> AblationResult:
     完整MATDO系统（三维联合优化）
     """
     if config.use_real_model:
-        model, cfg = _get_model(enable_rabitq=True, enable_attnres=True, enable_qttt=True)
+        model, cfg = _get_shared_model()
+        _set_flags(cfg, enable_rabitq=True, enable_attnres=True, enable_qttt=True)
         result = evaluate_on_task(
             model, "needle", cfg,
             device=config.device,

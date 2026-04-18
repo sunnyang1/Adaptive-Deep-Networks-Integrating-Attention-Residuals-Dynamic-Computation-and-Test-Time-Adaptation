@@ -25,15 +25,28 @@ def test_quality_scores_are_bounded_in_unit_interval() -> None:
     assert torch.all(quality <= 1.0)
 
 
-def test_smoother_signal_has_higher_quality_than_noisy_signal() -> None:
-    """Low-frequency signal should score higher than high-frequency noise."""
+def test_quality_score_has_per_token_shape_for_sequence_input() -> None:
+    """Score is computed along the channel dim and preserves [B, T]."""
+
+    torch.manual_seed(0)
+    signal = torch.randn(2, 7, 64)
+
+    quality = compute_quality_score(signal, low_pass_ratio=0.25)
+
+    assert quality.shape == (2, 7)
+    assert torch.all(quality >= 0.0)
+    assert torch.all(quality <= 1.0)
+
+
+def test_high_frequency_signal_has_higher_quality_than_smooth_signal() -> None:
+    """Per QASP Eq. (5), rho(t) = 1 - s(t): info-rich content scores higher."""
 
     t = torch.linspace(0.0, 2.0 * torch.pi, 256)
     smooth = torch.sin(t).repeat(4, 1)
+    torch.manual_seed(0)
     noisy = torch.randn(4, 256)
 
-    smooth_quality = compute_quality_score(smooth, low_pass_ratio=0.2).mean()
-    noisy_quality = compute_quality_score(noisy, low_pass_ratio=0.2).mean()
+    smooth_quality = compute_quality_score(smooth, low_pass_ratio=0.25).mean()
+    noisy_quality = compute_quality_score(noisy, low_pass_ratio=0.25).mean()
 
-    assert smooth_quality > noisy_quality
-
+    assert noisy_quality > smooth_quality

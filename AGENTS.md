@@ -122,6 +122,8 @@ python experiments/matdo/run_all_experiments.py \
 - `--checkpoint PATH`: Load pretrained weights
 - `--device {cuda,mps,cpu}`: Compute device
 
+For CPU-friendly US4/US6 tuning (`--us4-num-trials`, `--us4-no-qttt`, `--rls-ctx-lengths`) and the shared `MATDOConfig` fields, see [experiments/matdo/README.md](experiments/matdo/README.md).
+
 **Implementation notes:**
 
 - US1–US3 default to simulation due to O(100) model evaluations each

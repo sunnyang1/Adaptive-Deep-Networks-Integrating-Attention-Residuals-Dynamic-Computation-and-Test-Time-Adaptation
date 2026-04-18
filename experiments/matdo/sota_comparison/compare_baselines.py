@@ -102,13 +102,15 @@ _global_matdo_cfg = None
 def _ensure_matdo_model():
     global _global_matdo_model, _global_matdo_cfg
     if _global_matdo_model is None:
+        # ``us4_enable_qttt`` lets CPU smoke runs skip the per-token
+        # query-only TTT loop, which otherwise dominates wall-clock time.
         _global_matdo_model, _global_matdo_cfg = load_matdo_model(
             checkpoint_path=config.checkpoint_path,
             model_size=config.model_size,
             device=config.device,
             enable_rabitq=True,
             enable_attnres=True,
-            enable_qttt=True,
+            enable_qttt=bool(getattr(config, "us4_enable_qttt", True)),
         )
     return _global_matdo_model, _global_matdo_cfg
 
@@ -304,9 +306,15 @@ def statistical_test(
     t_stat, p_value = stats.ttest_rel(matdo_accuracies, baseline_accuracies)
     
     # 单侧检验：MATDO > baseline
-    is_significant = p_value / 2 < 0.05 and np.mean(matdo_accuracies) > np.mean(baseline_accuracies)
-    
-    return is_significant, p_value
+    # Cast numpy comparisons to Python primitives so downstream ``json.dump``
+    # does not trip on ``np.bool_`` (which is not a subclass of ``bool`` in
+    # numpy >= 1.20 and is not JSON-serializable by default).
+    is_significant = bool(
+        (p_value / 2 < 0.05)
+        and (np.mean(matdo_accuracies) > np.mean(baseline_accuracies))
+    )
+
+    return is_significant, float(p_value)
 
 
 def run_sota_comparison(
@@ -444,6 +452,11 @@ def run_sota_comparison(
         'survives_at_rho_99': high_pressure_results['MATDO-E (4D)'].accuracy > 0.90,
         'significant_vs_3d': sig_vs_matdo3d,
     }
+    # Any of the ``>`` comparisons above can yield ``np.bool_`` when a side
+    # is a numpy scalar (e.g. ``BaselineResult.accuracy`` is computed through
+    # ``np.random.normal``). ``json.dump`` raises on ``np.bool_``, so coerce
+    # the whole acceptance dict to Python primitives.
+    acceptance = {key: bool(value) for key, value in acceptance.items()}
     
     print(f"\n{'='*70}")
     print("Acceptance Criteria:")
