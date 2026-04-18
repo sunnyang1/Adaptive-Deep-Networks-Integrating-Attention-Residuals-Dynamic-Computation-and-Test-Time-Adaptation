@@ -46,6 +46,9 @@ def run_all_matdo_experiments(
     us4_num_trials: Optional[int] = None,
     us4_enable_qttt: Optional[bool] = None,
     rls_ctx_lengths_override: Optional[Tuple[int, ...]] = None,
+    use_paper_policy: bool = False,
+    paper_rho_hbm: float = 0.92,
+    paper_rho_dram: float = 0.30,
 ) -> Dict:
     """
     运行所有MATDO实验
@@ -61,6 +64,9 @@ def run_all_matdo_experiments(
         us4_num_trials: 若给定，写入 ``config.us4_num_trials``（US4 试验次数）
         us4_enable_qttt: 若给定，写入 ``config.us4_enable_qttt``
         rls_ctx_lengths_override: 若给定，写入 ``config.rls_ctx_lengths_override``（US6）
+        use_paper_policy: 若为 True，用 ``paper_policy_bridge`` 调用 MATDO-new 的
+            ``solve_policy``，打印并写入 ``paper_policy_bridge.json``（不改变 US4–US6 内部求解器）
+        paper_rho_hbm / paper_rho_dram: 传给 MATDO-new 的运行时观测
 
     Returns:
         all_results: 所有实验结果汇总
@@ -92,6 +98,23 @@ def run_all_matdo_experiments(
         matdo_config.us4_enable_qttt = us4_enable_qttt
     if rls_ctx_lengths_override is not None:
         matdo_config.rls_ctx_lengths_override = rls_ctx_lengths_override
+
+    paper_policy_payload: Optional[Dict] = None
+    if use_paper_policy:
+        from experiments.matdo.paper_policy_bridge import (
+            dump_policy_payload,
+            policy_payload_for_experiments,
+        )
+
+        print_banner("MATDO-new paper policy (bridge)")
+        paper_policy_payload = policy_payload_for_experiments(
+            matdo_config,
+            rho_hbm=float(paper_rho_hbm),
+            rho_dram=float(paper_rho_dram),
+        )
+        print(json.dumps(paper_policy_payload, indent=2, ensure_ascii=False))
+        dump_policy_payload(output_dir / "paper_policy_bridge.json", paper_policy_payload)
+        print(f"Paper policy snapshot: {output_dir / 'paper_policy_bridge.json'}\n")
     
     # 设置随机种子确保可复现
     np.random.seed(42)
@@ -99,7 +122,9 @@ def run_all_matdo_experiments(
     print(f"开始时间: {datetime.now().isoformat()}")
     print()
     
-    all_results = {}
+    all_results: Dict = {}
+    if paper_policy_payload is not None:
+        all_results["paper_policy_bridge"] = paper_policy_payload
     singularity_results_file = None
     
     # ==================== US1: 二阶奇点标度律 ====================
@@ -358,6 +383,25 @@ if __name__ == "__main__":
             "例: 128,256,512"
         ),
     )
+    parser.add_argument(
+        "--paper-policy",
+        action="store_true",
+        help="调用 MATDO-new solve_policy 并写入 paper_policy_bridge.json（见 MATDO_NEW_BRIDGE.md）",
+    )
+    parser.add_argument(
+        "--paper-rho-hbm",
+        type=float,
+        default=0.92,
+        metavar="RHO",
+        help="与 --paper-policy 联用：观测到的 HBM 利用率",
+    )
+    parser.add_argument(
+        "--paper-rho-dram",
+        type=float,
+        default=0.30,
+        metavar="RHO",
+        help="与 --paper-policy 联用：观测到的 DRAM 利用率",
+    )
 
     args = parser.parse_args()
 
@@ -376,4 +420,7 @@ if __name__ == "__main__":
         us4_num_trials=args.us4_num_trials,
         us4_enable_qttt=False if args.us4_no_qttt else None,
         rls_ctx_lengths_override=_parse_rls_ctx_lengths(args.rls_ctx_lengths),
+        use_paper_policy=args.paper_policy,
+        paper_rho_hbm=args.paper_rho_hbm,
+        paper_rho_dram=args.paper_rho_dram,
     )

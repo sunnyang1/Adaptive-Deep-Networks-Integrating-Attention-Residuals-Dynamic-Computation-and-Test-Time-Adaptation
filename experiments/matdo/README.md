@@ -81,6 +81,10 @@ run_all_matdo_experiments(
 
 For laptop smoke runs, `run_smoke.py` sets `(128,)` and `num_samples=1`.
 
+## MATDO-new paper policy bridge
+
+Legacy US1–US6 use `experiments.matdo.common.config.MATDOConfig`. The paper-aligned package **`matdo_new`** lives under [`MATDO-new/`](../../MATDO-new/README.md). To compare knobs without duplicating heuristics by hand, see **[MATDO_NEW_BRIDGE.md](MATDO_NEW_BRIDGE.md)** and `paper_policy_bridge.py`. Optional CLI: `--paper-policy`, `--paper-rho-hbm`, `--paper-rho-dram` on `run_all_experiments.py`.
+
 ## US5 ablation cache
 
 `ablation/run_ablation.py` keeps **one** loaded `AdaptiveTransformer` per `(model_size, checkpoint, device)` and toggles `enable_rabitq` / `enable_attnres` / `enable_qttt` on the shared config. Do not reinstantiate one model per flag combination.
