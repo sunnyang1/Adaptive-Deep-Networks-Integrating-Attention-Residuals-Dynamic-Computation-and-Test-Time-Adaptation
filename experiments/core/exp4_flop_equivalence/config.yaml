@@ -1,0 +1,47 @@
+# Experiment 4: FLOP Equivalence Verification
+#
+# Validates the formula: T_think ≈ 2 * N_qTTT * k
+# Tests different allocation strategies between width (thinking tokens) and depth (qTTT steps).
+
+# Model configuration
+model:
+  vocab_size: 10000
+  d_model: 1024
+  num_layers: 12
+  num_heads: 16
+  k: 128  # qTTT hidden dimension
+
+# Experiment configuration
+experiment:
+  total_flops: 5.0e14  # Total FLOP budget
+  context_len: 65536   # Context length (tokens)
+  num_samples: 20      # Number of test samples per strategy
+  seq_len: 1024        # Sequence length for evaluation
+  batch_size: 2
+  
+  # Allocation strategies to test
+  strategies:
+    - id: pure_width
+      label: Pure Width
+      description: Allocate 100% to thinking tokens (N_qttt)
+    - id: pure_depth
+      label: Pure Depth
+      description: Allocate 100% to qTTT steps (T_think)
+    - id: balanced
+      label: Balanced
+      description: 50/50 allocation between width and depth
+    - id: depth_priority
+      label: Depth-Priority
+      description: 80/20 allocation favoring depth
+
+# Validation parameters
+validation:
+  tolerance: 0.20  # 20% tolerance for formula verification (0.8 <= ratio <= 1.2)
+  min_ratio: 0.8
+  max_ratio: 1.2
+
+# Visualization settings
+visualization:
+  figure_size: [12, 6]
+  dpi: 300
+  style: seaborn-v0_8-darkgrid

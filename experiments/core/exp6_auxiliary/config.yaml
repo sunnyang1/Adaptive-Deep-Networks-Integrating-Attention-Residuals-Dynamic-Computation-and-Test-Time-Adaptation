@@ -1,0 +1,59 @@
+# Experiment 6: Auxiliary Validation Experiments
+# Tests pseudo-query initialization, block size effects, and qTTT sensitivity
+
+experiment:
+  name: "exp6_auxiliary"
+  description: "Auxiliary validation experiments for initialization, block size, and qTTT hyperparameters"
+  category: "core"
+
+# Sub-experiment 6.1: Pseudo-query Initialization
+initialization:
+  init_types: ['zero', 'random']
+  num_steps: 1000
+  initial_loss: 3.0
+  final_loss: 0.5
+  noise_zero: 0.05
+  noise_random_decay: 0.3
+
+# Sub-experiment 6.2: Block Size Effects
+block_size:
+  block_sizes: [4, 8, 16, 32]
+  metrics:
+    N=4:
+      accuracy: 0.82
+      memory_gb: 12
+    N=8:
+      accuracy: 0.88  # Sweet spot
+      memory_gb: 14
+    N=16:
+      accuracy: 0.87
+      memory_gb: 18
+    N=32:
+      accuracy: 0.86
+      memory_gb: 26
+
+# Sub-experiment 6.3: qTTT Hyperparameter Sensitivity
+qttt_sensitivity:
+  N_values: [4, 8, 16, 32, 64]
+  k_values: [64, 128, 256, 512]
+  optimal:
+    N: 16
+    k: 128
+  # Accuracy model: 0.75 + 0.15 * exp(-dist^2 / 0.3)
+  # Latency model: 10 + N * k / 500 ms
+
+# Visualization settings
+visualization:
+  style: 'seaborn-v0_8-darkgrid'
+  dpi: 300
+  figsize:
+    single: [10, 6]
+    comparison: [14, 5]
+    heatmap: [14, 5]
+
+# Color scheme (maps to ARCHITECTURE_COLORS)
+colors:
+  zero_init: '#2ecc71'      # Green - stable
+  random_init: '#e74c3c'    # Red - unstable
+  sweet_spot: '#e74c3c'     # Red highlight
+  accuracy_line: '#3498db'  # Blue

@@ -1,0 +1,201 @@
+{
+  "needle_haystack": {
+    "paper_results": {
+      "context_lengths": [
+        4096,
+        32768,
+        65536,
+        131072,
+        262144
+      ],
+      "transformer": [
+        87.5,
+        22.1,
+        8.7,
+        3.2,
+        1.5
+      ],
+      "ttt_linear": [
+        94.2,
+        65.3,
+        48.7,
+        32.1,
+        18.5
+      ],
+      "attnres": [
+        96.8,
+        75.6,
+        58.9,
+        42.3,
+        28.7
+      ],
+      "adb_turboquant": [
+        98.5,
+        91.3,
+        85.5,
+        78.2,
+        68.2
+      ]
+    },
+    "simulated_test": {
+      "context_lengths": [
+        512,
+        1024,
+        2048
+      ],
+      "results": [
+        {
+          "context_length": 512,
+          "simulated_accuracy": 11.7,
+          "note": "Model untrained - results are baseline random"
+        },
+        {
+          "context_length": 1024,
+          "simulated_accuracy": 9.4,
+          "note": "Model untrained - results are baseline random"
+        },
+        {
+          "context_length": 2048,
+          "simulated_accuracy": 13.6,
+          "note": "Model untrained - results are baseline random"
+        }
+      ],
+      "note": "Model is untrained. Use pre-trained weights for real evaluation."
+    },
+    "key_finding": "Needle-in-Haystack requires pre-trained model for meaningful results"
+  },
+  "math_dataset": {
+    "paper_results": {
+      "methods": {
+        "Transformer": {
+          "level_1_2": 60.4,
+          "level_3_4": 31.6,
+          "level_5": 12.1,
+          "overall": 35.2
+        },
+        "CoT_5_samples": {
+          "level_1_2": 65.5,
+          "level_3_4": 38.7,
+          "level_5": 18.5,
+          "overall": 41.5
+        },
+        "TTT_Linear": {
+          "level_1_2": 70.0,
+          "level_3_4": 46.8,
+          "level_5": 28.7,
+          "overall": 48.9
+        },
+        "AttnRes_qTTT_gated": {
+          "level_1_2": 71.5,
+          "level_3_4": 51.3,
+          "level_5": 34.5,
+          "overall": 52.3
+        },
+        "AttnRes_qTTT_max": {
+          "level_1_2": 74.9,
+          "level_3_4": 58.6,
+          "level_5": 42.1,
+          "overall": 58.9
+        }
+      }
+    },
+    "note": "MATH evaluation requires pre-trained model with qTTT adaptation",
+    "expected_small_model": {
+      "overall": "25-35% (estimated)",
+      "scaling_to_medium": "52.3% (paper result for 8.7B)"
+    }
+  },
+  "ablation_study": {
+    "paper_results": {
+      "configurations": {
+        "Full_System": {
+          "score": 56.8,
+          "delta": 0.0
+        },
+        "w/o_qTTT": {
+          "score": 50.1,
+          "delta": -6.7
+        },
+        "w/o_Gating": {
+          "score": 53.2,
+          "delta": -3.6
+        },
+        "w/o_AttnRes": {
+          "score": 48.9,
+          "delta": -7.9
+        },
+        "w/o_TurboQuant": {
+          "score": 51.5,
+          "delta": -5.3
+        },
+        "Standard_Transformer": {
+          "score": 39.7,
+          "delta": -17.1
+        }
+      },
+      "synergy_coefficient": 1.18
+    },
+    "component_importance": [
+      [
+        "AttnRes",
+        7.9
+      ],
+      [
+        "qTTT",
+        6.7
+      ],
+      [
+        "TurboQuant",
+        5.3
+      ],
+      [
+        "Gating",
+        3.6
+      ]
+    ],
+    "note": "Ablation study shows all components contribute significantly"
+  },
+  "compute_efficiency": {
+    "paper_results": {
+      "configurations": {
+        "Standard_32L": {
+          "flops": 1.0,
+          "accuracy": 35.2,
+          "acc_per_flop": 35.2
+        },
+        "AttnRes_32L_static": {
+          "flops": 1.05,
+          "accuracy": 41.8,
+          "acc_per_flop": 39.8
+        },
+        "AttnRes_qTTT_uniform": {
+          "flops": 1.45,
+          "accuracy": 47.5,
+          "acc_per_flop": 32.8
+        },
+        "AttnRes_qTTT_gated": {
+          "flops": 1.28,
+          "accuracy": 52.3,
+          "acc_per_flop": 40.9
+        },
+        "AttnRes_qTTT_oracle": {
+          "flops": 1.15,
+          "accuracy": 54.8,
+          "acc_per_flop": 47.7
+        }
+      }
+    },
+    "small_model_estimation": {
+      "flops_per_token": 4300000000.0,
+      "estimated_tokens_per_problem": 1000,
+      "estimated_flops_per_problem": 4300000000000.0
+    },
+    "note": "Small Model has ~70% FLOPs of 8.7B model per token"
+  },
+  "metadata": {
+    "timestamp": "2026-03-30T11:27:32.967525",
+    "model_size": "small",
+    "model_params": 2214266880,
+    "note": "Paper results for reference. Actual evaluation requires pre-trained weights."
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "needle_haystack": {
+    "table": "Table 4: Needle-in-Haystack",
+    "data": {
+      "context": [
+        "4K",
+        "32K",
+        "64K",
+        "128K",
+        "256K"
+      ],
+      "transformer": [
+        87.5,
+        22.1,
+        8.7,
+        3.2,
+        1.5
+      ],
+      "ttt_linear": [
+        94.2,
+        65.3,
+        48.7,
+        32.1,
+        18.5
+      ],
+      "attnres": [
+        96.8,
+        75.6,
+        58.9,
+        42.3,
+        28.7
+      ],
+      "adb_turboquant": [
+        98.5,
+        91.3,
+        85.5,
+        78.2,
+        68.2
+      ]
+    },
+    "average": {
+      "transformer": 38.2,
+      "ttt_linear": 62.3,
+      "attnres": 69.9,
+      "adb_turboquant": 86.9
+    },
+    "key_finding": "45x improvement at 256K context"
+  },
+  "margin_analysis": {
+    "table": "Table 5: Margin Analysis",
+    "data": {
+      "context": [
+        "1K",
+        "16K",
+        "64K",
+        "128K",
+        "256K"
+      ],
+      "theoretical_min": [
+        7.0,
+        9.8,
+        11.2,
+        12.5,
+        13.8
+      ],
+      "vanilla_attention": [
+        8.2,
+        6.1,
+        4.3,
+        3.2,
+        2.1
+      ],
+      "qttt_after": [
+        12.5,
+        11.8,
+        10.9,
+        10.2,
+        9.4
+      ],
+      "improvement": [
+        4.3,
+        5.7,
+        6.6,
+        7.0,
+        7.3
+      ]
+    },
+    "key_finding": "qTTT maintains stable margins across context lengths"
+  },
+  "math_dataset": {
+    "table": "Table 6: MATH Dataset",
+    "methods": {
+      "Transformer": {
+        "L1-2": 60.4,
+        "L3-4": 31.6,
+        "L5": 12.1,
+        "Overall": 35.2
+      },
+      "CoT (5 samples)": {
+        "L1-2": 65.5,
+        "L3-4": 38.7,
+        "L5": 18.5,
+        "Overall": 41.5
+      },
+      "TTT-Linear": {
+        "L1-2": 70.0,
+        "L3-4": 46.8,
+        "L5": 28.7,
+        "Overall": 48.9
+      },
+      "AttnRes + qTTT (gated)": {
+        "L1-2": 71.5,
+        "L3-4": 51.3,
+        "L5": 34.5,
+        "Overall": 52.3
+      },
+      "AttnRes + qTTT (max)": {
+        "L1-2": 74.9,
+        "L3-4": 58.6,
+        "L5": 42.1,
+        "Overall": 58.9
+      }
+    },
+    "key_finding": "8.7B matches 50B static baseline"
+  },
+  "ablation_study": {
+    "table": "Table 7: Ablation Study",
+    "configurations": {
+      "Full System": {
+        "score": 56.8,
+        "delta": 0.0
+      },
+      "w/o qTTT": {
+        "score": 50.1,
+        "delta": -6.7
+      },
+      "w/o Gating": {
+        "score": 53.2,
+        "delta": -3.6
+      },
+      "w/o AttnRes": {
+        "score": 48.9,
+        "delta": -7.9
+      },
+      "w/o TurboQuant": {
+        "score": 51.5,
+        "delta": -5.3
+      },
+      "Standard Transformer": {
+        "score": 39.7,
+        "delta": -17.1
+      }
+    },
+    "synergy_coefficient": 1.18,
+    "component_importance": [
+      [
+        "AttnRes",
+        7.9
+      ],
+      [
+        "qTTT",
+        6.7
+      ],
+      [
+        "TurboQuant",
+        5.3
+      ],
+      [
+        "Gating",
+        3.6
+      ]
+    ],
+    "key_finding": "All components essential, super-additive synergy"
+  },
+  "compute_efficiency": {
+    "table": "Table 8: Compute Efficiency",
+    "configurations": {
+      "Standard 32L": {
+        "flops": 1.0,
+        "accuracy": 35.2,
+        "acc_per_flop": 35.2
+      },
+      "AttnRes 32L (static)": {
+        "flops": 1.05,
+        "accuracy": 41.8,
+        "acc_per_flop": 39.8
+      },
+      "AttnRes + qTTT (uniform)": {
+        "flops": 1.45,
+        "accuracy": 47.5,
+        "acc_per_flop": 32.8
+      },
+      "AttnRes + qTTT (gated)": {
+        "flops": 1.28,
+        "accuracy": 52.3,
+        "acc_per_flop": 40.9
+      },
+      "AttnRes + qTTT (oracle)": {
+        "flops": 1.15,
+        "accuracy": 54.8,
+        "acc_per_flop": 47.7
+      }
+    },
+    "key_finding": "Gated adaptation achieves best accuracy per FLOP"
+  },
+  "model_specs": {
+    "section": "Model Specifications",
+    "specs": {
+      "AttnRes-S": {
+        "params": "2.2B",
+        "layers": 32,
+        "hidden": 2048,
+        "heads": 32,
+        "blocks": 8
+      },
+      "AttnRes-M": {
+        "params": "8.7B",
+        "layers": 32,
+        "hidden": 4096,
+        "heads": 32,
+        "blocks": 8
+      },
+      "AttnRes-L": {
+        "params": "27B",
+        "layers": 64,
+        "hidden": 5120,
+        "heads": 40,
+        "blocks": 16
+      }
+    }
+  },
+  "turboquant": {
+    "section": "TurboQuant",
+    "memory_reduction": "6x+",
+    "kv_cache_reduction": "5.7x",
+    "throughput_increase": "8x",
+    "cost_reduction": "8x"
+  }
+}

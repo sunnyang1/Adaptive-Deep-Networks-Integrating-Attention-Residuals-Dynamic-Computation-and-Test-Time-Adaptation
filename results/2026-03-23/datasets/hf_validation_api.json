@@ -1,0 +1,51 @@
+{
+  "timestamp": "2026-03-23T23:30:28.620529",
+  "results": {
+    "Long-Context Retrieval": [
+      {
+        "status": "ERROR",
+        "repo_id": "THUDM/LongBench-v2",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      }
+    ],
+    "Mathematical Reasoning": [
+      {
+        "status": "ERROR",
+        "repo_id": "hendrycks/competition_math",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      },
+      {
+        "status": "ERROR",
+        "repo_id": "openai/gsm8k",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      }
+    ],
+    "General Tasks": [
+      {
+        "status": "ERROR",
+        "repo_id": "Rowan/hellaswag",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      },
+      {
+        "status": "ERROR",
+        "repo_id": "allenai/ai2_arc",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      },
+      {
+        "status": "ERROR",
+        "repo_id": "openai/openai_humaneval",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      },
+      {
+        "status": "ERROR",
+        "repo_id": "lukaemon/bbh",
+        "error": "<urlopen error TLS/SSL connection has been closed (EOF) (_ssl.c:1135)>"
+      }
+    ]
+  },
+  "summary": {
+    "total": 7,
+    "available": 0,
+    "success_rate": "0.0%"
+  }
+}

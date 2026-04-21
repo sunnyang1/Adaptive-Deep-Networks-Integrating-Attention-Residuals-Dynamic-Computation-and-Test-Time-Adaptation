@@ -1,0 +1,236 @@
+{
+  "timestamp": "2026-03-23T22:32:08.719836",
+  "datasets": {
+    "Long-Context Retrieval Benchmarks": {
+      "Needle-in-Haystack": {
+        "description": "Long-context retrieval benchmark with embedded facts",
+        "context_lengths": [
+          1024,
+          4096,
+          16384,
+          32768,
+          65536,
+          131072,
+          262144
+        ],
+        "needle_example": "The best thing to do in San Francisco is eat a sandwich and sit in Dolores Park on a sunny day.",
+        "query_example": "What is the best thing to do in San Francisco?",
+        "generation": "Local synthetic generation",
+        "evaluation": "Exact match accuracy across 10 depths per length",
+        "source": "Generated locally following Kamradt (2023)",
+        "status": "✓ Local generation"
+      },
+      "LongBench-v2": {
+        "description": "Multi-task long-context benchmark for deep understanding and reasoning",
+        "average_context": "35K tokens (up to 200K)",
+        "task_categories": [
+          "Single-document QA",
+          "Multi-document QA",
+          "Summarization",
+          "Few-shot learning",
+          "Synthetic tasks",
+          "Code completion"
+        ],
+        "huggingface": "THUDM/LongBench-v2",
+        "data_format": {
+          "_id": "Unique identifier",
+          "domain": "Primary domain category",
+          "sub_domain": "Specific sub-domain",
+          "difficulty": "easy or hard",
+          "length": "short, medium, or long",
+          "question": "Input/command for the task",
+          "choice_A/B/C/D": "Multiple choice options",
+          "answer": "Groundtruth answer (A/B/C/D)",
+          "context": "Long context (documents, books, code)"
+        },
+        "paper": "LongBench v2: Towards Deeper Understanding and Reasoning on Realistic Long-context Multitasks",
+        "github": "https://github.com/THUDM/LongBench",
+        "status": "✓ HuggingFace available"
+      },
+      "ZeroScrolls": {
+        "description": "Zero-shot benchmark for long text understanding",
+        "max_context": "Up to 100K tokens",
+        "tasks": [
+          "GovReport - Government report summarization",
+          "SummScreen - TV show summarization",
+          "QMSum - Meeting summarization",
+          "SQuALITY - Quality-focused QA",
+          "SpaceDigest - Scientific article aggregation",
+          "BookSumSort - Book summary sorting",
+          "MuSiQue - Multi-hop question answering",
+          "Qasper - Scientific paper QA"
+        ],
+        "paper": "ZeroSCROLLS: A Zero-Shot Benchmark for Long Text Understanding (EMNLP 2023)",
+        "website": "https://www.zero.scrolls-benchmark.com/",
+        "arxiv": "https://arxiv.org/abs/2305.14196",
+        "status": "⚠ Requires local implementation"
+      }
+    },
+    "Mathematical Reasoning Benchmarks": {
+      "MATH": {
+        "description": "Competition mathematics problems with step-by-step solutions",
+        "total_problems": 12500,
+        "split": {
+          "train": 7500,
+          "test": 5000
+        },
+        "difficulty_levels": [
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "categories": [
+          "Algebra",
+          "Geometry",
+          "Counting & Probability",
+          "Number Theory",
+          "Precalculus",
+          "Calculus"
+        ],
+        "huggingface": "hendrycks/competition_math",
+        "format": {
+          "problem": "Mathematical problem statement",
+          "level": "Difficulty level (1-5)",
+          "type": "Problem category",
+          "solution": "Step-by-step solution with boxed answer"
+        },
+        "paper": "Measuring Mathematical Problem Solving With the MATH Dataset (NeurIPS 2021)",
+        "github": "https://github.com/hendrycks/math",
+        "status": "✓ HuggingFace available"
+      },
+      "GSM8K": {
+        "description": "Grade school math word problems",
+        "total_problems": 8500,
+        "split": {
+          "train": 7473,
+          "test": 1319
+        },
+        "steps_per_problem": "2-8 steps",
+        "operations": [
+          "Addition",
+          "Subtraction",
+          "Multiplication",
+          "Division"
+        ],
+        "huggingface": "openai/gsm8k",
+        "format": {
+          "question": "Word problem",
+          "answer": "Step-by-step solution and final answer"
+        },
+        "paper": "Training Verifiers to Solve Math Word Problems",
+        "github": "https://github.com/openai/grade-school-math",
+        "status": "✓ HuggingFace available"
+      }
+    },
+    "Language Modeling and General Tasks": {
+      "HellaSwag": {
+        "description": "Commonsense natural language inference through sentence completion",
+        "validation_samples": 10042,
+        "format": "Multiple choice (4 options)",
+        "human_accuracy": "~95%",
+        "task": "Select most plausible continuation",
+        "huggingface": "Rowan/hellaswag",
+        "paper": "HellaSwag: Can a Machine Really Finish Your Sentence?",
+        "status": "✓ HuggingFace available"
+      },
+      "ARC-Challenge": {
+        "description": "AI2 Reasoning Challenge - Grade-school science questions",
+        "total_questions": 7787,
+        "split": {
+          "ARC-Easy": 5197,
+          "ARC-Challenge": 2590
+        },
+        "format": "Multiple choice QA",
+        "requirements": "Reasoning beyond surface-level facts",
+        "huggingface": "allenai/ai2_arc",
+        "paper": "Think you have Solved Question Answering? Try ARC, the AI2 Reasoning Challenge",
+        "status": "✓ HuggingFace available"
+      },
+      "HumanEval": {
+        "description": "Hand-crafted programming problems for code generation",
+        "problems": 164,
+        "language": "Python",
+        "format": {
+          "task_id": "Problem identifier",
+          "prompt": "Function signature and docstring",
+          "entry_point": "Function name",
+          "canonical_solution": "Reference solution",
+          "test": "Unit tests"
+        },
+        "evaluation": "Pass@k metric",
+        "huggingface": "openai/openai_humaneval",
+        "paper": "Evaluating Large Language Models Trained on Code",
+        "github": "https://github.com/openai/human-eval",
+        "status": "✓ HuggingFace available"
+      },
+      "BBH": {
+        "description": "Big-Bench Hard - 23 challenging tasks from BIG-Bench",
+        "tasks": [
+          "boolean_expressions",
+          "causal_judgement",
+          "date_understanding",
+          "disambiguation_qa",
+          "dyck_languages",
+          "formal_fallacies",
+          "geometric_shapes",
+          "hyperbaton",
+          "logical_deduction_five_objects",
+          "logical_deduction_seven_objects",
+          "logical_deduction_three_objects",
+          "movie_recommendation",
+          "multistep_arithmetic_two",
+          "navigate",
+          "object_counting",
+          "penguins_in_a_table",
+          "reasoning_about_colored_objects",
+          "ruin_names",
+          "salient_translation_error_detection",
+          "snarks",
+          "sports_understanding",
+          "temporal_sequences",
+          "tracking_shuffled_objects_five_objects"
+        ],
+        "huggingface": "lukaemon/bbh",
+        "paper": "Challenging BIG-Bench Tasks and Whether Chain-of-Thought Can Solve Them",
+        "status": "✓ HuggingFace available"
+      }
+    }
+  },
+  "pretraining_corpora": {
+    "C4": {
+      "description": "Colossal Clean Crawled Corpus",
+      "size": "365B tokens",
+      "source": "Cleaned Common Crawl",
+      "purpose": "Pre-training corpus",
+      "metric": "Perplexity"
+    },
+    "The Pile": {
+      "description": "Diverse domain validation corpus",
+      "size": "300B tokens",
+      "source": "Academic, web, books, code",
+      "purpose": "Pre-training corpus",
+      "metric": "Perplexity"
+    }
+  },
+  "summary": {
+    "total_categories": 3,
+    "total_datasets": 9,
+    "huggingface_available": [
+      "LongBench-v2",
+      "MATH",
+      "GSM8K",
+      "HellaSwag",
+      "ARC-Challenge",
+      "HumanEval",
+      "BBH"
+    ],
+    "local_generation": [
+      "Needle-in-Haystack"
+    ],
+    "requires_implementation": [
+      "ZeroScrolls"
+    ]
+  }
+}

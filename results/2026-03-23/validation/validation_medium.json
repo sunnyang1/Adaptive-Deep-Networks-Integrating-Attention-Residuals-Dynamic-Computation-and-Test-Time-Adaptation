@@ -1,0 +1,65 @@
+{
+  "model_size": "medium",
+  "config": {
+    "params": 8721268736,
+    "num_layers": 32,
+    "hidden_dim": 4096,
+    "num_heads": 32,
+    "num_blocks": 8,
+    "max_qttt_steps": 32,
+    "qttt_span_length": 128
+  },
+  "flop_equivalence": {
+    "thinking_tokens": {
+      "count": 8192,
+      "flops": 9727775195120271360,
+      "flops_per_token": 1187472557998080.0
+    },
+    "qttt": {
+      "num_steps": 32,
+      "span_length": 128,
+      "flops_per_step": 73014444032,
+      "total_flops": 2336462209024
+    },
+    "equivalence": {
+      "theoretical_t_think": 8192,
+      "actual_t_think": 8192,
+      "ratio": 1.0,
+      "is_equivalent": true
+    },
+    "efficiency": {
+      "qttt_vs_think_ratio": 2.4018464265046294e-07,
+      "cache_reuse_savings": "O(T^2) vs O(k*T) per step"
+    }
+  },
+  "strategies": {
+    "budget_flops": 500000000000000.0,
+    "context_length": 65536,
+    "strategies": {
+      "pure_width": {
+        "thinking_tokens": 0,
+        "qttt_steps": 0,
+        "description": "Generate only thinking tokens"
+      },
+      "pure_depth": {
+        "thinking_tokens": 0,
+        "qttt_steps": 6847,
+        "qttt_span": 128,
+        "description": "Use only qTTT adaptation"
+      },
+      "balanced": {
+        "thinking_tokens": 0,
+        "qttt_steps": 3423,
+        "qttt_span": 128,
+        "description": "Equal FLOP allocation"
+      },
+      "depth_prioritized": {
+        "thinking_tokens": 0,
+        "qttt_steps": 5478,
+        "qttt_span": 128,
+        "description": "Paper recommendation: prioritize depth"
+      }
+    }
+  },
+  "timestamp": "2026-03-23T22:00:57.475249"
+}

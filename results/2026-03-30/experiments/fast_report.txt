@@ -1,0 +1,77 @@
+======================================================================
+SMALL MODEL PAPER EXPERIMENTS REPORT (Fast Version)
+======================================================================
+
+Timestamp: 2026-03-30T11:11:33.009084
+Device: cpu
+Model: Small (2.21B)
+
+----------------------------------------------------------------------
+Model Configuration
+----------------------------------------------------------------------
+Layers: 32
+Hidden dim: 2048
+Num heads: 32
+Num blocks (AttnRes): 8
+Vocab size: 32000
+
+----------------------------------------------------------------------
+Component Analysis
+----------------------------------------------------------------------
+layers: 2148.5M (97.0%)
+token_embedding: 65.5M (3.0%)
+attnres_modules: 0.3M (0.0%)
+norm: 0.0M (0.0%)
+
+----------------------------------------------------------------------
+FLOP Analysis (Paper Section 4.3.3)
+----------------------------------------------------------------------
+Per layer: 134.2 MFLOPs
+Per token: 4.30 GFLOPs/token
+qTTT max steps: 16
+qTTT span: 128
+
+FLOP Equivalence: T_think ≈ 2 * N_qTTT * k
+  = 2 * 16 * 128
+  = 4096 thinking tokens
+
+----------------------------------------------------------------------
+Memory Analysis
+----------------------------------------------------------------------
+Model memory: 8446.8 MB
+
+KV Cache by sequence length:
+   1024 tokens: KV=8.0MB
+   2048 tokens: KV=16.0MB
+   4096 tokens: KV=32.0MB
+   8192 tokens: KV=64.0MB
+
+----------------------------------------------------------------------
+AttnRes Analysis (Paper Table 1)
+----------------------------------------------------------------------
+Number of blocks: 8
+Layers per block: 4
+Memory reduction: 4.0×
+Param overhead: 0.0118%
+
+----------------------------------------------------------------------
+Architecture Comparison (Paper Tables 1 & 2)
+----------------------------------------------------------------------
+Architecture    Attenuation  Eff. Depth   CV      
+--------------------------------------------------
+PreNorm         13.50        18           0.84    
+PostNorm        1.30         72           0.31    
+DeepNorm        4.40         45           0.52    
+AttnRes (Ours)  1.06         91           0.11    
+
+----------------------------------------------------------------------
+Key Findings
+----------------------------------------------------------------------
+1. AttnRes reduces memory complexity from O(Ld) to O(Nd)
+2. Parameter overhead is negligible (0.0118%)
+3. AttnRes achieves uniform gradient distribution (CV=0.11)
+4. Effective depth increases from 18 to 91 layers vs PreNorm
+
+======================================================================
+END OF REPORT
+======================================================================

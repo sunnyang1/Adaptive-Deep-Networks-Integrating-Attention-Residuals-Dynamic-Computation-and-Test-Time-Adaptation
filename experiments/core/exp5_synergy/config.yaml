@@ -1,0 +1,57 @@
+# Experiment 5: Component Synergy Analysis
+# Tests synergy between AttnRes, Gating, and qTTT components
+
+model:
+  vocab_size: 10000
+  d_model: 1024
+  num_layers: 12
+  num_heads: 16
+
+experiment:
+  num_samples: 1000
+  seq_len: 1024
+  batch_size: 4
+  
+# 2^3 factorial design - 7 meaningful configurations
+configs:
+  - name: "Baseline"
+    has_attnres: false
+    has_qttt: false
+    has_gating: false
+    
+  - name: "AttnRes Only"
+    has_attnres: true
+    has_qttt: false
+    has_gating: false
+    
+  - name: "qTTT Only"
+    has_attnres: false
+    has_qttt: true
+    has_gating: false
+    
+  - name: "AttnRes + qTTT"
+    has_attnres: true
+    has_qttt: true
+    has_gating: false
+    
+  - name: "AttnRes + Gating"
+    has_attnres: true
+    has_qttt: false
+    has_gating: true
+    
+  - name: "qTTT + Gating"
+    has_attnres: false
+    has_qttt: true
+    has_gating: true
+    
+  - name: "Full System"
+    has_attnres: true
+    has_qttt: true
+    has_gating: true
+
+# Component contribution weights (for simulation)
+component_weights:
+  attnres: 0.15
+  qttt: 0.12
+  gating: 0.08
+  synergy_aq: 0.03  # AttnRes + qTTT synergy
