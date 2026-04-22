@@ -81,10 +81,15 @@ ignore = [
     "E501",  # line too long (handled by black)
     "N806",  # variable name in function (allow for scientific code)
     "N803",  # argument name (allow for ML conventions)
+    "N812",  # lowercase imported as non-lowercase (F for functional is PyTorch standard)
 ]
 
 [tool.ruff.per-file-ignores]
-"tests/*" = ["N802", "N803"]  # Allow test function names
+"tests/*" = ["N802", "N803", "N801", "N812", "F841", "E741", "B011", "SIM110", "SIM117", "SIM118", "E712", "E402", "UP038", "B007"]  # Allow test conventions and setup code
+"tests/legacy/*" = ["ALL"]  # Legacy tests are deprecated and ignored by pytest
+"src/*/legacy/*" = ["ALL"]  # Legacy source is deprecated
+"src/rabitq/legacy/*" = ["ALL"]  # Legacy RaBitQ source is deprecated
+"src/turboquant/legacy/*" = ["ALL"]  # Legacy TurboQuant source is deprecated
 
 [tool.mypy]
 python_version = "3.12"

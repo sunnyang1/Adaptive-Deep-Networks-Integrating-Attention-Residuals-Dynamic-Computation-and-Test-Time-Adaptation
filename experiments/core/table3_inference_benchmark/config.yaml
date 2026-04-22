@@ -1,0 +1,54 @@
+# Table 3: Inference Benchmark (500ms Latency Budget)
+experiment:
+  name: "table3_inference_benchmark"
+  description: "End-to-end inference performance: throughput, memory, latency (Paper Table 3)"
+  category: "core"
+  paper_table: 3
+
+# Benchmark scenarios
+scenarios:
+  - id: "thinking_tokens"
+    name: "Thinking Tokens (Width)"
+    description: "Standard inference with thinking token budget"
+  - id: "adb_rabitq"
+    name: "ADB + RaBitQ (Depth)"
+    description: "Ponder gate + RaBitQ depth-priority allocation"
+
+# Context lengths to benchmark
+context_lengths:
+  quick: [1024, 4096]
+  full: [4096, 16384, 65536, 131072]
+
+# Batch size (single-user latency focus)
+batch_size: 1
+
+# Model config
+model:
+  d_model: 1024
+  num_layers: 12
+  num_heads: 16
+  vocab_size: 10000
+
+# Benchmark duration (seconds)
+benchmark_duration:
+  quick: 5
+  full: 60
+
+# Latency budget (ms)
+latency_budget_ms: 500
+
+# Target metrics (from paper Table 3)
+targets:
+  adb_rabitq:
+    throughput_gain_vs_standard: 1.5   # tokens/sec improvement
+    memory_reduction_vs_standard: 5.0  # KV cache compression ratio
+
+# Validation parameters
+validation:
+  throughput_tolerance: 0.20    # 20% tolerance on throughput gains
+  memory_tolerance: 0.25        # 25% tolerance on memory reduction
+
+# Visualization settings
+visualization:
+  figure_size: [12, 6]
+  dpi: 300

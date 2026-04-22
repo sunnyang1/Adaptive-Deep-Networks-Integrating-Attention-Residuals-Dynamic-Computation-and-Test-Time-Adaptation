@@ -1,0 +1,50 @@
+# Table 8: Accuracy-Compute Pareto Frontier
+experiment:
+  name: "table8_pareto"
+  description: "FLOPs vs accuracy trade-off (Paper Table 8)"
+  category: "core"
+  paper_table: 8
+
+# Configurations to test
+configurations:
+  - id: "standard_32l"
+    name: "Standard 32L"
+    flop_multiplier: 1.0
+    accuracy_model: "baseline"
+    description: "Baseline 32-layer transformer"
+  - id: "attnres_static"
+    name: "AttnRes 32L (static)"
+    flop_multiplier: 1.05
+    accuracy_model: "attnres_only"
+    description: "Block AttnRes without qTTT"
+  - id: "attnres_qttt_uniform"
+    name: "AttnRes + qTTT (uniform)"
+    flop_multiplier: 1.45
+    accuracy_model: "attnres_qttt"
+    description: "qTTT on all tokens"
+  - id: "attnres_qttt_gated"
+    name: "AttnRes + qTTT (gated)"
+    flop_multiplier: 1.28
+    accuracy_model: "full_system"
+    description: "Ponder gate (20% activation)"
+  - id: "attnres_qttt_oracle"
+    name: "AttnRes + qTTT (oracle)"
+    flop_multiplier: 1.15
+    accuracy_model: "oracle"
+    description: "Perfect gating (only on hard)"
+
+# Simulation parameters
+simulation:
+  base_flops: 1e12  # Base FLOPs per sample
+  base_accuracy: 0.60  # Baseline accuracy
+  noise_std: 0.01  # Accuracy noise
+  num_samples:
+    quick: 20
+    full: 200
+
+# Visualization
+visualization:
+  figsize: [10, 7]
+  dpi: 300
+  pareto_color: '#e74c3c'
+  dominated_color: '#bdc3c7'

@@ -1,0 +1,39 @@
+# Table 5: Logit Margin Distribution
+# Measures attention logit margins before/after qTTT adaptation
+experiment:
+  name: "table5_margin_distribution"
+  description: "Logit margin distribution before/after qTTT (Paper Table 5)"
+  category: "core"
+  paper_table: 5
+
+# Context lengths to test
+context_lengths:
+  quick: [1024, 4096]
+  full: [4096, 16384, 65536, 131072, 262144]
+
+# Sample counts
+samples:
+  quick: 10
+  full: 50
+
+# Model config for simulation
+model:
+  vocab_size: 10000
+  d_model: 1024
+  num_heads: 16
+  num_layers: 12
+  head_dim: 64
+
+# qTTT parameters
+qttt:
+  num_steps: 5
+  learning_rate: 0.01
+  span_length: 128
+
+# Metrics
+metrics:
+  - mean_margin_before
+  - mean_margin_after
+  - delta_margin
+  - pct_theoretical_minimum
+  - margin_improvement_ratio

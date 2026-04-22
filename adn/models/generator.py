@@ -9,21 +9,20 @@ Unified generator module combining:
 Provides O(L) incremental generation by maintaining state across tokens.
 """
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from typing import Optional, List, Dict, Tuple, Any
-from dataclasses import dataclass, field
 import time
+from dataclasses import dataclass
+from typing import Any
 
-from adn.core.config import ModelConfig
+import torch
+import torch.nn.functional as F
+
 from adn.models.adaptive_transformer import AdaptiveTransformer
 from adn.qttt.adaptation import KVCache
-
 
 # =============================================================================
 # Incremental State (from incremental_state.py)
 # =============================================================================
+
 
 @dataclass
 class IncrementalState:
@@ -53,8 +52,8 @@ class IncrementalState:
         ... )
     """
 
-    kv_caches: List[KVCache]
-    block_representations: List[torch.Tensor]
+    kv_caches: list[KVCache]
+    block_representations: list[torch.Tensor]
     partial_block: torch.Tensor
     seq_len: int
     num_layers: int
@@ -121,7 +120,7 @@ class IncrementalState:
         """
         self.block_representations.append(block_output)
 
-    def get_latest_block_representation(self) -> Optional[torch.Tensor]:
+    def get_latest_block_representation(self) -> torch.Tensor | None:
         """
         Get the most recent block representation.
 
@@ -141,7 +140,7 @@ class IncrementalState:
         """
         self.seq_len += num_tokens
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert to dictionary for serialization.
 
@@ -159,7 +158,7 @@ class IncrementalState:
             "num_blocks": self.num_blocks,
         }
 
-    def get_memory_usage(self) -> Dict[str, int]:
+    def get_memory_usage(self) -> dict[str, int]:
         """
         Get memory usage statistics.
 
@@ -253,7 +252,7 @@ def validate_state(state: IncrementalState, raise_on_error: bool = True) -> bool
     if state.kv_caches:
         devices = [cache.keys.device for cache in state.kv_caches]
         devices.append(state.partial_block.device)
-        if len(set(str(d) for d in devices)) > 1:
+        if len({str(d) for d in devices}) > 1:
             errors.append(f"Inconsistent devices: {devices}")
 
     if errors:
@@ -318,14 +317,16 @@ def create_empty_state(
 # Incremental KV Cache (from incremental_kv_cache.py)
 # =============================================================================
 
+
 @dataclass
 class IncrementalCacheState:
     """State for incremental KV cache."""
 
-    kv_caches: List[KVCache]
+    kv_caches: list[KVCache]
     last_seq_len: int
-    block_representations: List[torch.Tensor]
+    block_representations: list[torch.Tensor]
     partial_block: torch.Tensor
+
 
 class IncrementalKVCacheManager:
     """
@@ -347,10 +348,10 @@ class IncrementalKVCacheManager:
         self.num_layers = num_layers
         self.num_blocks = num_blocks
         self.device = device
-        self.state: Optional[IncrementalCacheState] = None
+        self.state: IncrementalCacheState | None = None
         self.layers_per_block = max(num_layers // max(num_blocks, 1), 1)
 
-    def initialize(self, input_ids: torch.Tensor, model: AdaptiveTransformer) -> List[KVCache]:
+    def initialize(self, input_ids: torch.Tensor, model: AdaptiveTransformer) -> list[KVCache]:
         """
         Initialize KV cache from prompt (full forward pass).
 
@@ -380,7 +381,7 @@ class IncrementalKVCacheManager:
 
     def update(
         self, new_token_id: torch.Tensor, model: AdaptiveTransformer, use_attnres: bool = True
-    ) -> List[KVCache]:
+    ) -> list[KVCache]:
         """
         Incrementally update KV cache with new token.
 
@@ -414,7 +415,7 @@ class IncrementalKVCacheManager:
 
         return kv_caches
 
-    def get_cache(self) -> List[KVCache]:
+    def get_cache(self) -> list[KVCache]:
         """Get current KV cache."""
         if self.state is None:
             raise RuntimeError("Cache not initialized.")
@@ -423,6 +424,7 @@ class IncrementalKVCacheManager:
     def clear(self):
         """Clear cached state."""
         self.state = None
+
 
 def create_incremental_manager(model: AdaptiveTransformer) -> IncrementalKVCacheManager:
     """
@@ -444,6 +446,7 @@ def create_incremental_manager(model: AdaptiveTransformer) -> IncrementalKVCache
 # =============================================================================
 # Adaptive Generator (from incremental_generator.py)
 # =============================================================================
+
 
 @dataclass
 class GenerationStats:
@@ -486,7 +489,7 @@ class AdaptiveGenerator:
         device: Device for computation (inferred from model if None)
     """
 
-    def __init__(self, model: AdaptiveTransformer, device: Optional[torch.device] = None):
+    def __init__(self, model: AdaptiveTransformer, device: torch.device | None = None):
         self.model = model
         self.model.eval()
 
@@ -495,7 +498,7 @@ class AdaptiveGenerator:
         self.device = device
 
         self.config = model.config
-        self.state: Optional[IncrementalState] = None
+        self.state: IncrementalState | None = None
         self.stats = GenerationStats()
 
         # Initialize empty state
@@ -549,7 +552,7 @@ class AdaptiveGenerator:
 
     @torch.no_grad()
     def step(
-        self, temperature: float = 1.0, top_k: Optional[int] = None, use_attnres: bool = True
+        self, temperature: float = 1.0, top_k: int | None = None, use_attnres: bool = True
     ) -> torch.Tensor:
         """
         Generate one token incrementally.
@@ -590,8 +593,6 @@ class AdaptiveGenerator:
 
         # Get last token's hidden state from the last layer
         # We can use the KV cache to infer what we need
-        last_layer_cache = self.state.kv_caches[-1]
-
         # Simple approach: use the existing model forward
         # with the current sequence (reconstructing input_ids from state)
         # This is not true O(L) but demonstrates the API
@@ -644,10 +645,10 @@ class AdaptiveGenerator:
         input_ids: torch.Tensor,
         max_new_tokens: int = 50,
         temperature: float = 1.0,
-        top_k: Optional[int] = None,
+        top_k: int | None = None,
         use_attnres: bool = True,
         verbose: bool = False,
-    ) -> Tuple[torch.Tensor, GenerationStats]:
+    ) -> tuple[torch.Tensor, GenerationStats]:
         """
         Complete generation with prefill + steps.
 
@@ -697,7 +698,7 @@ class AdaptiveGenerator:
 
         return output_ids, self.stats
 
-    def get_state_summary(self) -> Dict[str, any]:
+    def get_state_summary(self) -> dict[str, any]:
         """Get summary of current state."""
         if self.state is None:
             return {"status": "uninitialized"}
@@ -713,16 +714,16 @@ class AdaptiveGenerator:
 
 
 def create_adaptive_generator(
-    model: AdaptiveTransformer, device: Optional[torch.device] = None
-) -> IncrementalGenerator:
+    model: AdaptiveTransformer, device: torch.device | None = None
+) -> AdaptiveGenerator:
     """
-    Factory function to create IncrementalGenerator.
+    Factory function to create AdaptiveGenerator.
 
     Args:
         model: Transformer model
         device: Device (inferred from model if None)
 
     Returns:
-        Configured IncrementalGenerator
+        Configured AdaptiveGenerator
     """
-    return IncrementalGenerator(model, device)
+    return AdaptiveGenerator(model, device)
