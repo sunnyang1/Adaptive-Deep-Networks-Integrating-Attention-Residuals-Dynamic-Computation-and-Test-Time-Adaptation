@@ -57,8 +57,8 @@ Paper experiments and validation scripts.
 | `run_small_model_paper_experiments.py` | Full paper experiments |
 | `paper_metrics_summary.py` | Generate paper metrics summary |
 | `test_small_model_datasets.py` | Dataset testing |
-| `test_turboquant_small.py` | TurboQuant testing |
-| `validate_turboquant_setup.py` | TurboQuant setup validation |
+| `test_rabitq_small.py` | RaBitQ testing |
+| `validate_rabitq_setup.py` | RaBitQ setup validation |
 
 ### data/
 Data processing, validation, and download scripts.

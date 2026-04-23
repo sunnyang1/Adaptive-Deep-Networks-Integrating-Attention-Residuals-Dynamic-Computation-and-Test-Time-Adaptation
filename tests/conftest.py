@@ -4,14 +4,14 @@ Pytest configuration and shared fixtures for Adaptive Deep Networks tests.
 
 import pytest
 
-# Legacy tests target removed/renamed APIs (TurboQuant V1/V2, old MNNTurboQuant).
+# Legacy tests target removed/renamed APIs (old quantization APIs).
 # Run explicitly with: pytest tests/legacy/ -v
 collect_ignore = ["legacy"]
 import sys
 from pathlib import Path
-import torch
+
 import numpy as np
-from typing import Tuple
+import torch
 
 # Ensure repository root is importable so `import src.*` works
 # regardless of how pytest is invoked.
@@ -43,7 +43,7 @@ def torch_rng():
 def sample_tensor():
     """Return a sample tensor for testing."""
 
-    def _create(shape: Tuple[int, ...], dtype=torch.float32):
+    def _create(shape: tuple[int, ...], dtype=torch.float32):
         return torch.randn(shape, dtype=dtype)
 
     return _create

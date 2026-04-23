@@ -11,7 +11,7 @@ Adaptive Deep Networks (ADN) is a modular transformer architecture designed for 
 |-----------|---------|-------------|
 | **Attention Residuals (AttnRes)** | Prevents representation burial | O(Nd) memory vs O(Ld) |
 | **Dynamic Gating with qTTT** | Adaptive computation allocation | 40% efficiency gain |
-| **TurboQuant** | Model compression | 6x compression, 0% accuracy loss |
+| **RaBitQ** | Model compression | 6x compression, 0% accuracy loss |
 
 ## Quick Navigation
 
@@ -20,7 +20,7 @@ Adaptive Deep Networks (ADN) is a modular transformer architecture designed for 
 - [Module Dependencies](#module-dependencies) - Import relationships
 - [AttnRes Flow](#attention-residuals-attnres-flow) - Block attention mechanism
 - [qTTT Flow](#qttt-adaptation-flow) - Query adaptation process
-- [TurboQuant Pipeline](#turboquant-compression-pipeline) - Compression stages
+- [RaBitQ Pipeline](#rabitq-compression-pipeline) - Compression stages
 - [Directory Structure](#directory-structure) - File organization
 
 ## High-Level Architecture
@@ -31,7 +31,7 @@ flowchart TB
     Embed --> Layers[Adaptive Transformer Layers]
     Layers --> Head[LM Head]
     Head --> Output([Output Logits])
-    
+
     subgraph "Each Layer"
         direction TB
         AR[AttnRes] --> Attn[Attention]
@@ -41,8 +41,8 @@ flowchart TB
         TTT --> MLP
         Skip --> MLP[Feed Forward]
     end
-    
-    Layers -.-> TQ[TurboQuant]
+
+    Layers -.-> TQ[RaBitQ]
     TQ --> PQ[PolarQuant]
     TQ --> QJL[QJL Transform]
 ```
@@ -61,9 +61,9 @@ sequenceDiagram
     I->>A: Hidden States
     A->>A: Block Aggregation
     A->>G: Augmented Hidden
-    
+
     G->>G: Compute Loss
-    
+
     alt Loss > Threshold
         G->>Q: Trigger Adapt
         Q->>Q: N adaptation steps
@@ -82,20 +82,20 @@ flowchart TD
         M[models] --> Attn[attnres]
         M --> Q[qttt]
         M --> G[gating]
-        M --> T[turboquant]
+        M --> T[rabitq]
     end
-    
+
     subgraph Exp["Experiments"]
         direction TB
         C[common] --> CR[core]
         C --> V[validation]
         C --> R[runner]
     end
-    
+
     subgraph Scr["Scripts"]
         SC[common] --> TR[training]
     end
-    
+
     Attn -.->|uses| Exp
     Q -.->|uses| Exp
     M -.->|uses| Scr
@@ -112,10 +112,10 @@ flowchart LR
         BN[Block N] --> Agg
         BP[Partial] --> Agg
     end
-    
+
     Agg --> PQ{Pseudo-Query}
     PQ --> WS[Weighted Sum]
-    
+
     subgraph Phase2["Phase 2: Intra-Block (Sequential)"]
         direction TB
         WS --> LN[LayerNorm]
@@ -135,7 +135,7 @@ sequenceDiagram
     participant L as Margin Loss
 
     Q->>A: Initialize q_adapt
-    
+
     loop N steps
         A->>C: attention(q_adapt, K, V)
         C->>L: compute distribution
@@ -143,26 +143,26 @@ sequenceDiagram
         L-->>A: backward()
         A->>A: q_adapt -= lr * grad
     end
-    
+
     A-->>Q: adapted query
 ```
 
-## TurboQuant Compression Pipeline
+## RaBitQ Compression Pipeline
 
 ```mermaid
 flowchart TD
     Input["Input x ∈ ℝᵈ"] --> HT["Hadamard Transform"]
     HT --> Polar["Cartesian → Polar"]
-    
+
     Polar --> Mag["Magnitude r"]
     Polar --> Ang["Angles θ"]
-    
+
     Ang --> LM["Lloyd-Max<br/>3-bit quant"]
     Mag --> QJL["QJL Residual<br/>1-bit sign"]
-    
+
     LM --> Out["Compressed<br/>r: FP16 + θ: 3b + s: 1b"]
     QJL --> Out
-    
+
     style Out fill:#e1f5fe
 ```
 
@@ -174,7 +174,7 @@ flowchart TB
         direction LR
         T1[Tokens] --> T2[Embed] --> T3[Layers] --> T4[Head] --> T5[Loss]
     end
-    
+
     subgraph Inf["Inference"]
         direction TB
         I1[Input] --> I2[KV Cache]
@@ -184,14 +184,14 @@ flowchart TB
         I4 --> I6[Generate]
         I5 --> I6
     end
-    
+
     subgraph Comp["Compression"]
         direction LR
-        C1[Weights] --> C2[TurboQuant]
+        C1[Weights] --> C2[RaBitQ]
         C2 --> C3[4-bit Weights]
         C2 --> C4[Compressed KV]
     end
-    
+
     style Train fill:#e8f5e9
     style Inf fill:#fff3e0
     style Comp fill:#fce4ec
@@ -216,7 +216,7 @@ Adaptive-Deep-Networks/
 │   ├── models/                   # Model definitions
 │   │   ├── adaptive_transformer.py
 │   │   └── configs.py
-│   └── turboquant/               # Compression
+│   └── rabitq/               # Compression
 │       ├── polar_quant.py       # Polar quantization
 │       ├── qjl.py               # QJL transform
 │       └── turbo_quant.py       # Pipeline
@@ -276,13 +276,13 @@ Adaptive-Deep-Networks/
 |-----------|--------|---------|---------------|
 | AttnRes | O(Nd) | O(N²d) | O(Nd) |
 | qTTT | O(d) | O(N_adapt × d) | O(1) |
-| TurboQuant | O(d/6) | O(d) | O(d/6) |
+| RaBitQ | O(d/6) | O(d) | O(d/6) |
 
 ## Extension Points
 
 1. **New Architectures**: Extend `BaseExperiment`
 2. **New Gating Policies**: Extend `DynamicThreshold`
-3. **New Compression**: Extend `TurboQuantPipeline`
+3. **New Compression**: Extend `RaBitQPipeline`
 4. **New Adaptation**: Extend `QueryOnlyTTT`
 
 ## Troubleshooting

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-论文指标汇总 - Adaptive Deep Networks TurboQuant
+论文指标汇总 - Adaptive Deep Networks RaBitQ
 
-基于 Adaptive_Deep_Networks_TurboQuant.md 的关键指标汇总
+基于 Adaptive_Deep_Networks_RaBitQ.md 的关键指标汇总
 """
 
 import json
@@ -25,7 +25,7 @@ def needle_haystack_metrics():
         "transformer": [87.5, 22.1, 8.7, 3.2, 1.5],
         "ttt_linear": [94.2, 65.3, 48.7, 32.1, 18.5],
         "attnres": [96.8, 75.6, 58.9, 42.3, 28.7],
-        "adb_turboquant": [98.5, 91.3, 85.5, 78.2, 68.2],
+        "adb_rabitq": [98.5, 91.3, 85.5, 78.2, 68.2],
     }
 
     print(
@@ -39,7 +39,7 @@ def needle_haystack_metrics():
             f"{data['transformer'][i]:>6.1f}%{'':<8} "
             f"{data['ttt_linear'][i]:>6.1f}%{'':<8} "
             f"{data['attnres'][i]:>6.1f}%{'':<8} "
-            f"{data['adb_turboquant'][i]:>6.1f}%"
+            f"{data['adb_rabitq'][i]:>6.1f}%"
         )
 
     print("-" * 80)
@@ -60,7 +60,7 @@ def needle_haystack_metrics():
             "transformer": 38.2,
             "ttt_linear": 62.3,
             "attnres": 69.9,
-            "adb_turboquant": 86.9,
+            "adb_rabitq": 86.9,
         },
         "key_finding": "45x improvement at 256K context",
     }
@@ -148,7 +148,7 @@ def ablation_study_metrics():
         "w/o qTTT": {"score": 50.1, "delta": -6.7},
         "w/o Gating": {"score": 53.2, "delta": -3.6},
         "w/o AttnRes": {"score": 48.9, "delta": -7.9},
-        "w/o TurboQuant": {"score": 51.5, "delta": -5.3},
+        "w/o RaBitQ": {"score": 51.5, "delta": -5.3},
         "Standard Transformer": {"score": 39.7, "delta": -17.1},
     }
 
@@ -161,7 +161,7 @@ def ablation_study_metrics():
         print(f"{config:<28} {data['score']:>6.1f}%{marker:<8} {delta_str:>15}")
 
     print("-" * 70)
-    print(f"\nSynergy Coefficient: 1.18")
+    print("\nSynergy Coefficient: 1.18")
     print("(>1.0 indicates super-additive interaction)")
 
     print("\nKey Findings:")
@@ -174,7 +174,7 @@ def ablation_study_metrics():
     importance = [
         ("AttnRes", 7.9),
         ("qTTT", 6.7),
-        ("TurboQuant", 5.3),
+        ("RaBitQ", 5.3),
         ("Gating", 3.6),
     ]
 
@@ -257,9 +257,9 @@ def model_specifications():
     return {"section": "Model Specifications", "specs": specs}
 
 
-def turboquant_metrics():
-    """TurboQuant Metrics"""
-    print_section("TurboQuant Compression Metrics")
+def rabitq_metrics():
+    """RaBitQ Metrics"""
+    print_section("RaBitQ Compression Metrics")
 
     print("\nCompression Performance:")
     print("  • Memory reduction: 6×+ with zero accuracy loss")
@@ -283,7 +283,7 @@ def turboquant_metrics():
     print("  • Combined: 8× throughput increase")
 
     return {
-        "section": "TurboQuant",
+        "section": "RaBitQ",
         "memory_reduction": "6x+",
         "kv_cache_reduction": "5.7x",
         "throughput_increase": "8x",
@@ -300,7 +300,7 @@ def generate_summary_report(all_results):
     report.append(f"\nGenerated: {datetime.now().isoformat()}")
     report.append("\nThis report summarizes key metrics from the paper:")
     report.append("'Adaptive Deep Networks: Integrating Block Attention")
-    report.append("Residuals, TurboQuant Compression, and Test-Time Adaptation'")
+    report.append("Residuals, RaBitQ Compression, and Test-Time Adaptation'")
 
     report.append("\n" + "=" * 70)
     report.append("TOP-LEVEL ACHIEVEMENTS")
@@ -323,7 +323,7 @@ def generate_summary_report(all_results):
     report.append("\n4. Memory Efficiency")
     report.append("   • 5.7× KV cache reduction")
     report.append("   • 2.8 GB vs 16 GB at 128K context")
-    report.append("   • 6×+ TurboQuant compression")
+    report.append("   • 6×+ RaBitQ compression")
 
     report.append("\n5. Component Synergy")
     report.append("   • Synergy coefficient: 1.18 (super-additive)")
@@ -338,7 +338,7 @@ def generate_summary_report(all_results):
     report.append("  • Overhead: <0.1% parameters")
     report.append("  • Gradient CV: 0.11 vs 0.84 (PreNorm)")
 
-    report.append("\nTurboQuant:")
+    report.append("\nRaBitQ:")
     report.append("  • 6×+ memory reduction, zero accuracy loss")
     report.append("  • Data-oblivious: no calibration needed")
     report.append("  • 8× throughput on Tensor Cores")
@@ -353,7 +353,7 @@ def generate_summary_report(all_results):
     report.append("=" * 70)
     report.append("\n@article{adaptive_deep_networks_2026,")
     report.append("  title={Adaptive Deep Networks: Integrating Attention")
-    report.append("         Residuals, TurboQuant Compression, and")
+    report.append("         Residuals, RaBitQ Compression, and")
     report.append("         Test-Time Adaptation},")
     report.append("  author={[Authors]},")
     report.append("  journal={arXiv preprint},")
@@ -382,7 +382,7 @@ def main():
     all_results["ablation_study"] = ablation_study_metrics()
     all_results["compute_efficiency"] = compute_efficiency_metrics()
     all_results["model_specs"] = model_specifications()
-    all_results["turboquant"] = turboquant_metrics()
+    all_results["rabitq"] = rabitq_metrics()
 
     # 生成汇总报告
     report = generate_summary_report(all_results)

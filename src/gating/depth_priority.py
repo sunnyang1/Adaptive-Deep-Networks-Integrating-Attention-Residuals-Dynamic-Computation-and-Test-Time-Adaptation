@@ -9,10 +9,9 @@ When RaBitQ acceleration is enabled:
 - This transforms the FLOP equivalence to decisively favor depth
 """
 
-import torch
-import torch.nn as nn
-from typing import Tuple, Optional, Dict
 from collections import deque
+
+import torch.nn as nn
 
 from .threshold import DynamicThreshold, EMAThreshold, TargetRateThreshold
 
@@ -21,9 +20,9 @@ class DepthPriorityGatingController:
     """
     Gating controller with strict depth-priority policy.
 
-    Under TurboQuant acceleration:
-    - C_qTTT^Turbo ≈ (1/8) * C_qTTT^Standard
-    - T_think ≈ 16 * N_qTTT * k (vs 2 * N_qTTT * k without TurboQuant)
+    Under RaBitQ compression:
+    - C_qTTT^RaBitQ ≈ (1/8) * C_qTTT^Standard
+    - T_think ≈ 16 * N_qTTT * k (vs 2 * N_qTTT * k without RaBitQ)
     - Policy: When d_t = 1, allocate 100% to depth
     """
 
@@ -34,7 +33,7 @@ class DepthPriorityGatingController:
         min_qttt_steps: int = 4,
         think_tokens_if_forced: int = 0,  # Set to 0 for strict depth priority
         rabitq_enabled: bool = True,
-        reconstruction_computer: Optional[nn.Module] = None,
+        reconstruction_computer: nn.Module | None = None,
     ):
         """
         Args:
@@ -73,8 +72,8 @@ class DepthPriorityGatingController:
         }
 
     def decide(
-        self, reconstruction_loss: float, input_complexity: Optional[float] = None
-    ) -> Tuple[bool, int, int, float]:
+        self, reconstruction_loss: float, input_complexity: float | None = None
+    ) -> tuple[bool, int, int, float]:
         """
         Make depth-priority adaptation decision.
 
@@ -108,10 +107,7 @@ class DepthPriorityGatingController:
             )
 
             # Strict depth priority: minimize thinking tokens
-            if self.rabitq_enabled:
-                think_tokens = 0  # All budget to depth
-            else:
-                think_tokens = self.think_tokens
+            think_tokens = 0 if self.rabitq_enabled else self.think_tokens
 
             self.adaptation_stats["total_qttt_steps"] += num_steps
             self.adaptation_stats["total_think_tokens"] += think_tokens
@@ -139,7 +135,7 @@ class DepthPriorityGatingController:
 
         return should_adapt, num_steps, think_tokens, threshold
 
-    def get_allocation_report(self) -> Dict:
+    def get_allocation_report(self) -> dict:
         """
         Generate report on computation allocation.
 
@@ -178,24 +174,24 @@ class DepthPriorityGatingController:
             "flop_equivalence_multiplier": self.flop_equivalence_multiplier,
         }
 
-    def get_policy_comparison(self) -> Dict:
+    def get_policy_comparison(self) -> dict:
         """
         Compare depth-priority vs width-priority policies.
 
-        Shows why TurboQuant makes depth-priority optimal.
+        Shows why RaBitQ makes depth-priority optimal.
         """
-        # Standard policy (without TurboQuant)
+        # Standard policy (without RaBitQ)
         standard_equiv = 2  # T_think = 2 * N_qTTT * k
 
-        # TurboQuant policy
-        turbo_equiv = self.flop_equivalence_multiplier
+        # RaBitQ policy
+        rabitq_equiv = self.flop_equivalence_multiplier
 
         # Cost for equivalent computation
         N = 16  # Example: 16 qTTT steps with k=128
         k = 128
 
         standard_think = standard_equiv * N * k
-        turbo_think = turbo_equiv * N * k
+        rabitq_think = rabitq_equiv * N * k
 
         return {
             "standard_policy": {
@@ -203,9 +199,9 @@ class DepthPriorityGatingController:
                 "example_16_steps_128_span": f"{standard_think} tokens",
             },
             "rabitq_policy": {
-                "equivalence": f"T_think = {turbo_equiv} * N_qTTT * k",
-                "example_16_steps_128_span": f"{turbo_think} tokens",
-                "savings_vs_standard": f"{turbo_equiv / standard_equiv:.1f}x",
+                "equivalence": f"T_think = {rabitq_equiv} * N_qTTT * k",
+                "example_16_steps_128_span": f"{rabitq_think} tokens",
+                "savings_vs_standard": f"{rabitq_equiv / standard_equiv:.1f}x",
             },
             "recommendation": "Strict depth priority under RaBitQ",
         }

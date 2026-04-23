@@ -10,7 +10,7 @@ src/
 ├── gating/           # Dynamic gating for adaptation
 ├── models/           # Model configurations and implementations
 ├── qttt/             # Query-Only Test-Time Training
-└── turboquant/       # TurboQuant compression
+└── rabitq/       # RaBitQ compression
 
 experiments/
 ├── common/           # Shared experiment utilities
@@ -72,21 +72,21 @@ gating = EMAThreshold(initial_threshold=2.0, beta=0.99)
 should_adapt = gating.should_adapt(reconstruction_loss)
 ```
 
-### src.turboquant
+### src.rabitq
 
-TurboQuant compression for 6x model compression.
+RaBitQ compression for 6x model compression.
 
 **Key Classes:**
 - `PolarQuant` - Polar coordinate quantization
 - `QJLCompressor` - Quantized JL transform
-- `TurboQuantPipeline` - Full compression pipeline
+- `RaBitQPipeline` - Full compression pipeline
 
 **Example:**
 ```python
-from src.turboquant import TurboQuantPipeline, TurboQuantConfig
+from src.rabitq import RaBitQPipeline, RaBitQConfig
 
-config = TurboQuantConfig(angle_bits=3, qjl_proj_dim=256)
-pipeline = TurboQuantPipeline(dim=512, config=config)
+config = RaBitQConfig(angle_bits=3, qjl_proj_dim=256)
+pipeline = RaBitQPipeline(dim=512, config=config)
 r, theta, signs = pipeline.compress_vector(x)
 ```
 

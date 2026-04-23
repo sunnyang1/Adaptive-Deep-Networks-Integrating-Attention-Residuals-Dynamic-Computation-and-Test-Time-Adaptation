@@ -1,22 +1,23 @@
 """
 Polar-Coordinate Query-only Test-Time Training (qTTT)
 
-Based on: Section 3.3 of Adaptive Deep Networks TurboQuant version
+Based on: Section 3.3 of Adaptive Deep Networks
 
 Key innovations:
 1. Polar decomposition: w = r * u(θ)
 2. Freeze magnitude r, adapt only direction θ (50% parameter reduction)
 3. Spherical gradient descent for natural geometry
-4. Integration with TurboQuant for 8× cost reduction
+4. Integration with RaBitQ for 4-bit KV-cache compression
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple
-from dataclasses import dataclass
 
 from .adaptation import KVCache, compute_attention_with_query
 
@@ -61,7 +62,7 @@ class PolarQTTTConfig:
     rabitq_bits: int = 1  # Total bits: 1=16×, 2=8×, 3=5.3× (vs FP16)
 
     # Early stopping (disabled for paper defaults to ensure full steps)
-    early_stop_threshold: Optional[float] = None  # Stop if loss change < threshold
+    early_stop_threshold: float | None = None  # Stop if loss change < threshold
 
     @property
     def compression_ratio(self) -> float:
@@ -81,7 +82,7 @@ def spherical_step_jit(
     learning_rate: float,
     momentum: float,
     velocity: torch.Tensor,
-) -> Tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[torch.Tensor, torch.Tensor]:
     """
     JIT-compiled spherical gradient step.
 
@@ -289,10 +290,10 @@ class PolarQTTT(nn.Module):
         direction: torch.Tensor,  # Unit vector u(θ) [d]
         kv_cache: KVCache,
         seq_positions: torch.Tensor,
-        distractor_positions: Optional[torch.Tensor] = None,
-        projection_head: Optional[nn.Module] = None,
-        target_token_ids: Optional[torch.Tensor] = None,
-    ) -> Tuple[torch.Tensor, List[float]]:
+        distractor_positions: torch.Tensor | None = None,
+        projection_head: nn.Module | None = None,
+        target_token_ids: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, list[float]]:
         """
         Adapt polar pseudo-query via qTTT.
 
@@ -314,7 +315,7 @@ class PolarQTTT(nn.Module):
 
         loss_history = []
 
-        for step in range(self.config.num_steps):
+        for _step in range(self.config.num_steps):
             # Forward pass with current adapted query
             query = adapter.get_query()
 
@@ -327,10 +328,7 @@ class PolarQTTT(nn.Module):
             attn_output = compute_attention_with_query(query_mha, kv_cache)
 
             # Apply projection head if available to get logits
-            if projection_head is not None:
-                logits = projection_head(attn_output)
-            else:
-                logits = attn_output
+            logits = projection_head(attn_output) if projection_head is not None else attn_output
 
             # Compute adaptation loss (cross_entropy default, margin_maximization alternative)
             loss = self._compute_adaptation_loss(
@@ -370,14 +368,14 @@ class PolarQTTT(nn.Module):
         self,
         queries: torch.Tensor,  # [B, T, D]
         kv_cache: KVCache,
-        seq_positions: Optional[torch.Tensor] = None,
-        distractor_positions: Optional[torch.Tensor] = None,
-        projection_head: Optional[nn.Module] = None,
-        target_token_ids: Optional[torch.Tensor] = None,
-        model: Optional[AdaptiveTransformer] = None,
-        input_ids: Optional[torch.Tensor] = None,
-        kv_caches: Optional[List["KVCache"]] = None,
-    ) -> Tuple[torch.Tensor, List[float]]:
+        seq_positions: torch.Tensor | None = None,
+        distractor_positions: torch.Tensor | None = None,
+        projection_head: nn.Module | None = None,
+        target_token_ids: torch.Tensor | None = None,
+        model: AdaptiveTransformer | None = None,
+        input_ids: torch.Tensor | None = None,
+        kv_caches: list[KVCache] | None = None,
+    ) -> tuple[torch.Tensor, list[float]]:
         """
         Adapt query projection vectors in polar coordinates.
 
@@ -412,7 +410,7 @@ class PolarQTTT(nn.Module):
 
         loss_history = []
 
-        for step in range(self.config.num_steps):
+        for _step in range(self.config.num_steps):
             query = r * F.normalize(u_adapt, dim=-1)  # [B, T, D]
 
             # Use full model forward if available (recommended)
@@ -521,8 +519,8 @@ class PolarQTTT(nn.Module):
         self,
         logits: torch.Tensor,
         seq_positions: torch.Tensor,
-        target_token_ids: Optional[torch.Tensor] = None,
-        distractor_positions: Optional[torch.Tensor] = None,
+        target_token_ids: torch.Tensor | None = None,
+        distractor_positions: torch.Tensor | None = None,
     ) -> torch.Tensor:
         """Compute adaptation loss based on config.loss_type.
 
@@ -622,9 +620,9 @@ class PolarQTTT(nn.Module):
         self,
         attn_output: torch.Tensor,
         seq_positions: torch.Tensor,
-        distractor_positions: Optional[torch.Tensor],
-        projection_head: Optional[nn.Module],
-        target_token_ids: Optional[torch.Tensor],
+        distractor_positions: torch.Tensor | None,
+        projection_head: nn.Module | None,
+        target_token_ids: torch.Tensor | None,
     ) -> torch.Tensor:
         """Compute margin maximization loss with proper 4D indexing."""
         if projection_head is None or target_token_ids is None:
@@ -682,15 +680,15 @@ class PolarQTTT(nn.Module):
         return loss
 
     def compute_effective_cost(
-        self, batch_size: int, seq_len: int, use_turboquant: bool = True
-    ) -> Dict[str, float]:
+        self, batch_size: int, seq_len: int, use_rabitq: bool = True
+    ) -> dict[str, float]:
         """
         Compute effective FLOP cost of polar qTTT.
 
         Args:
             batch_size: Batch size
             seq_len: Sequence length
-            use_turboquant: Account for TurboQuant acceleration
+            use_rabitq: Account for RaBitQ compression
 
         Returns:
             Cost breakdown dictionary
@@ -722,7 +720,7 @@ class PolarQTTT(nn.Module):
             "parameter_reduction": 0.5,  # 50% fewer adapted params
         }
 
-    def get_stats(self) -> Dict:
+    def get_stats(self) -> dict:
         """Get adaptation statistics."""
         return self.adaptation_stats.copy()
 
@@ -731,7 +729,7 @@ class DepthPriorityController:
     """
     Controller for depth-priority computation allocation.
 
-    Under TurboQuant acceleration, strictly prioritizes depth (qTTT)
+    Under RaBitQ compression, strictly prioritizes depth (qTTT)
     over width (thinking tokens) when gating activates.
     """
 
@@ -739,16 +737,16 @@ class DepthPriorityController:
         self,
         max_qttt_steps: int = 32,
         think_tokens_budget: int = 0,  # Set to 0 for strict depth priority
-        turboquant_enabled: bool = True,
+        rabitq_enabled: bool = True,
     ):
         self.max_qttt_steps = max_qttt_steps
         self.think_tokens_budget = think_tokens_budget
-        self.turboquant_enabled = turboquant_enabled
+        self.rabitq_enabled = rabitq_enabled
 
-        # Policy: With TurboQuant, depth is 8× cheaper
-        self.depth_priority_factor = 8.0 if turboquant_enabled else 2.0
+        # Policy: With RaBitQ, depth is 8× cheaper
+        self.depth_priority_factor = 8.0 if rabitq_enabled else 2.0
 
-    def allocate(self, gating_active: bool, budget_constraint: str = "moderate") -> Tuple[int, int]:
+    def allocate(self, gating_active: bool, budget_constraint: str = "moderate") -> tuple[int, int]:
         """
         Allocate computation budget between depth and width.
 
@@ -762,7 +760,7 @@ class DepthPriorityController:
         if not gating_active:
             return 0, 0
 
-        # Strict depth priority under TurboQuant
+        # Strict depth priority under RaBitQ
         if budget_constraint == "constrained":
             return self.max_qttt_steps, 0
         elif budget_constraint == "moderate":
@@ -772,12 +770,12 @@ class DepthPriorityController:
             # Hybrid with learned balance (future work)
             return self.max_qttt_steps, self.think_tokens_budget
 
-    def get_policy_summary(self) -> Dict:
+    def get_policy_summary(self) -> dict:
         """Get summary of allocation policy."""
         return {
             "max_qttt_steps": self.max_qttt_steps,
             "think_tokens_budget": self.think_tokens_budget,
-            "rabitq_enabled": self.turboquant_enabled,
+            "rabitq_enabled": self.rabitq_enabled,
             "depth_priority_factor": self.depth_priority_factor,
-            "policy": "strict_depth_priority" if self.turboquant_enabled else "balanced",
+            "policy": "strict_depth_priority" if self.rabitq_enabled else "balanced",
         }

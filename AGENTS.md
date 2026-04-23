@@ -51,7 +51,7 @@ This is the import path used by training scripts, most tests, and the existing C
 - `src/qttt/` — Query-only test-time training (`adaptation.py`, `margin_loss.py`, `batch_adaptation.py`, `polar_adaptation.py`, `adaptive_config.py`).
 - `src/models/` — `AdaptiveTransformer`, `AdaptiveLayer`, `AdaptiveAttention`, `AdaptiveMLP`, `IncrementalState`, `IncrementalGenerator`, `IncrementalKVCache`, and `configs.py` (`ModelConfig`, `AttnResSmallConfig`, `AttnResMediumConfig`, `AttnResLargeConfig`, `AttnResT4Config`).
 - `src/rabitq/` — RaBitQ KV-cache compression (`api.py`, `quantizer.py`, `rotation.py`, `packing.py`, `cache.py`, `estimator.py`) plus a `legacy/` subdirectory.
-- `src/turboquant/` — TurboQuant compression (`api.py`, `quantizer.py`, `rotation.py`, `compressor.py`, `cache.py`) plus a `legacy/` subdirectory.
+- `src/rabitq/` — RaBitQ compression (`api.py`, `quantizer.py`, `rotation.py`, `compressor.py`, `cache.py`) plus a `legacy/` subdirectory.
 - `src/engram/` — Engram n-gram memory (`engram_module.py`, `embeddings.py`, `ngram_hash.py`, `compressed_tokenizer.py`, `integration.py`, `config.py`).
 - `src/benchmarks/` — Needle-in-Haystack, MATH eval, FLOP analysis.
 
@@ -209,7 +209,7 @@ Use **`python3`** (not `python`) on this repo.
 - **Framework**: `pytest` with markers: `slow`, `gpu`, `unit`, `integration`.
 - **Fixtures**: `conftest.py` provides `device`, `rng`, `torch_rng`, `sample_tensor`, `model_config_small`, `model_config_medium`, and an autouse `reset_torch_seed` fixture.
 - **PYTHONPATH**: `conftest.py` injects the repo root so `import src.*` works reliably.
-- **Legacy exclusion**: `tests/legacy/` is ignored by default via `collect_ignore = ["legacy"]` because those tests target removed/renamed APIs (old TurboQuant V1/V2, MNNTurboQuant).
+- **Legacy exclusion**: `tests/legacy/` is ignored by default via `collect_ignore = ["legacy"]` because those tests target removed/renamed APIs (old RaBitQ V1/V2, MNNRaBitQ).
 - **CI**: PR workflow runs fast unit tests on Python 3.10. Validation workflow runs code-quality checks plus unit tests on Python 3.9, 3.10, and 3.11.
 
 ## Deployment and Environment Notes

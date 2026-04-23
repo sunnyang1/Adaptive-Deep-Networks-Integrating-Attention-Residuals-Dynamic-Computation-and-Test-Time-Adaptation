@@ -7,7 +7,7 @@ This directory contains all project documentation organized by category.
 Research papers and technical documents:
 
 - **[Adaptive_Deep_Networks_V1.md](papers/Adaptive_Deep_Networks_V1.md)** - Main research paper (original version)
-- **[Adaptive_Deep_Networks_TurboQuant.md](papers/Adaptive_Deep_Networks_TurboQuant.md)** - Paper with TurboQuant compression focus
+- **[Adaptive_Deep_Networks_RaBitQ.md](papers/Adaptive_Deep_Networks_RaBitQ.md)** - Paper with RaBitQ compression focus
 
 ## 📊 Reports
 
@@ -16,7 +16,7 @@ Research papers and technical documents:
 
 ### Implementation Reports
 - **[REFACTOR_COMPLETE.md](reports/implementation/REFACTOR_COMPLETE.md)** - Code refactoring completion report
-- **[TURBOQUANT_IMPLEMENTATION_SUMMARY.md](reports/implementation/TURBOQUANT_IMPLEMENTATION_SUMMARY.md)** - TurboQuant implementation details
+- **[RABITQ_IMPLEMENTATION_SUMMARY.md](reports/implementation/RABITQ_IMPLEMENTATION_SUMMARY.md)** - RaBitQ implementation details
 
 ### Research Reports
 - **[research_report_2026-03-29.md](reports/research/research_report_2026-03-29.md)** - Research progress report

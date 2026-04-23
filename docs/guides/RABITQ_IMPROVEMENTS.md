@@ -1,10 +1,10 @@
-# MNN-Inspired TurboQuant Improvements
+# MNN-Inspired RaBitQ Improvements
 
 **Reference**: [Alibaba MNN Commit 244f5d1](https://github.com/alibaba/MNN/commit/244f5d10df5a95b4f4e6f3d9251c6fe3dc0e7c83)
 
 ## Overview
 
-This document describes the improvements to TurboQuant based on Alibaba's MNN (Mobile Neural Network) framework implementation. MNN's approach provides a more flexible and production-ready KV cache quantization system.
+This document describes the improvements to RaBitQ based on Alibaba's MNN (Mobile Neural Network) framework implementation. MNN's approach provides a more flexible and production-ready KV cache quantization system.
 
 ## Key Improvements
 
@@ -48,7 +48,7 @@ class KVQuantMode(IntEnum):
 MNN uses optimized Lloyd-Max quantization for TQ3/TQ4 modes:
 
 ```python
-from src.turboquant import LloydMaxQuantizer
+from src.rabitq import LloydMaxQuantizer
 
 # Create 4-bit quantizer
 quantizer = LloydMaxQuantizer(num_bits=4, max_iter=100)
@@ -76,14 +76,14 @@ MNN recommends different modes based on model size:
 ### Basic Usage
 
 ```python
-from src.turboquant import (
-    MNNTurboQuantConfig,
-    MNNTurboQuantCompressor,
-    create_mnn_turboquant,
+from src.rabitq import (
+    MNNRaBitQConfig,
+    MNNRaBitQCompressor,
+    create_mnn_rabitq,
 )
 
 # Create compressor with recommended config
-compressor = create_mnn_turboquant(
+compressor = create_mnn_rabitq(
     attention_mode=14,  # FlashAttention + KV-TQ4
     head_dim=128,
 )
@@ -96,16 +96,16 @@ keys_decomp, values_decomp = compressor.decompress_kv(compressed)
 ### Custom Configuration
 
 ```python
-from src.turboquant import MNNTurboQuantConfig
+from src.rabitq import MNNRaBitQConfig
 
-config = MNNTurboQuantConfig(
+config = MNNRaBitQConfig(
     attention_mode=14,
     use_lloyd_max=True,
     lloyd_max_iterations=100,
     min_params_for_tq=4e9,  # 4B threshold
 )
 
-compressor = MNNTurboQuantCompressor(config, head_dim=128)
+compressor = MNNRaBitQCompressor(config, head_dim=128)
 
 # Fit codebooks on sample data
 compressor.fit_codebooks(sample_keys, sample_values)
@@ -139,7 +139,7 @@ print(f"Saving ratio: {stats['saving_ratio']:.2f}x")
 ### Recommended Configurations
 
 ```python
-from src.turboquant import CONFIG_RECOMMENDATIONS
+from src.rabitq import CONFIG_RECOMMENDATIONS
 
 # Pre-defined configs
 CONFIG_RECOMMENDATIONS = {
@@ -155,17 +155,17 @@ CONFIG_RECOMMENDATIONS = {
 Run the demo to see all features:
 
 ```bash
-python scripts/experiments/mnn_turboquant_demo.py --all
+python scripts/experiments/mnn_rabitq_demo.py --all
 ```
 
 Or specific demos:
 
 ```bash
-python scripts/experiments/mnn_turboquant_demo.py --modes
-python scripts/experiments/mnn_turboquant_demo.py --compression
-python scripts/experiments/mnn_turboquant_demo.py --memory
-python scripts/experiments/mnn_turboquant_demo.py --quantization
-python scripts/experiments/mnn_turboquant_demo.py --recommendations
+python scripts/experiments/mnn_rabitq_demo.py --modes
+python scripts/experiments/mnn_rabitq_demo.py --compression
+python scripts/experiments/mnn_rabitq_demo.py --memory
+python scripts/experiments/mnn_rabitq_demo.py --quantization
+python scripts/experiments/mnn_rabitq_demo.py --recommendations
 ```
 
 ## Testing
@@ -173,21 +173,21 @@ python scripts/experiments/mnn_turboquant_demo.py --recommendations
 Run tests:
 
 ```bash
-pytest tests/unit/test_mnn_turboquant.py -v
+pytest tests/unit/test_mnn_rabitq.py -v
 ```
 
-## Migration from Original TurboQuant
+## Migration from Original RaBitQ
 
-The MNN-inspired implementation is compatible with the original TurboQuant but offers more flexibility:
+The MNN-inspired implementation is compatible with the original RaBitQ but offers more flexibility:
 
 ```python
 # Original
-from src.turboquant import TurboQuantPipeline, TurboQuantConfig
+from src.rabitq import RaBitQPipeline, RaBitQConfig
 
 # MNN-inspired (new)
-from src.turboquant import (
-    MNNTurboQuantCompressor,
-    MNNTurboQuantConfig,
+from src.rabitq import (
+    MNNRaBitQCompressor,
+    MNNRaBitQConfig,
 )
 
 # Key differences:
@@ -201,4 +201,4 @@ from src.turboquant import (
 
 1. [MNN Commit 244f5d1](https://github.com/alibaba/MNN/commit/244f5d10df5a95b4f4e6f3d9251c6fe3dc0e7c83)
 2. [MNN Documentation](https://www.yuque.com/mnn/en)
-3. TurboQuant Paper (ICLR 2026)
+3. RaBitQ Paper (ICLR 2026)

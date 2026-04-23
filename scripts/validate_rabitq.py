@@ -1,31 +1,29 @@
 """
-TurboQuant V3 Validation Script
+RaBitQ V3 Validation Script
 
 Validates compression quality by comparing attention scores on real model KV cache.
 Tests multiple configurations and reports comprehensive metrics.
 
 Based on:
-- https://github.com/tonbistudio/turboquant-pytorch/validate.py
-- https://github.com/tonbistudio/turboquant-pytorch/validate_v3.py
+- https://github.com/tonbistudio/rabitq-pytorch/validate.py
+- https://github.com/tonbistudio/rabitq-pytorch/validate_v3.py
 
 Usage:
-    python scripts/validate_turboquant_v3.py --model Qwen/Qwen2.5-0.5B --seq-len 1024
+    python scripts/validate_rabitq_v3.py --model Qwen/Qwen2.5-0.5B --seq-len 1024
 """
+
+import argparse
+import os
+import sys
+import time
+from dataclasses import dataclass
 
 import torch
 import torch.nn.functional as F
-import time
-import os
-import sys
-import argparse
-from typing import Dict, List, Tuple, Optional
-from dataclasses import dataclass
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from rabitq import create_k4_v2, create_k3_v2, create_k2_v2, RaBitQ
-from rabitq.api import RaBitQConfig
-
+from rabitq import create_k2_v2, create_k3_v2, create_k4_v2
 
 # =============================================================================
 # Configuration
@@ -74,7 +72,7 @@ def build_needle_prompt(tokenizer, target_tokens: int = 2048, needle_pos: float 
     )
 
 
-def find_needle_position(input_ids: torch.Tensor, tokenizer, needle: str = NEEDLE) -> Optional[int]:
+def find_needle_position(input_ids: torch.Tensor, tokenizer, needle: str = NEEDLE) -> int | None:
     """Find needle token position in input."""
     needle_tokens = tokenizer.encode(needle, add_special_tokens=False)
     input_ids_list = input_ids[0].tolist()
@@ -95,8 +93,8 @@ def find_needle_position(input_ids: torch.Tensor, tokenizer, needle: str = NEEDL
 
 
 def compute_attention_metrics(
-    real_scores: torch.Tensor, compressed_scores: torch.Tensor, needle_pos: Optional[int] = None
-) -> Dict[str, float]:
+    real_scores: torch.Tensor, compressed_scores: torch.Tensor, needle_pos: int | None = None
+) -> dict[str, float]:
     """
     Compute metrics comparing real vs compressed attention scores.
 
@@ -153,14 +151,14 @@ def compute_attention_metrics(
 
 
 def evaluate_compression_config(
-    cache, compressor_factory, label: str, needle_pos: Optional[int] = None, device: str = "cpu"
+    cache, compressor_factory, label: str, needle_pos: int | None = None, device: str = "cpu"
 ) -> ValidationResult:
     """
     Evaluate a compression configuration on model KV cache.
 
     Args:
         cache: HF model's past_key_values
-        compressor_factory: Function that returns a TurboQuantV3 instance
+        compressor_factory: Function that returns a RaBitQV3 instance
         label: Name of this configuration
         needle_pos: Position of needle token
         device: Device to run on
@@ -169,8 +167,6 @@ def evaluate_compression_config(
         ValidationResult with all metrics
     """
     n_layers = len(cache)
-    head_dim = cache[0][0].shape[-1]
-    num_kv_heads = cache[0][0].shape[1]
 
     total_compressed_bytes = 0
     total_original_bytes = 0
@@ -262,7 +258,7 @@ def evaluate_compression_config(
     )
 
 
-def print_results_table(results: List[ValidationResult]):
+def print_results_table(results: list[ValidationResult]):
     """Print results in a formatted table."""
     print("\n" + "=" * 100)
     print(
@@ -282,7 +278,7 @@ def print_results_table(results: List[ValidationResult]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Validate TurboQuant V3 compression")
+    parser = argparse.ArgumentParser(description="Validate RaBitQ V3 compression")
     parser.add_argument(
         "--model", type=str, default=None, help="Model name (e.g., Qwen/Qwen2.5-0.5B)"
     )
@@ -305,7 +301,7 @@ def main():
         device = "cpu"
 
     print("=" * 100)
-    print("TurboQuant V3 Validation")
+    print("RaBitQ V3 Validation")
     print("=" * 100)
     print(f"Device: {device}")
 

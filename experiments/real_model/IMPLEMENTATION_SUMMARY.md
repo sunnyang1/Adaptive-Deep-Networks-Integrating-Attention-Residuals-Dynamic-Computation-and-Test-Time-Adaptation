@@ -70,7 +70,7 @@ python experiments/real_model/needle_haystack_real.py \
   - GPU 显存峰值测量
   - KV Cache 大小估计
   - 上下文长度扩展测试
-  - 标准模型 vs TurboQuant 对比
+  - 标准模型 vs RaBitQ 对比
 
 **使用方式**:
 
@@ -85,7 +85,7 @@ python experiments/real_model/memory_profiler.py \
 - **功能**: 一键运行所有测试
 - **包含测试**:
   1. Needle-in-Haystack（Table 4）
-  2. 内存分析（TurboQuant）
+  2. 内存分析（RaBitQ）
   3. 梯度流分析（Table 2）
   4. 吞吐量测试
 
@@ -112,8 +112,8 @@ python experiments/real_model/validator.py \
 | Table 2: CV=0.11          | `validator.py --test gradient`   | ✅ 框架就绪 |
 | Table 4: NIH 86.9%        | `needle_haystack_real.py`        | ✅ 框架就绪 |
 | Table 4: 128K 68.2%       | `needle_haystack_real.py`        | ✅ 框架就绪 |
-| TurboQuant: 6x 压缩         | `memory_profiler.py`             | ✅ 框架就绪 |
-| TurboQuant: 5.7x KV Cache | `memory_profiler.py`             | ✅ 框架就绪 |
+| RaBitQ: 6x 压缩         | `memory_profiler.py`             | ✅ 框架就绪 |
+| RaBitQ: 5.7x KV Cache | `memory_profiler.py`             | ✅ 框架就绪 |
 | Throughput: 110 t/s       | `validator.py --test throughput` | ✅ 框架就绪 |
 
 
@@ -126,7 +126,7 @@ python experiments/real_model/validator.py \
 - `attnres_small.pt` (2.2B)
 - `attnres_medium.pt` (8.7B)
 - `attnres_large.pt` (27B)
-- `attnres_medium_turboquant.pt`
+- `attnres_medium_rabitq.pt`
 - Baseline 模型（用于对比）
 
 ### 2. Tokenizer 集成
@@ -209,5 +209,3 @@ results/real_model/
 | Medium model (8.7B) | 24 GB | RTX 4090 / A5000 |
 | Large model (27B)   | 80 GB | H100 / A100      |
 | 1M context          | 80 GB | H100 80GB        |
-
-

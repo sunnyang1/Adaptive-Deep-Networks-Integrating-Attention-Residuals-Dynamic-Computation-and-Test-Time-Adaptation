@@ -1,6 +1,6 @@
 # Adaptive Deep Networks - 实验运行 Makefile
 
-.PHONY: help list quick full core turboquant clean
+.PHONY: help list quick full core rabitq clean
 
 help:
 	@echo "Adaptive Deep Networks 实验运行"
@@ -10,7 +10,7 @@ help:
 	@echo "  make quick      - 快速运行所有实验（减少计算量）"
 	@echo "  make full       - 完整运行所有实验"
 	@echo "  make core       - 仅运行核心实验"
-	@echo "  make turboquant - 仅运行TurboQuant验证"
+	@echo "  make rabitq - 仅运行RaBitQ验证"
 	@echo "  make clean      - 清理实验结果"
 	@echo ""
 	@echo "选项:"
@@ -29,8 +29,8 @@ full:
 core:
 	python run_experiments_unified.py --category core
 
-turboquant:
-	python run_experiments_unified.py --exp val_turboquant
+rabitq:
+	python run_experiments_unified.py --exp val_rabitq
 
 clean:
 	rm -rf results/unified/*

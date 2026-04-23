@@ -1,10 +1,10 @@
-# TurboQuant V3 - Community Improvements
+# RaBitQ V3 - Community Improvements
 
-**Reference**: [tonbistudio/turboquant-pytorch](https://github.com/tonbistudio/turboquant-pytorch)
+**Reference**: [tonbistudio/rabitq-pytorch](https://github.com/tonbistudio/rabitq-pytorch)
 
 ## Overview
 
-TurboQuant V3 incorporates key findings from 8+ independent community implementations. The main discovery: **QJL hurts for KV cache compression** because softmax amplifies its variance.
+RaBitQ V3 incorporates key findings from 8+ independent community implementations. The main discovery: **QJL hurts for KV cache compression** because softmax amplifies its variance.
 
 ## Key Findings
 
@@ -30,7 +30,7 @@ Remove QJL, use all bits for reconstruction quality (MSE-only).
 ### 1. MSE-Only Compression
 
 ```python
-from src.turboquant import create_v3_k4_v2
+from src.rabitq import create_v3_k4_v2
 
 # No QJL - all bits go to reconstruction quality
 v3 = create_v3_k4_v2(head_dim=128)
@@ -77,7 +77,7 @@ v3 = create_v3_layer_adaptive(
 ### Quick Start (Recommended: K4/V2)
 
 ```python
-from src.turboquant import create_v3_k4_v2
+from src.rabitq import create_v3_k4_v2
 
 # Create compressor
 v3 = create_v3_k4_v2(head_dim=128, device='cuda')
@@ -93,8 +93,8 @@ for layer_idx in range(num_layers):
 
 # Compress during inference
 compressed = v3.compress_kv(
-    keys, values, 
-    head_dim=128, 
+    keys, values,
+    head_dim=128,
     layer_idx=layer_idx
 )
 
@@ -121,9 +121,9 @@ print(f"Saved: {stats['memory_saved_percent']:.0f}%")
 ### Custom Configuration
 
 ```python
-from src.turboquant import TurboQuantV3, TurboQuantV3Config
+from src.rabitq import RaBitQV3, RaBitQV3Config
 
-config = TurboQuantV3Config(
+config = RaBitQV3Config(
     key_bits=4,
     value_bits=2,
     use_rotation=True,
@@ -133,7 +133,7 @@ config = TurboQuantV3Config(
     device='cuda'
 )
 
-v3 = TurboQuantV3(config)
+v3 = RaBitQV3(config)
 ```
 
 ## Results
@@ -159,7 +159,7 @@ Hidden fact retrieval across context lengths:
 ## Recommended Configurations
 
 ```python
-from src.turboquant import V3_RECOMMENDED
+from src.rabitq import V3_RECOMMENDED
 
 # Best overall (recommended)
 v3 = V3_RECOMMENDED['k4_v2'](head_dim=128)
@@ -207,23 +207,23 @@ x_rotated = fwht(x * D)  # D = random diagonal signs
 
 ```bash
 # Run V3 demo
-python scripts/experiments/turboquant_v3_demo.py --all
+python scripts/experiments/rabitq_v3_demo.py --all
 
 # Run tests
-pytest tests/unit/test_turboquant_v3.py -v
+pytest tests/unit/test_rabitq_v3.py -v
 ```
 
 ## Community Implementations
 
-- **scos-lab/turboquant**: 8-model benchmark, K/V norm ratio analysis
-- **0xSero/turboquant**: Triton kernels, vLLM integration
-- **back2matching/turboquant**: HuggingFace drop-in, residual windowing
-- **TheTom/turboquant_plus**: Layer-adaptive, Apple Silicon optimized
+- **scos-lab/rabitq**: 8-model benchmark, K/V norm ratio analysis
+- **0xSero/rabitq**: Triton kernels, vLLM integration
+- **back2matching/rabitq**: HuggingFace drop-in, residual windowing
+- **TheTom/rabitq_plus**: Layer-adaptive, Apple Silicon optimized
 - **RecursiveIntell/turbo-quant**: Rust implementation
 - **SCJedi/entropy-adaptive-kv-cache**: + token eviction for 12x compression
 
 ## References
 
-1. [tonbistudio/turboquant-pytorch](https://github.com/tonbistudio/turboquant-pytorch)
-2. TurboQuant Paper (ICLR 2026)
-3. [MNN TurboQuant](https://github.com/alibaba/MNN)
+1. [tonbistudio/rabitq-pytorch](https://github.com/tonbistudio/rabitq-pytorch)
+2. RaBitQ Paper (ICLR 2026)
+3. [MNN RaBitQ](https://github.com/alibaba/MNN)

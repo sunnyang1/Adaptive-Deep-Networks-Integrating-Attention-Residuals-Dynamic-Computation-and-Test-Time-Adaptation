@@ -155,9 +155,9 @@ data/
 | `MATDO_E_A100_BEGINNER_GUIDE.md` | MATDO-E / A100 入门与排障（长教程）             |
 | `README_FOR_BEGINNERS.md`        | MATDO-E 新手路径与资源索引                     |
 | `LARGE_MODEL_BUILD.md`           | 大模型构建指南                               |
-| `MNN_TURBOQUANT_IMPROVEMENTS.md` | MNN TurboQuant 改进指南                   |
-| `TURBOQUANT_REFACTORED.md`       | TurboQuant 重构指南                       |
-| `TURBOQUANT_V3.md`               | TurboQuant V3 指南                      |
+| `MNN_RABITQ_IMPROVEMENTS.md` | MNN RaBitQ 改进指南                   |
+| `RABITQ_REFACTORED.md`       | RaBitQ 重构指南                       |
+| `RABITQ_V3.md`               | RaBitQ V3 指南                      |
 
 
 #### 论文相关 (`docs/papers/`)
@@ -172,7 +172,7 @@ data/
 | `Adaptive_Deep_Networks_Query_Optimization_REVISED.md`   | 查询优化修订稿（当前主用的长篇 Markdown）   |
 | `ADN_Query_Optimization_v3.md`                           | 查询优化 v3                     |
 | `Adaptive_Deep_Networks_RaBitQ.md`                       | RaBitQ 论文                   |
-| `Adaptive_Deep_Networks_TurboQuant.md`                   | TurboQuant 论文               |
+| `Adaptive_Deep_Networks_RaBitQ.md`                   | RaBitQ 论文               |
 | `Adaptive_Deep_Networks_V1.md`                           | ADN V1 版本                   |
 | `matdo_paper.tex`                                        | MATDO LaTeX（经典稿）            |
 | `matdo-e_paper.tex`                                      | MATDO-E LaTeX 补充稿           |
@@ -199,7 +199,7 @@ docs/project/
     ├── IMPLEMENTATION_AUDIT.md       # 实现审计
     ├── MATDO.md                      # MATDO 论文
     ├── SOTA_CLAIMS_SUMMARY.md        # SOTA 声明总结
-    └── TURBOQUANT_V3_SUMMARY.md      # TurboQuant V3 总结
+    └── RABITQ_V3_SUMMARY.md      # RaBitQ V3 总结
 ```
 
 #### 报告 (`docs/reports/`)
@@ -222,7 +222,7 @@ docs/project/
 | 文件                                     | 说明              |
 | -------------------------------------- | --------------- |
 | `REFACTOR_COMPLETE.md`                 | 重构完成报告          |
-| `TURBOQUANT_IMPLEMENTATION_SUMMARY.md` | TurboQuant 实现总结 |
+| `RABITQ_IMPLEMENTATION_SUMMARY.md` | RaBitQ 实现总结 |
 
 
 #### 研究报告 (`docs/reports/research/`)
@@ -302,7 +302,7 @@ docs/project/
 
 | 文件                          | 说明              |
 | --------------------------- | --------------- |
-| `TURBOQUANT_EXPERIMENTS.md` | TurboQuant 实验文档 |
+| `RABITQ_EXPERIMENTS.md` | RaBitQ 实验文档 |
 | `core_experiments.md`       | 核心实验文档          |
 
 
@@ -378,7 +378,7 @@ matdo/
 | ------------- | ------------- |
 | `benchmarks/` | 基准测试结果        |
 | `core/`       | 核心实验结果        |
-| `turboquant/` | TurboQuant 结果 |
+| `rabitq/` | RaBitQ 结果 |
 
 
 #### 实验运行器 (`experiments/runner/`)
@@ -392,7 +392,7 @@ matdo/
 | `runner.py`   | 主运行器  |
 
 
-#### TurboQuant 实验 (`experiments/turboquant/`)
+#### RaBitQ 实验 (`experiments/rabitq/`)
 
 
 | 文件          | 说明   |
@@ -441,7 +441,7 @@ matdo/
 | ------------- | ------------------------------- |
 | `2026-03-23/` | 3月23日结果（数据集验证、验证结果）             |
 | `2026-03-24/` | 3月24日结果（大模型配置、5.2节报告）           |
-| `2026-03-30/` | 3月30日结果（实验、论文指标、小模型、TurboQuant） |
+| `2026-03-30/` | 3月30日结果（实验、论文指标、小模型、RaBitQ） |
 
 
 #### 核心结果 (`results/core/`)
@@ -569,10 +569,10 @@ matdo/
 
 | 文件                                  | 说明                 |
 | ----------------------------------- | ------------------ |
-| `test_turboquant_on_small_model.py` | TurboQuant 小模型测试   |
-| `test_turboquant_v3_improved.py`    | TurboQuant V3 改进测试 |
-| `validate_turboquant_setup.py`      | TurboQuant 设置验证    |
-| `turboquant_v3_demo.py`             | TurboQuant V3 演示   |
+| `test_rabitq_on_small_model.py` | RaBitQ 小模型测试   |
+| `test_rabitq_v3_improved.py`    | RaBitQ V3 改进测试 |
+| `validate_rabitq_setup.py`      | RaBitQ 设置验证    |
+| `rabitq_v3_demo.py`             | RaBitQ V3 演示   |
 
 
 #### 遗留脚本 (`scripts/legacy/`)
@@ -581,11 +581,11 @@ matdo/
 | 文件                                    | 说明                |
 | ------------------------------------- | ----------------- |
 | `__init__.py`                         | 包初始化              |
-| `mnn_turboquant_demo.py`              | MNN TurboQuant 演示 |
+| `mnn_rabitq_demo.py`              | MNN RaBitQ 演示 |
 | `run_small_experiments.py`            | 小实验               |
 | `run_small_model_experiments_fast.py` | 快速小模型实验           |
-| `test_turboquant_small.py`            | TurboQuant 小测试    |
-| `turboquant_refactored_demo.py`       | TurboQuant 重构演示   |
+| `test_rabitq_small.py`            | RaBitQ 小测试    |
+| `rabitq_refactored_demo.py`       | RaBitQ 重构演示   |
 
 
 #### 模型脚本 (`scripts/model/`)
@@ -749,21 +749,21 @@ matdo/
 | `rotation_legacy.py`   | 旧版旋转   |
 
 
-#### TurboQuant (`src/turboquant/`)
+#### RaBitQ (`src/rabitq/`)
 
 
 | 文件              | 说明              |
 | --------------- | --------------- |
-| `README.md`     | TurboQuant 说明文档 |
+| `README.md`     | RaBitQ 说明文档 |
 | `__init__.py`   | 包初始化            |
-| `api.py`        | TurboQuant API  |
-| `cache.py`      | TurboQuant 缓存   |
+| `api.py`        | RaBitQ API  |
+| `cache.py`      | RaBitQ 缓存   |
 | `compressor.py` | 压缩流程封装          |
-| `quantizer.py`  | TurboQuant 量化器  |
+| `quantizer.py`  | RaBitQ 量化器  |
 | `rotation.py`   | 旋转操作            |
 
 
-##### 遗留代码 (`src/turboquant/legacy/`)
+##### 遗留代码 (`src/rabitq/legacy/`)
 
 
 | 文件                | 说明            |
@@ -774,7 +774,7 @@ matdo/
 | `polar_quant.py`  | 极坐标量化         |
 | `qjl.py`          | QJL 实现        |
 | `tensor_core.py`  | 张量核心优化        |
-| `turbo_quant.py`  | 旧版 TurboQuant |
+| `turbo_quant.py`  | 旧版 RaBitQ |
 | `v3_improved.py`  | V3 改进版        |
 
 
@@ -800,7 +800,7 @@ matdo/
 | `prd-inference-optimization.md`            | 推理优化 PRD               |
 | `prd-optimizations.md`                     | 优化 PRD                 |
 | `prd-rabitq-library-alignment.md`          | RaBitQ 库对齐 PRD         |
-| `prd-turboquant-refactor.md`               | TurboQuant 重构 PRD      |
+| `prd-rabitq-refactor.md`               | RaBitQ 重构 PRD      |
 | `pre-mortem-analysis.md`                   | 事前分析                   |
 | `product-brief-incremental-kv.md`          | 增量 KV 产品简报             |
 | `product-brief-inference-optimization.md`  | 推理优化产品简报               |
@@ -855,11 +855,11 @@ matdo/
 | -------------------------- | ----------------- |
 | `__init__.py`              | 包初始化              |
 | `test_gating_simple.py`    | 简单门控测试            |
-| `test_mnn_turboquant.py`   | MNN TurboQuant 测试 |
+| `test_mnn_rabitq.py`   | MNN RaBitQ 测试 |
 | `test_models_simple.py`    | 简单模型测试            |
 | `test_polar_components.py` | 极坐标组件测试           |
-| `test_turboquant.py`       | TurboQuant 测试     |
-| `test_turboquant_core.py`  | TurboQuant 核心测试   |
+| `test_rabitq.py`       | RaBitQ 测试     |
+| `test_rabitq_core.py`  | RaBitQ 核心测试   |
 
 
 #### 单元测试 (`tests/unit/`)
@@ -1008,7 +1008,7 @@ WorkBuddy AI 助手配置：
 | `IMPLEMENTATION_AUDIT.md`      | `docs/project/reports/`  | 实现审计          |
 | `MATDO.md`                     | `docs/project/reports/`  | MATDO 论文      |
 | `SOTA_CLAIMS_SUMMARY.md`       | `docs/project/reports/`  | SOTA 声明       |
-| `TURBOQUANT_V3_SUMMARY.md`     | `docs/project/reports/`  | TurboQuant 总结 |
+| `RABITQ_V3_SUMMARY.md`     | `docs/project/reports/`  | RaBitQ 总结 |
 
 
 ### 已删除文件
@@ -1049,11 +1049,11 @@ WorkBuddy AI 助手配置：
 - 新手与环境指南: `docs/guides/`（含 `README_FOR_BEGINNERS.md`、`MATDO_E_A100_BEGINNER_GUIDE.md`）
 - 活跃项目文档: `docs/project/`
 - 历史文档: `archive/`
-- 代码: `src/`（AttnRes / Gating / Engram / Models / qTTT / RaBitQ / TurboQuant）
+- 代码: `src/`（AttnRes / Gating / Engram / Models / qTTT / RaBitQ / RaBitQ）
 - 测试: `tests/`
 - 脚本: `scripts/`（`scripts/setup/QUICKSTART.sh`）、`experiments/`
 
 ---
 
-*整理日期: 2026-04-05*  
+*整理日期: 2026-04-05*
 *最后更新: 2026-04-07 — 同步仓库结构；约定根目录 `ADN_paper.md`、`matdo-e_paper.md` 为投稿稿，整理时不要移入子目录*

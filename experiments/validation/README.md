@@ -28,7 +28,7 @@ python progressive_context_test.py --max-context 1048576
 | --------------------------------- | ------------------------------ | ------------------------- |
 | `table1_representation_burial.py` | Table 1: Representation Burial | 1.06× vs 13.5×衰减, 91L有效深度 |
 | `table2_gradient_flow.py`         | Table 2: Gradient Flow         | CV改善 7.6× (0.11 vs 0.84)  |
-| `turboquant_compression.py`       | TurboQuant压缩                   | 6×+压缩比, 5.7×KV Cache缩减    |
+| `rabitq_compression.py`       | RaBitQ压缩                   | 6×+压缩比, 5.7×KV Cache缩减    |
 | `table4_needle_haystack.py`       | Table 4: Needle-in-Haystack    | 86.9%平均, 68.2%@256K       |
 | `table6_math.py`                  | Table 6: MATH Dataset          | 52.3% (8.7B = 50B)        |
 | `table7_synergy.py`               | Table 7: 组件协同                  | 协同系数 1.18                 |
@@ -70,7 +70,7 @@ python extreme_context_scaling.py --output-dir results/validation
 预期输出：
 
 - 128K: ~78.2% accuracy
-- 256K: ~68.2% accuracy  
+- 256K: ~68.2% accuracy
 - 512K: ~58% accuracy
 - 1M: ~48% accuracy (目标: >45%)
 
@@ -159,4 +159,3 @@ cat results/validation/validation_summary.json | python -m json.tool
     'description': '描述'
 },
 ```
-

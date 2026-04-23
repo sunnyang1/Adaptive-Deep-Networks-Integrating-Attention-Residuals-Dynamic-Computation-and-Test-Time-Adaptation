@@ -1,6 +1,6 @@
-# TurboQuant 实验
+# RaBitQ 实验
 
-本目录包含 TurboQuant 压缩和加速相关的实验。
+本目录包含 RaBitQ 压缩和加速相关的实验。
 
 ## 实验列表
 
@@ -14,7 +14,7 @@
 
 **运行**:
 ```bash
-python turboquant/test_polar_quant.py
+python rabitq/test_polar_quant.py
 ```
 
 ### TQ-2: Polar qTTT 效率验证
@@ -27,7 +27,7 @@ python turboquant/test_polar_quant.py
 
 **运行**:
 ```bash
-python turboquant/test_polar_qttt.py
+python rabitq/test_polar_qttt.py
 ```
 
 ### TQ-3: 深度优先策略验证
@@ -40,7 +40,7 @@ python turboquant/test_polar_qttt.py
 
 **运行**:
 ```bash
-python turboquant/test_depth_priority.py
+python rabitq/test_depth_priority.py
 ```
 
 ### TQ-4: 端到端集成测试
@@ -48,9 +48,9 @@ python turboquant/test_depth_priority.py
 
 **运行**:
 ```bash
-python turboquant/test_integration.py
+python rabitq/test_integration.py
 ```
 
 ## 详细步骤
 
-参见: [../docs/turboquant_experiments.md](../docs/turboquant_experiments.md)
+参见: [../docs/rabitq_experiments.md](../docs/rabitq_experiments.md)

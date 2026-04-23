@@ -89,7 +89,6 @@ ignore = [
 "tests/legacy/*" = ["ALL"]  # Legacy tests are deprecated and ignored by pytest
 "src/*/legacy/*" = ["ALL"]  # Legacy source is deprecated
 "src/rabitq/legacy/*" = ["ALL"]  # Legacy RaBitQ source is deprecated
-"src/turboquant/legacy/*" = ["ALL"]  # Legacy TurboQuant source is deprecated
 
 [tool.mypy]
 python_version = "3.12"

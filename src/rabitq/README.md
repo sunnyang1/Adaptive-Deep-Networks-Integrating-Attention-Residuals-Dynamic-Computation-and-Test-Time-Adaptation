@@ -76,7 +76,7 @@ rabitq/
 ├── quantizer.py    # True RaBitQ quantization (binary + ex_bits)
 ├── estimator.py    # Asymmetric popcount-based IP estimator
 ├── cache.py        # HF-compatible compressed cache
-└── legacy/         # Deprecated TurboQuant-based implementations
+└── legacy/         # Deprecated implementations
 ```
 
 ## Testing

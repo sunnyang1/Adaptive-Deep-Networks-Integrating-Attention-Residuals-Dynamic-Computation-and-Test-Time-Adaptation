@@ -1,12 +1,12 @@
-# TurboQuant 集成实验步骤
+# RaBitQ 集成实验步骤
 
-本文档描述了基于 `Adaptive_Deep_Networks_TurboQuant.md` 的完整实验流程，用于验证 TurboQuant 压缩、Polar 坐标 qTTT 和深度优先策略的有效性。
+本文档描述了基于 `Adaptive_Deep_Networks_RaBitQ.md` 的完整实验流程，用于验证 RaBitQ 压缩、Polar 坐标 qTTT 和深度优先策略的有效性。
 
 ---
 
 ## 实验目标
 
-1. **验证 TurboQuant 压缩效果**: 6×+ 内存缩减，零精度损失
+1. **验证 RaBitQ 压缩效果**: 6×+ 内存缩减，零精度损失
 2. **验证 Polar qTTT 效率**: 50% 参数减少，更快收敛
 3. **验证深度优先策略**: 2.4× 吞吐提升 (110 vs 45 tokens/s)
 4. **端到端系统验证**: 综合性能评估
@@ -17,9 +17,9 @@
 
 ```bash
 # 1. 创建并激活虚拟环境
-python -m venv venv_turboquant
-source venv_turboquant/bin/activate  # Linux/Mac
-# 或: venv_turboquant\Scripts\activate  # Windows
+python -m venv venv_rabitq
+source venv_rabitq/bin/activate  # Linux/Mac
+# 或: venv_rabitq\Scripts\activate  # Windows
 
 # 2. 安装依赖
 pip install -r requirements.txt
@@ -38,13 +38,13 @@ print(f'Tensor Cores (INT4): {capability[0] >= 8 and capability[1] >= 9}')
 
 ---
 
-## 实验 1: TurboQuant 压缩验证
+## 实验 1: RaBitQ 压缩验证
 
 ### 1.1 PolarQuant 单元测试
 
 ```bash
 # 测试 PolarQuant 压缩/解压
-python -m pytest tests/unit/test_turboquant.py::test_polar_quant -v
+python -m pytest tests/unit/test_rabitq.py::test_polar_quant -v
 ```
 
 **预期结果**:
@@ -55,23 +55,23 @@ python -m pytest tests/unit/test_turboquant.py::test_polar_quant -v
 
 ```bash
 # 测试 QJL 无偏估计
-python -m pytest tests/unit/test_turboquant.py::test_qjl_unbiased -v
+python -m pytest tests/unit/test_rabitq.py::test_qjl_unbiased -v
 ```
 
 **预期结果**:
 - 内积估计无偏: |E[est] - true| < 0.01
 - 方差控制在合理范围
 
-### 1.3 完整 TurboQuant Pipeline
+### 1.3 完整 RaBitQ Pipeline
 
 ```bash
 # 运行完整 pipeline 测试
 python -c "
 import torch
-from src.turboquant import TurboQuantPipeline, TurboQuantConfig
+from src.rabitq import RaBitQPipeline, RaBitQConfig
 
-config = TurboQuantConfig(angle_bits=3, qjl_proj_dim=256)
-turbo = TurboQuantPipeline(dim=4096, config=config, device='cuda')
+config = RaBitQConfig(angle_bits=3, qjl_proj_dim=256)
+turbo = RaBitQPipeline(dim=4096, config=config, device='cuda')
 
 # 测试数据
 x = torch.randn(1, 4096, device='cuda')
@@ -84,7 +84,7 @@ print(f'QJL signs shape: {qjl.shape}')
 
 # 计算压缩比
 orig_bytes = x.numel() * 2  # FP16
-comp_bytes = (r.numel() * 2 + theta.numel() * 1 + 
+comp_bytes = (r.numel() * 2 + theta.numel() * 1 +
               qjl.numel() * 1 + norm.numel() * 2)
 ratio = orig_bytes / comp_bytes
 print(f'Compression ratio: {ratio:.2f}x')
@@ -125,7 +125,7 @@ print(f'Reconstruction error: {reconstruction_error:.6f}')
 "
 ```
 
-**通过标准**: 
+**通过标准**:
 - 方向范数 = 1.0 (±1e-5)
 - 重构误差 < 1e-5
 
@@ -178,7 +178,7 @@ for i in range(10):
 "
 ```
 
-**通过标准**: 
+**通过标准**:
 - 方向始终保持单位范数
 - 沿梯度方向移动
 
@@ -206,7 +206,7 @@ from src.gating.depth_priority import create_depth_priority_controller
 controller = create_depth_priority_controller(
     target_rate=0.3,
     max_qttt_steps=32,
-    turboquant_enabled=True
+    rabitq_enabled=True
 )
 
 # 对比策略
@@ -221,7 +221,7 @@ for k, v in comparison.items():
 ```
 standard_policy: T_think = 2 * N_qTTT * k
   -> 4096 tokens for 16 steps @ 128 span
-turboquant_policy: T_think = 16 * N_qTTT * k
+rabitq_policy: T_think = 16 * N_qTTT * k
   -> 32768 tokens for 16 steps @ 128 span
   -> 8x theoretical advantage
 ```
@@ -234,7 +234,7 @@ from src.gating.depth_priority import create_depth_priority_controller
 
 controller = create_depth_priority_controller(
     target_rate=0.3,
-    turboquant_enabled=True
+    rabitq_enabled=True
 )
 
 # 模拟决策序列
@@ -254,7 +254,7 @@ for k, v in report.items():
 ```
 
 **通过标准**:
-- TurboQuant 启用时 think_tokens = 0
+- RaBitQ 启用时 think_tokens = 0
 - 适应率接近目标 30%
 
 ---
@@ -265,7 +265,7 @@ for k, v in report.items():
 
 ```bash
 python -c "
-from src.turboquant.tensor_core import estimate_throughput_gain
+from src.rabitq.tensor_core import estimate_throughput_gain
 
 estimates = estimate_throughput_gain(baseline_tps=45.0)
 print('Throughput Estimates:')
@@ -287,7 +287,7 @@ has_tensor_cores: True
 ```bash
 python -c "
 import torch
-from src.turboquant.tensor_core import INT4Linear
+from src.rabitq.tensor_core import INT4Linear
 
 # 创建 INT4 线性层
 layer = INT4Linear(4096, 4096).cuda()
@@ -299,7 +299,7 @@ layer.quantize_weights()
 x = torch.randn(1, 4096, dtype=torch.float16).cuda()
 with torch.no_grad():
     y = layer(x)
-    
+
 print(f'Input shape: {x.shape}')
 print(f'Output shape: {y.shape}')
 print(f'Quantized: {layer._quantized}')
@@ -325,7 +325,7 @@ config = ModelConfig(
     dim=2048,  # Small model for testing
     num_layers=8,
     num_heads=16,
-    use_turboquant=True,
+    use_rabitq=True,
     use_polar_qttt=True,
     depth_priority=True
 )
@@ -339,7 +339,7 @@ input_ids = torch.randint(0, 32000, (1, 512)).cuda()
 # 前向传播
 with torch.no_grad():
     output = model(input_ids)
-    
+
 print(f'Input shape: {input_ids.shape}')
 print(f'Output shape: {output.logits.shape}')
 print(f'KV cache compressed: {model.kv_cache_compressed}')
@@ -354,12 +354,12 @@ python scripts/evaluation/run_benchmarks.py \
     --benchmark needle \
     --context-lengths 4096,16384,65536,131072 \
     --model-size small \
-    --use-turboquant \
-    --output results/needle_turboquant.json
+    --use-rabitq \
+    --output results/needle_rabitq.json
 ```
 
 **预期结果**:
-| Context | Baseline | TurboQuant | 提升 |
+| Context | Baseline | RaBitQ | 提升 |
 |---------|----------|------------|------|
 | 4K | 87.5% | 98.5% | +11% |
 | 32K | 22.1% | 91.3% | +69% |
@@ -373,9 +373,9 @@ python scripts/evaluation/run_benchmarks.py \
 python scripts/evaluation/run_benchmarks.py \
     --benchmark math \
     --model-size small \
-    --use-turboquant \
+    --use-rabitq \
     --use-polar-qttt \
-    --output results/math_turboquant.json
+    --output results/math_rabitq.json
 ```
 
 **预期结果**:
@@ -395,17 +395,17 @@ import json
 
 # 配置变体
 configs = [
-    {'name': 'Full System', 'attnres': True, 'turboquant': True, 'qttt': True, 'polar': True},
-    {'name': 'w/o Polar qTTT', 'attnres': True, 'turboquant': True, 'qttt': True, 'polar': False},
-    {'name': 'w/o TurboQuant', 'attnres': True, 'turboquant': False, 'qttt': True, 'polar': True},
-    {'name': 'w/o qTTT', 'attnres': True, 'turboquant': True, 'qttt': False, 'polar': False},
-    {'name': 'w/o AttnRes', 'attnres': False, 'turboquant': True, 'qttt': True, 'polar': True},
-    {'name': 'Baseline', 'attnres': False, 'turboquant': False, 'qttt': False, 'polar': False},
+    {'name': 'Full System', 'attnres': True, 'rabitq': True, 'qttt': True, 'polar': True},
+    {'name': 'w/o Polar qTTT', 'attnres': True, 'rabitq': True, 'qttt': True, 'polar': False},
+    {'name': 'w/o RaBitQ', 'attnres': True, 'rabitq': False, 'qttt': True, 'polar': True},
+    {'name': 'w/o qTTT', 'attnres': True, 'rabitq': True, 'qttt': False, 'polar': False},
+    {'name': 'w/o AttnRes', 'attnres': False, 'rabitq': True, 'qttt': True, 'polar': True},
+    {'name': 'Baseline', 'attnres': False, 'rabitq': False, 'qttt': False, 'polar': False},
 ]
 
 # 打印配置
 for cfg in configs:
-    print(f\"{cfg['name']}: AttnRes={cfg['attnres']}, TurboQuant={cfg['turboquant']}, qTTT={cfg['qttt']}, Polar={cfg['polar']}\")
+    print(f\"{cfg['name']}: AttnRes={cfg['attnres']}, RaBitQ={cfg['rabitq']}, qTTT={cfg['qttt']}, Polar={cfg['polar']}\")
 "
 ```
 
@@ -414,7 +414,7 @@ for cfg in configs:
 |------|--------|-----------|
 | Full System | 56.8% | — |
 | w/o Polar qTTT | 54.2% | -2.6% |
-| w/o TurboQuant | 51.5% | -5.3% |
+| w/o RaBitQ | 51.5% | -5.3% |
 | w/o qTTT | 50.1% | -6.7% |
 | w/o AttnRes | 48.9% | -7.9% |
 | Baseline | 39.7% | -17.1% |
@@ -428,8 +428,8 @@ import time
 import torch
 
 configs = [
-    ('Thinking Tokens', {'use_turboquant': False, 'depth_priority': False}),
-    ('ADB + TurboQuant', {'use_turboquant': True, 'depth_priority': True}),
+    ('Thinking Tokens', {'use_rabitq': False, 'depth_priority': False}),
+    ('ADB + RaBitQ', {'use_rabitq': True, 'depth_priority': True}),
 ]
 
 for name, cfg in configs:
@@ -437,7 +437,7 @@ for name, cfg in configs:
     start = time.time()
     # ... 实际推理代码
     elapsed = time.time() - start
-    
+
     tokens_per_sec = 1000 / elapsed  # 假设生成 1000 tokens
     print(f'{name}: {tokens_per_sec:.1f} tokens/s')
 "
@@ -445,7 +445,7 @@ for name, cfg in configs:
 
 **预期结果**:
 - Thinking Tokens: ~45 t/s
-- ADB + TurboQuant: ~110 t/s (2.4×)
+- ADB + RaBitQ: ~110 t/s (2.4×)
 
 ---
 
@@ -456,10 +456,10 @@ for name, cfg in configs:
 ```bash
 python -c "
 import torch
-from src.turboquant import TurboQuantPipeline, TurboQuantConfig
+from src.rabitq import RaBitQPipeline, RaBitQConfig
 
-config = TurboQuantConfig(angle_bits=3, qjl_proj_dim=256)
-turbo = TurboQuantPipeline(dim=4096, config=config)
+config = RaBitQConfig(angle_bits=3, qjl_proj_dim=256)
+turbo = RaBitQPipeline(dim=4096, config=config)
 
 # 模拟 128K 上下文的 KV cache
 batch_size = 1
@@ -475,7 +475,7 @@ compressed = turbo.compress_kv_cache(keys, values)
 
 # 计算内存
 orig_mb = (keys.numel() + values.numel()) * 2 / 1024 / 1024
-comp_bytes = sum(v.numel() * (1 if v.dtype == torch.int8 else 2) 
+comp_bytes = sum(v.numel() * (1 if v.dtype == torch.int8 else 2)
                  for v in compressed.values())
 comp_mb = comp_bytes / 1024 / 1024
 
@@ -497,19 +497,19 @@ print(f'Target: >5.7x')
 ```bash
 # 运行所有测试并生成报告
 python experiments/run_experiments_unified.py --all \
-    --output results/turboquant_full_report.json
+    --output results/rabitq_full_report.json
 
 # 生成可视化
 python scripts/experiments/paper_metrics_summary.py \
-    --input results/turboquant_full_report.json \
-    --output docs/turboquant_results/
+    --input results/rabitq_full_report.json \
+    --output docs/rabitq_results/
 ```
 
 ### 预期最终指标
 
 | 指标 | 目标 | 验证方法 |
 |------|------|----------|
-| TurboQuant 压缩比 | ≥ 6× | 实验 1.3 |
+| RaBitQ 压缩比 | ≥ 6× | 实验 1.3 |
 | KV cache 缩减 | ≥ 5.7× | 实验 8.1 |
 | Polar qTTT 参数减少 | 50% | 实验 2.2 |
 | 吞吐提升 | 2.4× (110 vs 45 t/s) | 实验 5.1 |
@@ -525,7 +525,7 @@ python scripts/experiments/paper_metrics_summary.py \
 **解决**: 检查 GPU 计算能力 (需 ≥ 8.9)，或启用模拟模式
 
 ### 问题: 压缩比低于预期
-**解决**: 
+**解决**:
 - 检查 angle_bits 设置 (应为 3)
 - 验证 QJL 投影维度 (推荐 256)
 
@@ -541,7 +541,7 @@ python scripts/experiments/paper_metrics_summary.py \
 
 - [ ] 环境: PyTorch 2.1+, CUDA 12.1+
 - [ ] GPU: NVIDIA H100 (或 A100 作为备选)
-- [ ] TurboQuant: 6×+ 压缩比
+- [ ] RaBitQ: 6×+ 压缩比
 - [ ] Polar qTTT: 50% 参数冻结
 - [ ] 深度优先: think_tokens = 0
 - [ ] Tensor Cores: INT4 支持检测
@@ -551,6 +551,6 @@ python scripts/experiments/paper_metrics_summary.py \
 
 ---
 
-**文档版本**: 1.0  
-**更新日期**: 2026-03-29  
-**对应代码分支**: feature/turboquant
+**文档版本**: 1.0
+**更新日期**: 2026-03-29
+**对应代码分支**: feature/rabitq

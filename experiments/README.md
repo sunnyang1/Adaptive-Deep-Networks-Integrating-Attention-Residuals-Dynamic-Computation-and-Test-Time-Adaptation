@@ -17,19 +17,19 @@ experiments/
 │   ├── exp4_flop_equivalence/         # FLOP 等价验证
 │   ├── exp5_synergy/                  # 组件协同效应
 │   └── exp6_auxiliary/                # 辅助验证实验
-├── turboquant/                        # TurboQuant 相关实验
+├── rabitq/                        # RaBitQ 相关实验
 │   └── (待添加)
 ├── benchmarks/                        # 基准测试
 │   └── (待添加)
 ├── docs/                              # 实验文档
 │   ├── core_experiments.md            # 核心实验详细说明
-│   └── turboquant_experiments.md      # TurboQuant 实验步骤
+│   └── rabitq_experiments.md      # RaBitQ 实验步骤
 ├── utils/                             # 实验工具函数
 │   ├── __init__.py
 │   └── measurement.py
 └── results/                           # 实验结果输出
     ├── core/                          # 核心实验结果
-    ├── turboquant/                    # TurboQuant 结果
+    ├── rabitq/                    # RaBitQ 结果
     └── benchmarks/                    # 基准测试结果
 ```
 
@@ -133,7 +133,7 @@ python run_experiments_unified.py --all --dry-run
 
 详细说明：[docs/core_experiments.md](docs/core_experiments.md)
 
-### TurboQuant 实验 (turboquant/)
+### RaBitQ 实验 (rabitq/)
 
 | 实验 | 名称 | 目标 |
 |------|------|------|
@@ -142,7 +142,7 @@ python run_experiments_unified.py --all --dry-run
 | TQ-3 | 深度优先策略 | 验证 2.4x 吞吐提升 |
 | TQ-4 | 端到端集成 | 综合性能验证 |
 
-详细说明：[docs/turboquant_experiments.md](docs/turboquant_experiments.md)
+详细说明：[docs/rabitq_experiments.md](docs/rabitq_experiments.md)
 
 ### 基准测试 (benchmarks/)
 
@@ -186,7 +186,7 @@ pip install torch numpy matplotlib seaborn tqdm pyyaml
 | exp3 | 3.4.3 Gradient Flow | 图3, 表X |
 | exp4 | 4.3.3 FLOP Equivalence | 图4, 表Z |
 | exp5 | 5.5 Ablation Study | 图5 |
-| TQ-x | TurboQuant Section | 表TQ |
+| TQ-x | RaBitQ Section | 表TQ |
 
 ## 迁移说明
 

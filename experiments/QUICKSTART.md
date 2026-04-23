@@ -66,13 +66,13 @@ python core/exp5_synergy/run_exp5.py
 python core/exp6_auxiliary/run_exp6.py
 ```
 
-### TurboQuant验证
+### RaBitQ验证
 ```bash
 # 使用统一脚本
-python run_experiments_unified.py --exp val_turboquant
+python run_experiments_unified.py --exp val_rabitq
 
 # 或直接运行
-python ../scripts/experiments/validate_turboquant_setup.py
+python ../scripts/experiments/validate_rabitq_setup.py
 ```
 
 ## 输出位置
@@ -121,7 +121,7 @@ python -c "import json; d=json.load(open('results/experiments/execution_summary.
 | 类别 | 实验 | 说明 |
 |------|------|------|
 | core | exp1-exp6 | 核心验证实验 |
-| validation | val_small, val_turboquant | 模型验证 |
+| validation | val_small, val_rabitq | 模型验证 |
 | paper | paper_metrics | 论文指标生成 |
 
 ## 完整帮助

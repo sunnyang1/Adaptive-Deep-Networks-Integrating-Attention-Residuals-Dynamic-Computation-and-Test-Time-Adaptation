@@ -2,7 +2,7 @@
 """
 使用 Small Model 在论文数据集上测试指标
 
-基于 Adaptive_Deep_Networks_TurboQuant.md:
+基于 Adaptive_Deep_Networks_RaBitQ.md:
 1. Needle-in-Haystack (Table 4) - 长上下文检索
 2. MATH Dataset (Table 6) - 数学推理
 3. LongBench-v2 (Table 7) - 综合评估
@@ -19,14 +19,13 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
-import torch
-import numpy as np
 import json
 from datetime import datetime
-from typing import Dict, List
 
-from models.configs import get_config
+import numpy as np
+import torch
 from models.adaptive_transformer import AdaptiveTransformer
+from models.configs import get_config
 
 
 class DatasetTester:
@@ -49,12 +48,12 @@ class DatasetTester:
 
         print(f"Model: Small ({self.model.count_parameters()/1e9:.2f}B parameters)")
 
-    def test_needle_haystack(self, context_lengths: List[int] = None) -> Dict:
+    def test_needle_haystack(self, context_lengths: list[int] = None) -> dict:
         """
         测试 1: Needle-in-Haystack (Table 4)
 
         论文指标:
-        | Context | Transformer | TTT-Linear | AttnRes | ADB + TurboQuant |
+        | Context | Transformer | TTT-Linear | AttnRes | ADB + RaBitQ |
         |---------|-------------|------------|---------|------------------|
         | 4K      | 87.5%       | 94.2%      | 96.8%   | **98.5%**        |
         | 32K     | 22.1%       | 65.3%      | 75.6%   | **91.3%**        |
@@ -77,7 +76,7 @@ class DatasetTester:
             "transformer": [87.5, 22.1, 8.7, 3.2, 1.5],
             "ttt_linear": [94.2, 65.3, 48.7, 32.1, 18.5],
             "attnres": [96.8, 75.6, 58.9, 42.3, 28.7],
-            "adb_turboquant": [98.5, 91.3, 85.5, 78.2, 68.2],
+            "adb_rabitq": [98.5, 91.3, 85.5, 78.2, 68.2],
         }
 
         print("\nPaper Results (Table 4):")
@@ -94,7 +93,7 @@ class DatasetTester:
                 f"{paper_results['transformer'][i]:>6.1f}%{'':<8} "
                 f"{paper_results['ttt_linear'][i]:>6.1f}%{'':<8} "
                 f"{paper_results['attnres'][i]:>6.1f}%{'':<8} "
-                f"{paper_results['adb_turboquant'][i]:>6.1f}%"
+                f"{paper_results['adb_rabitq'][i]:>6.1f}%"
             )
 
         print("-" * 80)
@@ -109,7 +108,7 @@ class DatasetTester:
             "  1. At 256K context, ADB maintains 68.2% accuracy vs 1.5% baseline (45× improvement)"
         )
         print("  2. Relative ADB advantage increases with length: +11.1% (4K) → +53.6% (256K)")
-        print("  3. Average accuracy: 86.9% (ADB+TurboQuant) vs 38.2% (Transformer)")
+        print("  3. Average accuracy: 86.9% (ADB+RaBitQ) vs 38.2% (Transformer)")
 
         # 模拟测试 (由于模型未训练，返回模拟值)
         print("\n" + "-" * 70)
@@ -145,7 +144,7 @@ class DatasetTester:
         self.results["needle_haystack"] = results
         return results
 
-    def test_math_dataset(self) -> Dict:
+    def test_math_dataset(self) -> dict:
         """
         测试 2: MATH Dataset (Table 6)
 
@@ -241,7 +240,7 @@ class DatasetTester:
         self.results["math_dataset"] = results
         return results
 
-    def test_ablation_study(self) -> Dict:
+    def test_ablation_study(self) -> dict:
         """
         测试 3: 消融研究 (Table 7)
 
@@ -252,7 +251,7 @@ class DatasetTester:
         | w/o qTTT            | 50.1%     | -6.7%     |
         | w/o Gating          | 53.2%     | -3.6%     |
         | w/o AttnRes         | 48.9%     | -7.9%     |
-        | w/o TurboQuant      | 51.5%     | -5.3%     |
+        | w/o RaBitQ      | 51.5%     | -5.3%     |
         | Standard Transformer| 39.7%     | -17.1%    |
 
         协同系数: 1.18 (超加性交互)
@@ -267,7 +266,7 @@ class DatasetTester:
                 "w/o_qTTT": {"score": 50.1, "delta": -6.7},
                 "w/o_Gating": {"score": 53.2, "delta": -3.6},
                 "w/o_AttnRes": {"score": 48.9, "delta": -7.9},
-                "w/o_TurboQuant": {"score": 51.5, "delta": -5.3},
+                "w/o_RaBitQ": {"score": 51.5, "delta": -5.3},
                 "Standard_Transformer": {"score": 39.7, "delta": -17.1},
             },
             "synergy_coefficient": 1.18,
@@ -297,7 +296,7 @@ class DatasetTester:
             "component_importance": [
                 ("AttnRes", 7.9),
                 ("qTTT", 6.7),
-                ("TurboQuant", 5.3),
+                ("RaBitQ", 5.3),
                 ("Gating", 3.6),
             ],
             "note": "Ablation study shows all components contribute significantly",
@@ -306,7 +305,7 @@ class DatasetTester:
         self.results["ablation_study"] = results
         return results
 
-    def test_compute_efficiency(self) -> Dict:
+    def test_compute_efficiency(self) -> dict:
         """
         测试 4: 计算效率 (Table 8)
 
@@ -367,7 +366,7 @@ class DatasetTester:
         print(f"  FLOPs per token: {flops_per_token/1e9:.2f} GFLOPs")
         print(f"  Est. tokens per problem: {tokens_per_problem}")
         print(f"  Est. FLOPs per problem: {small_model_flops/1e9:.2f} GFLOPs")
-        print(f"  8.7B model FLOPs: ~14 GFLOPs/token (1.4× Small)")
+        print("  8.7B model FLOPs: ~14 GFLOPs/token (1.4× Small)")
 
         results = {
             "paper_results": paper_results,
@@ -408,7 +407,7 @@ class DatasetTester:
         report.append("Based on Adaptive Deep Networks Paper")
         report.append("=" * 70)
         report.append(f"\nTimestamp: {datetime.now().isoformat()}")
-        report.append(f"Model: Small (2.2B params, untrained)")
+        report.append("Model: Small (2.2B params, untrained)")
         report.append("\nNOTE: This report shows paper reference metrics.")
         report.append("Actual evaluation requires pre-trained model weights.")
 

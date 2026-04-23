@@ -5,19 +5,18 @@ Implements true RaBitQ (1-bit + extended-bit quantization with random
 orthogonal rotation and popcount-based inner-product estimation).
 """
 
-import torch
-from dataclasses import dataclass, field
-from typing import Dict, Tuple, Optional, List
+from dataclasses import dataclass
 
-from .rotation import FhtKacRotator, MatrixRotator, IdentityRotator, Rotator
+import torch
+
 from .quantizer import (
     QuantizedVector,
     RabitqConfig,
+    compute_const_scaling_factor,
     quantize_vector,
     reconstruct_vector,
-    compute_const_scaling_factor,
-    quantize_scalar,
 )
+from .rotation import FhtKacRotator, IdentityRotator, MatrixRotator
 
 
 @dataclass
@@ -38,8 +37,8 @@ class RaBitQConfig:
 class CompressedKV:
     """Compressed key-value pair for a batch of vectors."""
 
-    quantized_vectors: List[QuantizedVector]
-    original_shape: Tuple[int, ...]
+    quantized_vectors: list[QuantizedVector]
+    original_shape: tuple[int, ...]
     centroid: torch.Tensor
 
 
@@ -56,7 +55,7 @@ class RaBitQ:
 
     def __init__(
         self,
-        config: Optional[RaBitQConfig] = None,
+        config: RaBitQConfig | None = None,
         total_bits: int = 1,
         head_dim: int = 64,
         device: str = "cpu",
@@ -82,8 +81,8 @@ class RaBitQ:
         self.padded_dim = self.rotator.padded_dim()
         self.rabitq_config = RabitqConfig(total_bits=config.total_bits)
         self._is_fitted = False
-        self.centroid_k: Optional[torch.Tensor] = None
-        self.centroid_v: Optional[torch.Tensor] = None
+        self.centroid_k: torch.Tensor | None = None
+        self.centroid_v: torch.Tensor | None = None
 
     def fit(self, sample_keys: torch.Tensor, sample_values: torch.Tensor) -> "RaBitQ":
         """
@@ -113,7 +112,7 @@ class RaBitQ:
         self._is_fitted = True
         return self
 
-    def compress(self, keys: torch.Tensor, values: torch.Tensor) -> Dict[str, CompressedKV]:
+    def compress(self, keys: torch.Tensor, values: torch.Tensor) -> dict[str, CompressedKV]:
         """
         Compress keys and values.
 
@@ -142,13 +141,13 @@ class RaBitQ:
             "values": self._compress_tensor(values_rot, self.centroid_v, values.shape),
         }
 
-    def decompress(self, compressed: Dict[str, CompressedKV]) -> Tuple[torch.Tensor, torch.Tensor]:
+    def decompress(self, compressed: dict[str, CompressedKV]) -> tuple[torch.Tensor, torch.Tensor]:
         """Decompress keys and values back to original shape."""
         keys = self._decompress_tensor(compressed["keys"])
         values = self._decompress_tensor(compressed["values"])
         return keys, values
 
-    def as_cache(self, residual_window: Optional[int] = None):
+    def as_cache(self, residual_window: int | None = None):
         """Get HF-compatible cache using these compression settings."""
         from .cache import RaBitQCache
 
@@ -163,7 +162,7 @@ class RaBitQ:
 
     def memory_stats(
         self, seq_len: int, num_layers: int = 1, batch_size: int = 1, num_heads: int = 32
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """Calculate memory statistics."""
         num_vectors = batch_size * num_heads * seq_len
         elements_per_tensor = num_vectors * self.config.head_dim
@@ -223,7 +222,7 @@ class RaBitQ:
         return x
 
     def _compress_tensor(
-        self, rotated: torch.Tensor, centroid: torch.Tensor, original_shape: Tuple[int, ...]
+        self, rotated: torch.Tensor, centroid: torch.Tensor, original_shape: tuple[int, ...]
     ) -> CompressedKV:
         """Compress a batch of rotated vectors."""
         flat = rotated.reshape(-1, self.padded_dim)
@@ -283,7 +282,7 @@ def create_k3(head_dim: int = 64, device: str = "cpu") -> RaBitQ:
     return RaBitQ(total_bits=3, head_dim=head_dim, device=device)
 
 
-# Backward-compatible aliases matching old TurboQuant API
+# Backward-compatible aliases matching old API
 create_k4_v2 = create_k3
 create_k3_v2 = create_k2
 create_k2_v2 = create_k1
