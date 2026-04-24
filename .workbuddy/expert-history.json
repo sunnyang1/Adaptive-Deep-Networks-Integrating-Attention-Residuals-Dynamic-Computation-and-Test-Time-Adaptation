@@ -22,7 +22,49 @@
         "usedAt": 1774535532484,
         "industryId": "02-Engineering"
       }
+    ],
+    "90378fd61b1e4519a9d686937ebf3da3": [
+      {
+        "expertId": "AiEngineer",
+        "name": "深网网",
+        "profession": "AI工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/AiEngineer/AiEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/AiEngineer/AiEngineer_zh.md",
+        "usedAt": 1776940360936,
+        "industryId": "all"
+      }
+    ],
+    "906d6bf252b04871a35c0014a8f6ff86": [
+      {
+        "expertId": "TechnicalDocumentationEngineer",
+        "name": "文通通",
+        "profession": "技术文档工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/TechnicalDocumentationEngineer/TechnicalDocumentationEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/TechnicalDocumentationEngineer/TechnicalDocumentationEngineer_zh.md",
+        "usedAt": 1776952665374,
+        "industryId": "02-Engineering"
+      },
+      {
+        "expertId": "AiEngineer",
+        "name": "深网网",
+        "profession": "AI工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/AiEngineer/AiEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/AiEngineer/AiEngineer_zh.md",
+        "usedAt": 1776943416442,
+        "industryId": "all"
+      }
+    ],
+    "92566ed549ab42dfa6fc38183acd1113": [
+      {
+        "expertId": "TechnicalDocumentationEngineer",
+        "name": "文通通",
+        "profession": "技术文档工程师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/02-Engineering/TechnicalDocumentationEngineer/TechnicalDocumentationEngineer.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/02-Engineering/TechnicalDocumentationEngineer/TechnicalDocumentationEngineer_zh.md",
+        "usedAt": 1776952688651,
+        "industryId": "02-Engineering"
+      }
     ]
   },
-  "lastUpdated": 1774578569755
+  "lastUpdated": 1776995693190
 }

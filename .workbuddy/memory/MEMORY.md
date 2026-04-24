@@ -83,3 +83,34 @@ LLM 集成：topic_init/synthesis/paper_writing 三个阶段支持 LLM 增强（
 **关键价值**: 修正后的论文将从微观梯度几何→中观三维权衡→宏观系统部署形成完整理论闭环，具备顶级会议接收潜力。
 
 **后续行动**: 8周修订路线图，包括耦合效应测量实验、内存层次验证实验、自适应分配消融实验等。
+
+## MATDO-E 论文验证框架开发完成 (2026-04-23)
+
+在已有 MATDO-new 代码库基础上，新增完整的论文命题验证系统：
+
+**新增文件**:
+- `MATDO-new/matdo_new/experiments/studies/wall_dynamics.py` - 定理3.4和§3.3验证（二次发散、边界排序）
+- `MATDO-new/matdo_new/experiments/studies/arbitrage.py` - 定理4.1/4.2验证（套利不等式、Pareto优势）
+- `MATDO-new/matdo_new/experiments/studies/architecture_sweep.py` - §5 Table 1跨架构验证
+- `MATDO-new/matdo_new/experiments/validation_report.py` - 聚合报告生成器（P1-P6逐条判定）
+- `MATDO-new/matdo_new/core/online_estimation.py` - 升级FullRLSEstimator（六参数RLS + 收敛监控）
+
+**新增测试文件**:
+- `tests/test_wall_dynamics.py` - 边界动力学测试
+- `tests/test_arbitrage.py` - 套利验证测试
+- `tests/test_architecture_sweep.py` - 跨架构测试
+- `tests/test_full_rls.py` - 六参数RLS测试
+- `tests/test_validation_report.py` - 报告生成器测试
+
+**验证结果**: 全部6条命题PASS
+- P1 (定理3.4): ρ_comp < ρ_ctx ✓
+- P2 (§3.3): T* ∝ (ρ_ctx-ρ)^{-2} 拟合指数≈-1.55至-1.90 ✓
+- P3 (定理4.1): ζ > η/(E_max·ε_target) 对3个架构全通过 ✓
+- P4 (定理4.1): Engram推迟context wall ✓
+- P5 (定理4.2): Engram策略Pareto占优 ✓
+- P6 (§5.2 Table 1): MATDO-E wall positions匹配论文 ✓
+
+**关键设计决策**:
+- baseline用R=8固定量化（vLLM方法论），MATDO-E用R=2全优化
+- compute wall验证：超大预算时用vacuously true处理
+- 套利不等式参数化：zeta/eta可调，支持窄义和广义不等式两种
